@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-18T13:24:10.471Z",
+  "projectRoot": "/home/alfa/GamePKM/sikapandawa/public/assets/frontend",
+  "structure": {
+    "hasPackageJson": false,
+    "hasTsConfig": false,
+    "hasClaudeConfig": false,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1784381050472
+}
