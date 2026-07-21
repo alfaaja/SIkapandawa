@@ -12,6 +12,8 @@ export default defineConfig({
         },
     },
     server: {
-        port: 8080
+        // Gunakan port yang diberikan environment (preview harness); fallback 8080.
+        port: Number(process.env.PORT) || 8080,
+        strictPort: false
     }
 });

@@ -1,0 +1,15 @@
+{
+  "id": "session-1784549934654",
+  "startedAt": "2026-07-20T12:18:54.654Z",
+  "cwd": "/home/alfa/GamePKM/sikapandawa",
+  "context": {},
+  "metrics": {
+    "edits": 0,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  },
+  "restoredAt": "2026-07-20T12:19:18.642Z",
+  "endedAt": "2026-07-20T12:24:06.578Z",
+  "duration": 311924
+}

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-18T13:18:34.085Z",
+  "timestamp": "2026-07-21T02:23:47.349Z",
   "projectRoot": "/home/alfa/GamePKM/sikapandawa",
   "structure": {
     "hasPackageJson": true,
@@ -7,5 +7,5 @@
     "hasClaudeConfig": false,
     "hasClaudeFlow": true
   },
-  "scannedAt": 1784380714085
+  "scannedAt": 1784600627349
 }

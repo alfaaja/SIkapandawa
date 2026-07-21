@@ -1,15 +1,21 @@
 import { Scene } from 'phaser';
-import { addBackground, addImageIfExists } from '../ui/backdrop';
+import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backdrop';
 import { SpriteButton } from '../ui/SpriteButton';
 import { MessageModal } from '../ui/MessageModal';
+import { makeText } from '../ui/fonts';
 import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService, TOTAL_LEVELS } from '../services/ProgressStorageService';
+import {
+    ProgressStorageService, TOTAL_LEVELS, PLAYABLE_LEVELS
+} from '../services/ProgressStorageService';
+import { LEVELS } from '../data/levels';
 
 const GRID_XS = [380, 510, 640, 770, 900];
 const GRID_ROW_YS = [240, 350];
 
 /**
  * LevelSelect — panel user, total bintang, grid 10 level, Jejak Pandawa, logout.
+ * Level 1–2 membuka Gameplay (Level 1 lewat Intro pada first entry);
+ * Level 3+ placeholder untuk progress berikutnya.
  */
 export class LevelSelect extends Scene {
     private modal: MessageModal;
@@ -26,6 +32,7 @@ export class LevelSelect extends Scene {
             return;
         }
 
+        applyLogicalCamera(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
         addBackground(this, 'bg-level');
         this.modal = new MessageModal(this);
@@ -38,21 +45,11 @@ export class LevelSelect extends Scene {
         if (!panel) {
             this.add.rectangle(208, 46, 380, 47, 0x630995).setStrokeStyle(3, 0x3a0a52);
         }
-        const nameText = this.add.text(151, 45, account.displayName, {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '20px',
-            fontStyle: 'bold',
-            color: '#3a0a52'
-        }).setOrigin(0.5);
-        if (nameText.width > 240) {
-            nameText.setScale(240 / nameText.width);
-        }
-        this.add.text(367, 45, String(totalStars), {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '22px',
-            fontStyle: 'bold',
-            color: '#ffffff'
-        }).setOrigin(0.5);
+        const displayName = account.displayName.length > 16
+            ? `${account.displayName.slice(0, 15)}…`
+            : account.displayName;
+        makeText(this, 151, 45, displayName, 13).setOrigin(0.5);
+        makeText(this, 367, 45, String(totalStars), 15, { color: '#ffffff' }).setOrigin(0.5);
 
         // Branding kanan atas + logout.
         addImageIfExists(this, 1090, 46, 'label-sikapandawa');
@@ -61,12 +58,7 @@ export class LevelSelect extends Scene {
         // Judul misi.
         const misi = addImageIfExists(this, 640, 118, 'label-misi');
         if (!misi) {
-            this.add.text(640, 118, 'MISI PANDAWA', {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '36px',
-                fontStyle: 'bold',
-                color: '#630995'
-            }).setOrigin(0.5);
+            makeText(this, 640, 118, 'MISI PANDAWA', 24, { color: '#630995' }).setOrigin(0.5);
         }
 
         // Grid level 5x2.
@@ -76,12 +68,7 @@ export class LevelSelect extends Scene {
             const unlocked = level <= progress.highestUnlockedLevel;
             const textureKey = unlocked ? `level-${level}-unlocked` : `level-${level}-locked`;
             new SpriteButton(this, GRID_XS[col], GRID_ROW_YS[row], textureKey, () => {
-                if (this.modal.isOpen) return;
-                if (unlocked) {
-                    this.modal.show(`Gameplay Level ${level} akan dibuat pada progress berikutnya.`);
-                } else {
-                    this.modal.show('Selesaikan level sebelumnya terlebih dahulu.');
-                }
+                this.onLevelClick(level, unlocked, account.id);
             });
         }
 
@@ -89,6 +76,33 @@ export class LevelSelect extends Scene {
         new SpriteButton(this, 640, 575, 'jejak-locked', () => {
             if (this.modal.isOpen) return;
             this.modal.show('Jejak Pandawa terbuka setelah seluruh misi selesai.');
+        });
+    }
+
+    private onLevelClick(level: number, unlocked: boolean, accountId: string): void {
+        if (this.modal.isOpen) return;
+
+        if (!unlocked) {
+            this.modal.show('Selesaikan level sebelumnya terlebih dahulu.');
+            return;
+        }
+        if (level > PLAYABLE_LEVELS) {
+            this.modal.show(`Gameplay Level ${level} akan dibuat pada progress berikutnya.`);
+            return;
+        }
+
+        const definition = LEVELS[level];
+        const introId = definition?.introCharacterId;
+        const needIntro = introId !== undefined
+            && !ProgressStorageService.hasSeenIntro(accountId, introId);
+
+        this.cameras.main.fadeOut(220, 255, 244, 214);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+            if (needIntro && introId) {
+                this.scene.start('IntroCharacter', { levelId: level, characterId: introId });
+            } else {
+                this.scene.start('Gameplay', { levelId: level });
+            }
         });
     }
 

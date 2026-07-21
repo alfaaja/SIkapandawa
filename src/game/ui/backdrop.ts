@@ -1,15 +1,28 @@
 import { Scene } from 'phaser';
 
+/**
+ * Koordinat logis game adalah 1280x720. Backing canvas 2560x1440 dengan
+ * kamera zoom 2 sehingga tekstur @2x ter-render 1:1 (tajam/HD).
+ */
 export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
 
+/** Pasang kamera logis: zoom 2 dan pusat pada design space 1280x720. */
+export function applyLogicalCamera(scene: Scene): void {
+    const cam = scene.cameras.main;
+    cam.setZoom(2);
+    cam.centerOn(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2);
+}
+
 /**
- * Pasang background dari texture; bila asset gagal dimuat,
- * gambar gradien kuning sebagai fallback agar tidak ada layar hitam.
+ * Pasang background dari texture (ukuran texture bebas — ditampilkan pada
+ * 1280x720 logis). Bila asset gagal dimuat, gambar gradien kuning sebagai
+ * fallback agar tidak ada layar hitam.
  */
 export function addBackground(scene: Scene, textureKey: string): void {
     if (scene.textures.exists(textureKey)) {
-        scene.add.image(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2, textureKey);
+        scene.add.image(DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2, textureKey)
+            .setDisplaySize(DESIGN_WIDTH, DESIGN_HEIGHT);
         return;
     }
     const graphics = scene.add.graphics();

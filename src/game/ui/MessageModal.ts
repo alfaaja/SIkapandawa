@@ -1,4 +1,6 @@
 import { Scene, GameObjects } from 'phaser';
+import { DESIGN_WIDTH, DESIGN_HEIGHT } from './backdrop';
+import { makeText } from './fonts';
 
 const DEPTH_DIM = 900;
 const DEPTH_PANEL = 901;
@@ -26,50 +28,43 @@ export class MessageModal {
         this.visible = true;
         this.onClose = onClose;
 
-        const { width, height } = this.scene.scale;
-        const cx = width / 2;
-        const cy = height / 2;
+        const cx = DESIGN_WIDTH / 2;
+        const cy = DESIGN_HEIGHT / 2;
 
-        const dim = this.scene.add.rectangle(cx, cy, width, height, 0x2a0640, 0.55)
+        const dim = this.scene.add.rectangle(cx, cy, DESIGN_WIDTH, DESIGN_HEIGHT, 0x2a0640, 0.55)
             .setDepth(DEPTH_DIM)
             .setInteractive(); // menyerap klik di luar panel
 
-        const panelW = 620;
-        const panelH = 240;
+        const panelW = 640;
+        const panelH = 250;
         const panel = this.scene.add.graphics().setDepth(DEPTH_PANEL);
         panel.fillStyle(0x630995, 1);
         panel.fillRect(cx - panelW / 2 - 6, cy - panelH / 2 - 6, panelW + 12, panelH + 12);
         panel.fillStyle(0xffffff, 1);
         panel.fillRect(cx - panelW / 2, cy - panelH / 2, panelW, panelH);
 
-        const text = this.scene.add.text(cx, cy - 28, message, {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '22px',
-            fontStyle: 'bold',
-            color: '#3a0a52',
+        const text = makeText(this.scene, cx, cy - 30, message, 13, {
             align: 'center',
-            wordWrap: { width: panelW - 60 }
+            wordWrapWidth: panelW - 60,
+            lineSpacing: 6
         }).setOrigin(0.5).setDepth(DEPTH_PANEL);
+        this.objects.push(text);
 
         const buttonW = 130;
-        const buttonH = 48;
-        const buttonY = cy + panelH / 2 - 46;
+        const buttonH = 46;
+        const buttonY = cy + panelH / 2 - 44;
         const button = this.scene.add.rectangle(cx, buttonY, buttonW, buttonH, 0x9441c0)
             .setStrokeStyle(4, 0x630995)
             .setDepth(DEPTH_PANEL)
             .setInteractive({ useHandCursor: true });
-        const buttonLabel = this.scene.add.text(cx, buttonY, 'OK', {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '22px',
-            fontStyle: 'bold',
-            color: '#ffffff'
-        }).setOrigin(0.5).setDepth(DEPTH_PANEL);
+        const buttonLabel = makeText(this.scene, cx, buttonY, 'OK', 16, { color: '#ffffff' })
+            .setOrigin(0.5).setDepth(DEPTH_PANEL);
 
         button.on('pointerover', () => button.setFillStyle(0xa95fd2));
         button.on('pointerout', () => button.setFillStyle(0x9441c0));
         button.on('pointerup', () => this.hide());
 
-        this.objects.push(dim, panel, text, button, buttonLabel);
+        this.objects.push(dim, panel, button, buttonLabel);
     }
 
     hide(): void {

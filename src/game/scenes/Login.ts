@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
-import { addBackground, addImageIfExists } from '../ui/backdrop';
+import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backdrop';
+import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
 import { MessageModal } from '../ui/MessageModal';
 import { AuthForm } from '../ui/AuthForm';
@@ -28,17 +29,15 @@ export class Login extends Scene {
 
     create(): void {
         this.processing = false;
+        applyLogicalCamera(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
         addBackground(this, 'bg-panel-empty');
-        addImageIfExists(this, PANEL_CENTER_X, 130, 'logo-panel');
+        addImageIfExists(this, PANEL_CENTER_X, 130, 'logo-panel')?.setDisplaySize(156, 192);
 
         const textbox = addImageIfExists(this, TEXTBOX_X + 203, TEXTBOX_Y + 90, 'textbox-masuk');
         if (!textbox) {
-            this.add.text(PANEL_CENTER_X, TEXTBOX_Y + 90, 'Formulir masuk', {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '20px',
-                color: '#3a0a52'
-            }).setOrigin(0.5);
+            makeText(this, PANEL_CENTER_X, TEXTBOX_Y + 90, 'Formulir masuk', 16)
+                .setOrigin(0.5);
         }
 
         this.modal = new MessageModal(this);
@@ -49,24 +48,16 @@ export class Login extends Scene {
 
         this.submitButton = new SpriteButton(this, PANEL_CENTER_X, 505, 'button-masuk', () => this.submit());
 
-        const registerLink = this.add.text(PANEL_CENTER_X, 560, 'Belum punya akun? Daftar di sini', {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
-            fontStyle: 'bold',
-            color: '#9441c0'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        const registerLink = makeText(this, PANEL_CENTER_X, 560, 'Belum punya akun? Daftar di sini', 11, { color: '#9441c0' })
+            .setOrigin(0.5).setInteractive({ useHandCursor: true });
         registerLink.on('pointerover', () => registerLink.setColor('#630995'));
         registerLink.on('pointerout', () => registerLink.setColor('#9441c0'));
         registerLink.on('pointerup', () => {
             if (!this.processing && !this.modal.isOpen) this.goTo('Register');
         });
 
-        const back = this.add.text(414, 26, '‹ Kembali', {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
-            fontStyle: 'bold',
-            color: '#9441c0'
-        }).setInteractive({ useHandCursor: true });
+        const back = makeText(this, 414, 26, '‹ Kembali', 12, { color: '#9441c0' })
+            .setInteractive({ useHandCursor: true });
         back.on('pointerover', () => back.setColor('#630995'));
         back.on('pointerout', () => back.setColor('#9441c0'));
         back.on('pointerup', () => {

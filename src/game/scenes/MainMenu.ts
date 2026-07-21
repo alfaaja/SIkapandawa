@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
-import { addBackground, addImageIfExists } from '../ui/backdrop';
+import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backdrop';
 import { SpriteButton } from '../ui/SpriteButton';
+import { makeText } from '../ui/fonts';
 
 const PANEL_CENTER_X = 648;
 
@@ -13,20 +14,17 @@ export class MainMenu extends Scene {
     }
 
     create(): void {
+        applyLogicalCamera(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
         addBackground(this, 'bg-panel-empty');
 
-        // Logo diperbesar 2x (integer scale, pixel art tetap tajam) mengikuti preview.
+        // Logo tampil besar (312x385 logis) mengikuti preview; texture source-res.
         const logo = addImageIfExists(this, PANEL_CENTER_X, 260, 'logo-panel');
         if (logo) {
-            logo.setScale(2);
+            logo.setDisplaySize(312, 385);
         } else {
-            this.add.text(PANEL_CENTER_X, 240, 'SIKAPANDAWA', {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '48px',
-                fontStyle: 'bold',
-                color: '#630995'
-            }).setOrigin(0.5);
+            makeText(this, PANEL_CENTER_X, 240, 'SIKAPANDAWA', 32, { color: '#630995' })
+                .setOrigin(0.5);
         }
 
         new SpriteButton(this, PANEL_CENTER_X - 90, 565, 'button-daftar', () => {

@@ -1,11 +1,47 @@
 import { Scene, GameObjects } from 'phaser';
-import { addBackground, DESIGN_WIDTH } from '../ui/backdrop';
+import { addBackground, applyLogicalCamera, DESIGN_WIDTH } from '../ui/backdrop';
+import { makeText } from '../ui/fonts';
 
 const BAR_WIDTH = 420;
 const BAR_HEIGHT = 16;
 const BAR_Y = 672;
 const HOLD_AFTER_LOAD_MS = 600;
 const FADE_MS = 300;
+
+/** Aset gameplay bersama untuk kedua level (nama file identik per folder). */
+const GAMEPLAY_SHARED = [
+    'bg', 'bintang-hasil-abu', 'bintang-hasil', 'bintang-kebaikan', 'box-menu',
+    'label-sikapandawa', 'level-nama', 'pilihan', 'tanda-panah',
+    'teksboxt-kesimpulan', 'tombol-aksi', 'tombol-back', 'tombol-kanan',
+    'tombol-kiri', 'tombol-mute', 'tombol-next', 'tombol-pause-game',
+    'tombol-play-game', 'tombol-play', 'tombol-quit', 'tombol-replay',
+    'tombol-unmute'
+];
+
+const GAMEPLAY_LV1 = [
+    'ani-duduk', 'budi-duduk', 'edo-duduk', 'siti-duduk', 'pak-guru-duduk',
+    'gumpalan-kertas', 'koin', 'kursi-guru', 'kursi-siswa', 'meja-single',
+    'perkenalan-yudistira', 'textboxt-budi', 'textboxt-edo', 'textboxt-pak-guru',
+    'vas-jatuh', 'vas', 'yudistira-duduk', 'yudistira-tegap',
+    'yudistira-langkah-kanan-1', 'yudistira-langkah-kanan-2',
+    'yudistira-langkah-kanan-3', 'yudistira-langkah-kanan-4',
+    'yudistira-langkah-kiri-1', 'yudistira-langkah-kiri-2',
+    'yudistira-langkah-kiri-3', 'yudistira-langkah-kiri-4'
+];
+
+const GAMEPLAY_LV2 = [
+    'ani-olahraga-kanan', 'ani-olahraga-kiri', 'berebut-bola',
+    'budi-olahraga-kanan', 'budi-olahraga-kiri', 'budi-olahraga-marah',
+    'edo-olahraga-kiri', 'meja-botol', 'pak-guru-olahraga',
+    'siti-olahraga-kiri', 'siti-olahraga-marah',
+    'textbox-ani-olahraga', 'textbox-budi-olahraga', 'textbox-siti-olahraga',
+    'textbox-yudistira-olahraga', 'textboxt-pak-guru-olagraga',
+    'yudistira-olahraga', 'yudistira-olahraga-kanan', 'yudistira-olahraga-kiri',
+    'yudistira-olahraga-langkah-kanan-1', 'yudistira-olahraga-langkah-kanan-2',
+    'yudistira-olahraga-langkah-kanan-3', 'yudistira-olahraga-langkah-kanan-4',
+    'yudistira-olahraga-langkah-kiri-1', 'yudistira-olahraga-langkah-kiri-2',
+    'yudistira-olahraga-langkah-kiri-3', 'yudistira-olahraga-langkah-kiri-4'
+];
 
 /**
  * Preloader — Loading/Splash dalam satu flow:
@@ -23,6 +59,7 @@ export class Preloader extends Scene {
     }
 
     init(): void {
+        applyLogicalCamera(this);
         addBackground(this, 'bg-splash');
 
         const cx = DESIGN_WIDTH / 2;
@@ -31,12 +68,8 @@ export class Preloader extends Scene {
             .setFillStyle(0xffffff, 0.9);
         this.barFill = this.add.rectangle(cx - BAR_WIDTH / 2 + 2, BAR_Y, 4, BAR_HEIGHT - 6, 0x9441c0)
             .setOrigin(0, 0.5);
-        this.percentText = this.add.text(cx, BAR_Y - 26, '0%', {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '20px',
-            fontStyle: 'bold',
-            color: '#630995'
-        }).setOrigin(0.5);
+        this.percentText = makeText(this, cx, BAR_Y - 34, '0%', 16, { color: '#630995' })
+            .setOrigin(0.5);
 
         this.load.on('progress', (progress: number) => {
             this.barFill.width = Math.max(4, (BAR_WIDTH - 4) * progress);
@@ -64,11 +97,22 @@ export class Preloader extends Scene {
         this.load.image('label-misi', 'level-select/label-misi.png');
         this.load.image('label-sikapandawa', 'level-select/label-sikapandawa.png');
         this.load.image('button-logout', 'level-select/button-logout.png');
-        this.load.image('level-1-unlocked', 'level-select/level-1-unlocked.png');
-        for (let level = 2; level <= 10; level++) {
-            this.load.image(`level-${level}-locked`, `level-select/level-${level}-locked.png`);
+        for (let level = 1; level <= 10; level++) {
+            this.load.image(`level-${level}-unlocked`, `level-select/level-${level}-unlocked.png`);
+            if (level >= 2) {
+                this.load.image(`level-${level}-locked`, `level-select/level-${level}-locked.png`);
+            }
         }
         this.load.image('jejak-locked', 'level-select/jejak-locked.png');
+
+        // Gameplay Level 1-2
+        this.load.setPath('assets/gameplay');
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV1]) {
+            this.load.image(`lv1-${name}`, `lv1/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV2]) {
+            this.load.image(`lv2-${name}`, `lv2/${name}.png`);
+        }
     }
 
     create(): void {

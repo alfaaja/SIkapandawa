@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-20T18:42:50.872Z",
+  "projectRoot": "/home/alfa/GamePKM/sikapandawa/src/game/ui",
+  "structure": {
+    "hasPackageJson": false,
+    "hasTsConfig": false,
+    "hasClaudeConfig": false,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1784572970873
+}

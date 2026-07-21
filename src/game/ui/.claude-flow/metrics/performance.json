@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-07-20T18:31:34.338Z",
+  "mode": "headless",
+  "workerType": "optimize",
+  "model": "sonnet",
+  "durationMs": 355872,
+  "executionId": "optimize_1784571938466_l6wd9c",
+  "success": true,
+  "findings": {
+    "sections": [
+      {
+        "title": "Codebase context",
+        "content": "\nThis is a Phaser 3 + TypeScript game (no React, no backend DB — persistence is `window.localStorage` via three service singletons). I'm mapping your five categories onto their real analogues here: repeated `localStorage` read/parse round-trips (≈ N+1), per-frame redundant work in `Scene.update()` (≈ unnecessary re-renders), in-memory caching over storage parsing, DOM/listener cleanup, and dead/redundant computation in the game loop.\n\n",
+        "level": 2
+      },
+      {
+        "title": "1. Repeated storage reads (N+1-equivalent)",
+        "content": "\n`AuthStorageService.listAccounts()` (`services/AuthStorageService.ts:98`) does a fresh `localStorage.getItem` + `JSON.parse` + array scan on **every** call. It's the backing call for `getActiveAccount()` and `findByUsername()`, and every scene independently calls `getActiveAccount()` on entry:\n\n```\nscenes/Gameplay.ts:92    create() → getActiveAccount()\nscenes/Gameplay.ts:402   completeLevel() → getActiveAccount() again\nscenes/IntroCharacter.ts:69\nscenes/LevelSelect.ts:28\nscenes/Result.ts:37\n```\n\nSame pattern for `ProgressStorageService.getProgress()` (`services/ProgressStorageService.ts:79`) — parsed fresh in `LevelSelect.create()`, again in `hasSeenIntro()`, again inside `recordLevelResult()`, again in `Result.ts:38`, each a full JSON.parse of the whole progress object just to read one field.\n\nWith today's tiny account count this costs nothing, but it's the wrong pattern to build on — add more accounts/levels later and it scales linearly per read. Fix: cache the active account/progress in memory for the life of the session, invalidate on write.\n\n```typescript\n// AuthStorageService.ts\nlet cachedAccounts: LocalAccount[] | null = null;\n\nfunction invalidateCache(): void { cachedAccounts = null; }\n\nlistAccounts(): LocalAccount[] {\n    if (cachedAccounts) return cachedAccounts;\n    const raw = safeGet(KEYS.accounts);\n    if (!raw) return (cachedAccounts = []);\n    try {\n        const parsed: unknown = JSON.parse(raw);\n        cachedAccounts = Array.isArray(parsed) ? parsed.filter(isAccount) : [];\n    } catch { cachedAccounts = []; }\n    return cachedAccounts;\n},\n// call invalidateCache() after register()'s safeSet(KEYS.accounts, ...)\n```\n\nSame idea for `ProgressStorageService`: keep one in-memory `LocalProgress` per `accountId` for the scene's lifetime instead of re-reading in `hasSeenIntro` right after `create()` already loaded it.\n\n",
+        "level": 3
+      },
+      {
+        "title": "2. Per-frame redundant computation (the \"re-render\" equivalent)",
+        "content": "\n`Gameplay.update()` runs every frame while `state === 'EXPLORE'` and calls `updateMarkerAndAction()` (`scenes/Gameplay.ts:271`), which calls `currentTarget()` → `nextInteraction()` (`scenes/Gameplay.ts:258-263`):\n\n```typescript\nprivate nextInteraction(): InteractionDefinition | null {\n    const pending = this.segment.interactions\n        .filter((i) => !this.resolvedIds.has(i.id))\n        .sort((a, b) => a.order - b.order);\n    return pending[0] ?? null;\n}\n```\n\nThis `.filter().sort()` runs at 60fps even though `resolvedIds` only changes when the player resolves an interaction (`resolveInteraction`, `Gameplay.ts:366`) or a segment rebuilds (`buildSegment`). Cache it and invalidate on those two events instead:\n\n```typescript\nprivate pendingCache: InteractionDefinition[] | null = null;\n\nprivate invalidatePending(): void { this.pendingCache = null; }\n\nprivate nextInteraction(): InteractionDefinition | null {\n    if (!this.pendingCache) {\n        this.pendingCache = [...this.segment.interactions]\n            .filter((i) => !this.resolvedIds.has(i.id))\n            .sort((a, b) => a.order - b.order);\n    }\n    return this.pendingCache[0] ?? null;\n}\n// call this.invalidatePending() in resolveInteraction() and buildSegment()\n```\n\nAlso in `updateMarkerAndAction()` (`Gameplay.ts:283`), this line is dead code — the ternary evaluates to `0` on both branches, so it's computed every frame for nothing:\n\n```typescript\nif (Math.abs((this.marker.y - (this.markerTween?.isPlaying() ? 0 : 0)) - target.markerY) > 20) {\n```\n\nSimplify to `Math.abs(this.marker.y - target.markerY) > 20`.\n\n",
+        "level": 3
+      },
+      {
+        "title": "3. Caching opportunities",
+        "content": "\n- Cache `AuthStorageService`/`ProgressStorageService` reads as above — biggest win for the pattern used across every scene transition.\n- `ProgressStorageService.saveProgress()` (`ProgressStorageService.ts:94`) re-serializes the *entire* progress object (all 10 `levelStars`, `introSeen`, flags) on every single-field change like `markIntroSeen`. Fine at this data size, but if progress grows (e.g. per-level metadata), batch or diff writes rather than full-object `JSON.stringify` each time.\n- `Preloader.ts` eager-loads both `lv1` and `lv2` gameplay asset sets (`GAMEPLAY_LV1` + `GAMEPLAY_LV2`, ~50 images) before the player even reaches Main Menu, regardless of which level they'll actually play. Given the project's \"Level 3+ is placeholder\" scope and only 2 playable levels, this is a minor, optional win — not worth restructuring around a single generic `Gameplay` scene per your architecture rules, just flagging it exists.\n\n",
+        "level": 3
+      },
+      {
+        "title": "4. Memory leaks",
+        "content": "\nI did not find real leaks. The DOM/listener cleanup is actually done correctly:\n- `AuthForm` (`ui/AuthForm.ts:67`) explicitly registers `scene.events.once('shutdown', () => this.destroy())` and destroys all `GameObjects.DOMElement`s — the one place a leak would be easy to introduce (raw DOM inputs), and it's handled.\n- `Hud`, `TouchControls`, `DialogBox`, `ChoicePanel`, `PauseOverlay` all attach listeners directly to Phaser `GameObjects.Image`/`Text`, which Phaser destroys automatically on scene shutdown — no manual cleanup needed there, and none is missing.\n- `Gameplay.destroyWorld()` (`Gameplay.ts:188`) correctly removes the marker tween (`markerTween?.remove()`) before nulling it, avoiding a dangling tween reference across `buildSegment()` calls between segments.\n\nNothing to fix here — worth confirming rather than inventing an issue.\n\n",
+        "level": 3
+      },
+      {
+        "title": "5. Redundant computations",
+        "content": "- Covered above: the per-frame `filter().sort()` in `nextInteraction()` and the dead ternary are the concrete instances in this codebase.\n- `AuthStorageService.findByUsername()` (`AuthStorageService.ts:110`) does a full `.toLowerCase()` scan of all accounts per call; trivial at current scale (few local accounts), not worth optimizing now.\n\n**Priority if you want me to apply any of these**: #2 (per-frame cache + dead ternary in `Gameplay.ts`) is the only one with a measurable runtime cost today, since it runs 60×/sec during gameplay. The storage-caching items (#1/#3) are architecturally correct but low-impact at current data volume — happy to implement either on your say-so, but per project rules I won't change code without you confirming which of these you want.",
+        "level": 3
+      }
+    ],
+    "codeBlocks": [
+      {
+        "language": "text",
+        "code": "scenes/Gameplay.ts:92    create() → getActiveAccount()\nscenes/Gameplay.ts:402   completeLevel() → getActiveAccount() again\nscenes/IntroCharacter.ts:69\nscenes/LevelSelect.ts:28\nscenes/Result.ts:37"
+      },
+      {
+        "language": "typescript",
+        "code": "// AuthStorageService.ts\nlet cachedAccounts: LocalAccount[] | null = null;\n\nfunction invalidateCache(): void { cachedAccounts = null; }\n\nlistAccounts(): LocalAccount[] {\n    if (cachedAccounts) return cachedAccounts;\n    const raw = safeGet(KEYS.accounts);\n    if (!raw) return (cachedAccounts = []);\n    try {\n        const parsed: unknown = JSON.parse(raw);\n        cachedAccounts = Array.isArray(parsed) ? parsed.filter(isAccount) : [];\n    } catch { cachedAccounts = []; }\n    return cachedAccounts;\n},\n// call invalidateCache() after register()'s safeSet(KEYS.accounts, ...)"
+      },
+      {
+        "language": "typescript",
+        "code": "private nextInteraction(): InteractionDefinition | null {\n    const pending = this.segment.interactions\n        .filter((i) => !this.resolvedIds.has(i.id))\n        .sort((a, b) => a.order - b.order);\n    return pending[0] ?? null;\n}"
+      },
+      {
+        "language": "typescript",
+        "code": "private pendingCache: InteractionDefinition[] | null = null;\n\nprivate invalidatePending(): void { this.pendingCache = null; }\n\nprivate nextInteraction(): InteractionDefinition | null {\n    if (!this.pendingCache) {\n        this.pendingCache = [...this.segment.interactions]\n            .filter((i) => !this.resolvedIds.has(i.id))\n            .sort((a, b) => a.order - b.order);\n    }\n    return this.pendingCache[0] ?? null;\n}\n// call this.invalidatePending() in resolveInteraction() and buildSegment()"
+      },
+      {
+        "language": "typescript",
+        "code": "if (Math.abs((this.marker.y - (this.markerTween?.isPlaying() ? 0 : 0)) - target.markerY) > 20) {"
+      }
+    ]
+  },
+  "rawOutputPreview": "## Codebase context\n\nThis is a Phaser 3 + TypeScript game (no React, no backend DB — persistence is `window.localStorage` via three service singletons). I'm mapping your five categories onto their real analogues here: repeated `localStorage` read/parse round-trips (≈ N+1), per-frame redundant work in `Scene.update()` (≈ unnecessary re-renders), in-memory caching over storage parsing, DOM/listener cleanup, and dead/redundant computation in the game loop.\n\n### 1. Repeated storage reads (N+1-equivalent)\n\n`AuthStorageService.listAccounts()` (`services/AuthStorageService.ts:98`) does a fresh `localStorage.getItem` + `JSON.parse` + array scan on **every** call. It's the backing call for `getActiveAccount()` and `findByUsername()`, and every scene independently calls `getActiveAccount()` on entry:\n\n```\nscenes/Gameplay.ts:92    create() → getActiveAccount()\nscenes/Gameplay.ts:402   completeLevel() → getActiveAccount() again\nscenes/IntroCharacter.ts:69\nscenes/LevelSelect.ts:28\nscenes/Result.ts:37\n```\n\nSame pattern for `ProgressStorageService.getProgress()` (`services/ProgressStorageService.ts:79`) — parsed fresh in `LevelSelect.create()`, again in `hasSeenIntro()`, again inside `recordLevelResult()`, again in `Result.ts:38`, each a full JSON.parse of the whole progress object just to read one field.\n\nWith today's tiny account count this costs nothing, but it's the wrong pattern to build on — add more accounts/levels later and it scales linearly per read. Fix: cache the active account/progress in memory for the life of the session, invalidate on write.\n\n```typescript\n// AuthStorageService.ts\nlet cachedAccounts: LocalAccount[] | null = null;\n\nfunction invalidateCache(): void { cachedAccounts = null; }\n\nlistAccounts(): LocalAccount[] {\n    if (cachedAccounts) return cachedAccounts;\n    const raw = safeGet(KEYS.accounts);\n    if (!raw) return (cachedAccounts = []);\n    try {\n        const parsed: unknown = JSON.parse(raw);\n        cachedAccounts = Array.isArray(parsed) ? parsed.",
+  "rawOutputLength": 6662
+}

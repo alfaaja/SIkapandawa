@@ -1,12 +1,76 @@
 {
-  "timestamp": "2026-07-18T13:22:21.454Z",
-  "mode": "local",
-  "checks": {
-    "envFilesProtected": true,
-    "gitIgnoreExists": true,
-    "noHardcodedSecrets": true
+  "timestamp": "2026-07-21T02:26:20.239Z",
+  "mode": "headless",
+  "workerType": "audit",
+  "model": "haiku",
+  "durationMs": 64561,
+  "executionId": "audit_1784600715678_zv7sq0",
+  "success": true,
+  "findings": {
+    "vulnerabilities": [
+      {
+        "severity": "high",
+        "file": "src/game/services/AuthStorageService.ts",
+        "line": 76,
+        "description": "Weak cryptographic fallback hash function: When Web Crypto API is unavailable, falls back to non-cryptographic FNV-like hash using simple bitwise operations (lines 76-84). This fallback is cryptographically insecure and vulnerable to collisions and reverse engineering."
+      },
+      {
+        "severity": "high",
+        "file": "src/game/services/AuthStorageService.ts",
+        "line": 10,
+        "description": "Storing password hashes and salts in browser localStorage: LocalAccount includes passwordHash and passwordSalt stored plaintext in localStorage (lines 10-11). Any XSS vulnerability in the application could expose all user credentials and authentication data."
+      },
+      {
+        "severity": "high",
+        "file": "src/game/services/AuthStorageService.ts",
+        "line": 151,
+        "description": "Client-side only authentication with no backend validation: All authentication logic is performed client-side via localStorage lookup (lines 151-156). No server-side verification prevents attackers from tampering with localStorage to impersonate any user."
+      },
+      {
+        "severity": "medium",
+        "file": "src/game/services/AuthStorageService.ts",
+        "line": 54,
+        "description": "Non-cryptographic fallback for random number generation: randomHex() uses Math.floor(Math.random() * 256) as fallback when crypto.getRandomValues is unavailable (lines 54-55). Math.random() is not cryptographically secure and produces predictable values."
+      },
+      {
+        "severity": "medium",
+        "file": "src/game/services/AuthStorageService.ts",
+        "line": 125,
+        "description": "Weak password minimum requirement: Minimum password length is only 6 characters (line 125), making passwords vulnerable to brute-force attacks. NIST guidelines recommend minimum 8-12 characters."
+      },
+      {
+        "severity": "medium",
+        "file": "src/game/main.ts",
+        "line": 52,
+        "description": "Debug mode exposes internal game instance to window object: In DEV mode, entire Phaser game instance is assigned to window.__sikaGame (line 52). While restricted to dev mode, this could leak sensitive runtime state if build processes fail to strip dev code."
+      },
+      {
+        "severity": "medium",
+        "file": "log.js",
+        "line": 12,
+        "description": "Unvalidated external telemetry request: Makes HTTPS request to gryzor.co with package name and Phaser version (line 12). No validation of response, and endpoint purpose/authentication unclear. Could be used for unauthorized tracking."
+      },
+      {
+        "severity": "low",
+        "file": "src/game/ui/AuthForm.ts",
+        "line": 65,
+        "description": "Password field displayed with transparent background in DOM: While browser password manager is used, custom CSS styling (lines 59-68) with transparent background could potentially allow visual interception in certain scenarios."
+      }
+    ],
+    "riskScore": 72,
+    "recommendations": [
+      "CRITICAL: Implement backend authentication server — do not store credentials in localStorage. Move all password verification to a secure backend API over HTTPS.",
+      "CRITICAL: Remove non-cryptographic hash fallback — enforce Web Crypto API requirement or reject authentication on unsupported browsers.",
+      "HIGH: Implement Content Security Policy (CSP) to mitigate XSS risks that could expose localStorage credentials.",
+      "HIGH: Use secure HTTP-only cookies for session management instead of localStorage, combined with CSRF protection.",
+      "MEDIUM: Increase minimum password length to at least 8 characters, consider requiring complexity requirements.",
+      "MEDIUM: Verify telemetry endpoint purpose in log.js — consider removing external tracking or make it opt-in with clear disclosure.",
+      "MEDIUM: For random number generation, remove Math.random() fallback and require Web Crypto API for security-sensitive operations.",
+      "MEDIUM: Add rate limiting on login attempts to prevent brute-force attacks.",
+      "LOW: Add input validation/sanitization for all user-provided data (displayName, username) to prevent injection attacks.",
+      "LOW: Ensure DEV-mode code (window.__sikaGame) is completely stripped from production builds."
+    ]
   },
-  "riskLevel": "low",
-  "recommendations": [],
-  "note": "Install Claude Code CLI for AI-powered security analysis"
+  "rawOutputPreview": "Based on my analysis of this Phaser game codebase, here is the security audit report:\n\n```json\n{\n  \"vulnerabilities\": [\n    {\n      \"severity\": \"high\",\n      \"file\": \"src/game/services/AuthStorageService.ts\",\n      \"line\": 76,\n      \"description\": \"Weak cryptographic fallback hash function: When Web Crypto API is unavailable, falls back to non-cryptographic FNV-like hash using simple bitwise operations (lines 76-84). This fallback is cryptographically insecure and vulnerable to collisions and reverse engineering.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"file\": \"src/game/services/AuthStorageService.ts\",\n      \"line\": 10,\n      \"description\": \"Storing password hashes and salts in browser localStorage: LocalAccount includes passwordHash and passwordSalt stored plaintext in localStorage (lines 10-11). Any XSS vulnerability in the application could expose all user credentials and authentication data.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"file\": \"src/game/services/AuthStorageService.ts\",\n      \"line\": 151,\n      \"description\": \"Client-side only authentication with no backend validation: All authentication logic is performed client-side via localStorage lookup (lines 151-156). No server-side verification prevents attackers from tampering with localStorage to impersonate any user.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"file\": \"src/game/services/AuthStorageService.ts\",\n      \"line\": 54,\n      \"description\": \"Non-cryptographic fallback for random number generation: randomHex() uses Math.floor(Math.random() * 256) as fallback when crypto.getRandomValues is unavailable (lines 54-55). Math.random() is not cryptographically secure and produces predictable values.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"file\": \"src/game/services/AuthStorageService.ts\",\n      \"line\": 125,\n      \"description\": \"Weak password minimum requirement: Minimum password length is only 6 characters (line 125), making passwords vulnerable to brute-force attacks. NIST guidelin",
+  "rawOutputLength": 5209
 }

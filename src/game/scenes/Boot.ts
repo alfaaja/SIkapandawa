@@ -1,8 +1,9 @@
 import { Scene } from 'phaser';
+import { ensureFontsLoaded } from '../ui/fonts';
 
 /**
- * Boot — konfigurasi awal ringan. Hanya memuat background splash
- * agar Preloader bisa langsung menampilkannya.
+ * Boot — konfigurasi awal ringan: memuat background splash dan menunggu
+ * font Press Start 2P siap sebelum Preloader membuat teks progress.
  */
 export class Boot extends Scene {
     constructor() {
@@ -14,6 +15,8 @@ export class Boot extends Scene {
     }
 
     create(): void {
-        this.scene.start('Preloader');
+        ensureFontsLoaded().then(() => {
+            this.scene.start('Preloader');
+        });
     }
 }

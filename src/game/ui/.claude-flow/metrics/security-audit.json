@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-07-20T18:35:48.186Z",
+  "mode": "headless",
+  "workerType": "audit",
+  "model": "haiku",
+  "durationMs": 68787,
+  "executionId": "audit_1784572479399_ogelpz",
+  "success": true,
+  "findings": {
+    "vulnerabilities": [
+      {
+        "severity": "medium",
+        "file": "AuthForm.ts",
+        "line": 40,
+        "description": "No input validation on form fields. Only maxLength is enforced. No email format validation, password strength requirements, or character restriction checks. Allows any characters including special/control characters that could be exploited if stored or transmitted without sanitization."
+      },
+      {
+        "severity": "medium",
+        "file": "Hud.ts",
+        "line": 41,
+        "description": "Player name from user input (AuthForm) is displayed without sanitization. While Phaser renders text as graphics (not HTML), unsanitized user input should always be validated. The fitName() function only truncates, doesn't validate."
+      },
+      {
+        "severity": "medium",
+        "file": "DialogBox.ts",
+        "line": 68,
+        "description": "Text content from external source (lines array) is rendered directly via setText(). If dialog text originates from user input or untrusted API responses, could allow text injection attacks. No content validation before rendering."
+      },
+      {
+        "severity": "low",
+        "file": "AuthForm.ts",
+        "line": 21,
+        "description": "Password field uses autocomplete='off' (good), but no warning about storing passwords plaintext. The CLAUDE.md explicitly states 'Jangan menyimpan password plaintext' (don't store passwords plaintext), indicating this is a known concern in architecture."
+      },
+      {
+        "severity": "low",
+        "file": "fonts.ts",
+        "line": 19,
+        "description": "Font loading uses document.fonts API which is safe, but has a 3-second timeout that silently fails. Could lead to unreadable text without alerting users."
+      }
+    ],
+    "riskScore": 35,
+    "recommendations": [
+      "Implement input validation in AuthForm.ts: validate email format (RFC 5322), enforce password requirements (min length, character types), restrict special characters that could cause injection",
+      "Add sanitization middleware: escape or validate all user input before storage or display, even when rendering via Phaser game objects",
+      "Create an input validation service: centralize validation logic for all form fields to prevent inconsistent handling across the app",
+      "For auth credentials: ensure passwords are never stored in localStorage or sent as plaintext. Use secure session tokens and HTTPS-only communication",
+      "Document data origin for DialogBox and ChoicePanel text: if content comes from user input or backend APIs, add explicit sanitization",
+      "Add Content Security Policy (CSP) headers to prevent script injection (even though this is a game, defense-in-depth is important)",
+      "Audit localStorage usage: verify that ProgressStorageService and any other storage doesn't persist sensitive data like auth tokens or plaintext passwords",
+      "Implement rate limiting on auth endpoints to prevent brute force attacks on login/register",
+      "Use environment variables for any API endpoints — don't hardcode URLs in client code"
+    ]
+  },
+  "rawOutputPreview": "Based on my analysis of the provided codebase, here's the security assessment:\n\n```json\n{\n  \"vulnerabilities\": [\n    {\n      \"severity\": \"medium\",\n      \"file\": \"AuthForm.ts\",\n      \"line\": 40,\n      \"description\": \"No input validation on form fields. Only maxLength is enforced. No email format validation, password strength requirements, or character restriction checks. Allows any characters including special/control characters that could be exploited if stored or transmitted without sanitization.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"file\": \"Hud.ts\",\n      \"line\": 41,\n      \"description\": \"Player name from user input (AuthForm) is displayed without sanitization. While Phaser renders text as graphics (not HTML), unsanitized user input should always be validated. The fitName() function only truncates, doesn't validate.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"file\": \"DialogBox.ts\",\n      \"line\": 68,\n      \"description\": \"Text content from external source (lines array) is rendered directly via setText(). If dialog text originates from user input or untrusted API responses, could allow text injection attacks. No content validation before rendering.\"\n    },\n    {\n      \"severity\": \"low\",\n      \"file\": \"AuthForm.ts\",\n      \"line\": 21,\n      \"description\": \"Password field uses autocomplete='off' (good), but no warning about storing passwords plaintext. The CLAUDE.md explicitly states 'Jangan menyimpan password plaintext' (don't store passwords plaintext), indicating this is a known concern in architecture.\"\n    },\n    {\n      \"severity\": \"low\",\n      \"file\": \"fonts.ts\",\n      \"line\": 19,\n      \"description\": \"Font loading uses document.fonts API which is safe, but has a 3-second timeout that silently fails. Could lead to unreadable text without alerting users.\"\n    }\n  ],\n  \"riskScore\": 35,\n  \"recommendations\": [\n    \"Implement input validation in AuthForm.ts: validate email format (RFC 5322), enforce password requirements (min length, character types),",
+  "rawOutputLength": 4135
+}
