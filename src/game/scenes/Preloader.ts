@@ -43,6 +43,23 @@ const GAMEPLAY_LV2 = [
     'yudistira-olahraga-langkah-kiri-3', 'yudistira-olahraga-langkah-kiri-4'
 ];
 
+const GAMEPLAY_LV3 = [
+    'bima', 'bima-langkah-kanan-1', 'bima-langkah-kanan-2',
+    'bima-langkah-kanan-3', 'bima-langkah-kanan-4', 'bima-langkah-kiri-1',
+    'bima-langkah-kiri-2', 'bima-langkah-kiri-3', 'bima-langkah-kiri-4',
+    'bully-sepatu', 'edo-budi-siti', 'lempar-kucing', 'perkenalan-bima',
+    'textboxt-ani', 'textboxt-bima', 'textboxt-budi', 'textboxt-edo',
+    'textboxt-siti'
+];
+
+const GAMEPLAY_LV4 = [
+    'bima', 'bima-langkah-kanan-1', 'bima-langkah-kanan-2',
+    'bima-langkah-kanan-3', 'bima-langkah-kanan-4', 'bima-langkah-kiri-1',
+    'bima-langkah-kiri-2', 'bima-langkah-kiri-3', 'bima-langkah-kiri-4',
+    'budi-coret', 'budi-edo', 'coretan', 'textboxt-bima', 'textboxt-budi',
+    'textboxt-edo', 'textboxt-ibu-kantin'
+];
+
 /**
  * Preloader — Loading/Splash dalam satu flow:
  * splash tampil → progress asli + persentase → 100% → indikator hilang
@@ -112,6 +129,12 @@ export class Preloader extends Scene {
         }
         for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV2]) {
             this.load.image(`lv2-${name}`, `lv2/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV3]) {
+            this.load.image(`lv3-${name}`, `lv3/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV4]) {
+            this.load.image(`lv4-${name}`, `lv4/${name}.png`);
         }
     }
 

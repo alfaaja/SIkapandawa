@@ -87,7 +87,19 @@ export class Result extends Scene {
     }
 
     private goNext(nextId: number): void {
-        this.fadeTo(() => this.scene.start('Gameplay', { levelId: nextId }));
+        const account = AuthStorageService.getActiveAccount();
+        const nextLevel = LEVELS[nextId];
+        const introId = nextLevel?.introCharacterId;
+        const needsIntro = account !== null
+            && introId !== undefined
+            && !ProgressStorageService.hasSeenIntro(account.id, introId);
+        this.fadeTo(() => {
+            if (needsIntro && introId) {
+                this.scene.start('IntroCharacter', { levelId: nextId, characterId: introId });
+            } else {
+                this.scene.start('Gameplay', { levelId: nextId });
+            }
+        });
     }
 
     private goLevelSelect(): void {

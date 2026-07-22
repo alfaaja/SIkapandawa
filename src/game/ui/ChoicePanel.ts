@@ -21,6 +21,9 @@ export class ChoicePanel {
     private readonly scene: Scene;
     private readonly objects: GameObjects.GameObject[] = [];
     private open = false;
+    private previousCanvasSelection = '';
+    private previousCanvasWebkitSelection = '';
+    private previousCanvasHighlight = '';
 
     constructor(scene: Scene) {
         this.scene = scene;
@@ -33,6 +36,18 @@ export class ChoicePanel {
     show(texturePrefix: string, choices: ChoiceOption[], onSelect: (id: 'A' | 'B' | 'C') => void): void {
         this.close();
         this.open = true;
+
+        // Pilihan dirender di canvas, tetapi pointer/touch browser masih dapat
+        // mencoba menyeleksi teks ketika anak menekan/menyeret. Batasi aturan
+        // hanya pada canvas game dan kembalikan nilai sebelumnya saat ditutup;
+        // tidak mengubah CSS global atau focus keyboard halaman.
+        const canvas = this.scene.game.canvas;
+        this.previousCanvasSelection = canvas.style.getPropertyValue('user-select');
+        this.previousCanvasWebkitSelection = canvas.style.getPropertyValue('-webkit-user-select');
+        this.previousCanvasHighlight = canvas.style.getPropertyValue('-webkit-tap-highlight-color');
+        canvas.style.setProperty('user-select', 'none');
+        canvas.style.setProperty('-webkit-user-select', 'none');
+        canvas.style.setProperty('-webkit-tap-highlight-color', 'transparent');
 
         const key = `${texturePrefix}-pilihan`;
         if (this.scene.textures.exists(key)) {
@@ -72,5 +87,12 @@ export class ChoicePanel {
         this.open = false;
         for (const obj of this.objects) obj.destroy();
         this.objects.length = 0;
+        const canvas = this.scene.game.canvas;
+        canvas.style.setProperty('user-select', this.previousCanvasSelection);
+        canvas.style.setProperty('-webkit-user-select', this.previousCanvasWebkitSelection);
+        canvas.style.setProperty('-webkit-tap-highlight-color', this.previousCanvasHighlight);
+        this.previousCanvasSelection = '';
+        this.previousCanvasWebkitSelection = '';
+        this.previousCanvasHighlight = '';
     }
 }

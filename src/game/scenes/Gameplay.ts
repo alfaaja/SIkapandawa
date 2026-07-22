@@ -29,7 +29,7 @@ interface GameplayKeys {
 }
 
 /**
- * Gameplay generik Level 1–2 (data-driven; tidak ada scene per level/kasus).
+ * Gameplay generik Level 1–4 (data-driven; tidak ada scene per level/kasus).
  * State machine: SCRIPTED → EXPLORE → DIALOG → CHOICE → FEEDBACK → … → COMPLETE.
  */
 export class Gameplay extends Scene {

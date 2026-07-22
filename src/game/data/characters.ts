@@ -21,6 +21,20 @@ export const YUDHISTIRA_INTRO: CharacterIntro = {
         'sekolah hari ini!'
 };
 
+export const BIMA_INTRO: CharacterIntro = {
+    id: 'bima',
+    name: 'BIMA',
+    panelTexture: 'lv3-perkenalan-bima',
+    introText:
+        'Halo, teman-teman! Namaku Bima, aku adalah anak kedua dari Pandawa. ' +
+        'Tubuhku memang paling besar dan kuat, tetapi kekuatan ini kugunakan ' +
+        'untuk melindungi teman-teman. Aku sangat tidak suka perbuatan menindas ' +
+        'dan pergaulan yang buruk. Yuk, ikuti perjalananku hari ini. Kita belajar ' +
+        'menjadi anak yang berani membela kebenaran dan tegas menolak ajakan ' +
+        'yang salah!'
+};
+
 export const CHARACTER_INTROS: Record<string, CharacterIntro> = {
-    yudhistira: YUDHISTIRA_INTRO
+    yudhistira: YUDHISTIRA_INTRO,
+    bima: BIMA_INTRO
 };
