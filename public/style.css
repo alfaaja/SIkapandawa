@@ -21,3 +21,10 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+/* Hanya permukaan game: input HTML Login/Register tetap dapat diseleksi. */
+#game-container canvas {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}

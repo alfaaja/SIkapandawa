@@ -29,7 +29,7 @@ interface GameplayKeys {
 }
 
 /**
- * Gameplay generik Level 1–4 (data-driven; tidak ada scene per level/kasus).
+ * Gameplay generik Level 1–6 (data-driven; tidak ada scene per level/kasus).
  * State machine: SCRIPTED → EXPLORE → DIALOG → CHOICE → FEEDBACK → … → COMPLETE.
  */
 export class Gameplay extends Scene {
@@ -300,6 +300,12 @@ export class Gameplay extends Scene {
 
         for (const swap of inter.onStartSwaps ?? []) {
             this.actorMap.get(swap.actorId)?.setTexture(`${this.prefix}-${swap.texture}`).setScale(0.5);
+        }
+        for (const id of inter.onStartHideObjects ?? []) {
+            this.objectMap.get(id)?.setVisible(false);
+        }
+        for (const id of inter.onStartShowObjects ?? []) {
+            this.objectMap.get(id)?.setVisible(true);
         }
         if (inter.sitAtX !== undefined) {
             this.sitDown(inter.sitAtX);

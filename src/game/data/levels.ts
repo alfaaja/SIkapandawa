@@ -730,18 +730,379 @@ export const LEVEL_4: LevelDefinition = {
         'bukti anak yang tangguh.'
 };
 
+export const SPEAKERS_LV5: Record<string, SpeakerStyle> = {
+    'arjuna': { displayName: 'Arjuna', textboxTexture: 'lv5-textboxt-arjuna' },
+    'ibu': { displayName: 'Ibu', textboxTexture: 'lv5-textboxt-ibu' }
+};
+
+export const SPEAKERS_LV6: Record<string, SpeakerStyle> = {
+    'arjuna': { displayName: 'Arjuna', textboxTexture: 'lv6-textboxt-arjuna' },
+    'budi': { displayName: 'Budi', textboxTexture: 'lv6-textboxt-budi' },
+    'siti': { displayName: 'Siti', textboxTexture: 'lv6-textboxt-siti' },
+    'pak-guru': { displayName: 'Pak Guru', textboxTexture: 'lv6-textboxt-pak-guru' }
+};
+
+const ARJUNA_PLAYER_LV5 = {
+    idleTexture: 'arjuna',
+    seatedTexture: 'arjuna',
+    walkRightTextures: [
+        'arjuna-langkah-kanan-1', 'arjuna-langkah-kanan-2',
+        'arjuna-langkah-kanan-3', 'arjuna-langkah-kanan-4'
+    ],
+    walkLeftTextures: [
+        'arjuna-langkah-kiri-1', 'arjuna-langkah-kiri-2',
+        'arjuna-langkah-kiri-3', 'arjuna-langkah-kiri-4'
+    ],
+    walkSpeed: 260,
+    animFps: 9
+};
+
+const LV5_SEGMENTS: SegmentDefinition[] = [
+    {
+        id: 'lv5-event-1',
+        order: 1,
+        title: 'Berpakaian Rapi',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv5-s1-lemari',
+            order: 1,
+            triggerX: 1285,
+            markerY: 220,
+            interactionRadius: 100,
+            dialog: [{ speaker: 'arjuna', text: 'Apa aku pakai kaos tengkorak saja, ya?' }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Memakai kaos oblong bergambar tengkorak ke sekolah karena dianggap keren.' },
+                    { id: 'B', text: 'Memakai seragam merah putih dengan rapi, mengancingkan baju, memasukkannya ke celana, dan menyisir rambut.' },
+                    { id: 'C', text: 'Memakai seragam tetapi membiarkan kancing terbuka dan baju tidak rapi.' }
+                ],
+                correctChoiceId: 'B',
+                feedback: {
+                    A: { speaker: 'ibu', correct: false, text: 'Arjuna, sekolah memiliki aturan berpakaian. Gunakanlah seragam yang rapi agar kamu siap belajar.' },
+                    B: { speaker: 'ibu', correct: true, text: 'Wah, Arjuna rapi sekali! Berpakaian sopan berarti kamu menghargai diri sendiri dan sekolahmu.' },
+                    C: { speaker: 'ibu', correct: false, text: 'Seragam yang dikenakan dengan rapi membuatmu nyaman dan menunjukkan bahwa kamu menghargai aturan sekolah.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv5-event-2',
+        order: 2,
+        title: 'Berpamitan',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [{ id: 'ibu', texture: 'ibu', x: 680, y: 520, depth: 6 }],
+        objects: [],
+        interactions: [{
+            id: 'lv5-s2-ibu',
+            order: 1,
+            triggerX: 680,
+            markerY: 205,
+            interactionRadius: 105,
+            dialog: [{ speaker: 'ibu', text: 'Arjuna, kamu sudah mau berangkat, Nak?' }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Berteriak dari luar pagar sambil terus berlari.' },
+                    { id: 'B', text: 'Pergi diam-diam tanpa berpamitan.' },
+                    { id: 'C', text: 'Mendekati Ibu, mencium tangan, mengucapkan salam, dan meminta doa.' }
+                ],
+                correctChoiceId: 'C',
+                feedback: {
+                    A: { speaker: 'ibu', correct: false, text: 'Berpamitan sebaiknya dilakukan dengan mendekat dan berbicara dengan sopan, bukan berteriak dari jauh.' },
+                    B: { speaker: 'ibu', correct: false, text: 'Pergi tanpa berpamitan membuat Ibu khawatir. Berpamitan adalah adab yang baik.' },
+                    C: { speaker: 'ibu', correct: true, text: 'Waalaikumsalam. Hati-hati di jalan, Arjuna. Doa Ibu selalu menyertaimu.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv5-event-3',
+        order: 3,
+        title: 'Bersyukur atas Uang Saku',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [{ id: 'ibu', texture: 'ibu', x: 680, y: 520, depth: 6 }],
+        objects: [],
+        interactions: [{
+            id: 'lv5-s3-ibu',
+            order: 1,
+            triggerX: 680,
+            markerY: 205,
+            interactionRadius: 105,
+            dialog: [{ speaker: 'ibu', text: 'Arjuna, ini uang saku untuk kamu, ya.' }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Menolak karena jumlah uang saku dianggap terlalu sedikit.' },
+                    { id: 'B', text: 'Menerima dan mengucapkan terima kasih.' },
+                    { id: 'C', text: 'Menerima, tetapi mengeluh karena jumlahnya tidak banyak.' }
+                ],
+                correctChoiceId: 'B',
+                feedback: {
+                    A: { speaker: 'ibu', correct: false, text: 'Menolak pemberian hanya karena jumlahnya sedikit menunjukkan bahwa kita belum bersyukur.' },
+                    B: { speaker: 'ibu', correct: true, text: 'Sama-sama, Arjuna. Gunakan uangnya dengan bijak dan sisihkan sebagian untuk menabung.' },
+                    C: { speaker: 'ibu', correct: false, text: 'Menerima sambil mengeluh dapat menyakiti hati orang yang memberi. Belajarlah menerima dengan rasa syukur.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    }
+];
+
+export const LEVEL_5: LevelDefinition = {
+    id: 5,
+    title: 'Rumah dan Berangkat Sekolah',
+    subtitle: 'Kesopanan Diri',
+    assetPrefix: 'lv5',
+    worldWidth: WORLD_WIDTH,
+    worldHeight: WORLD_HEIGHT,
+    groundY: GROUND_Y,
+    player: ARJUNA_PLAYER_LV5,
+    segments: LV5_SEGMENTS,
+    conclusionTitle: 'KESIMPULAN NILAI KESOPANAN DIRI',
+    conclusion:
+        'Menjadi anak yang sopan dimulai dari diri sendiri. Berpakaian rapi sesuai ' +
+        'tempatnya, berpamitan, menghormati orang tua, dan bersyukur atas pemberian ' +
+        'adalah sikap yang membuat kita dihormati dan disayangi.',
+    introCharacterId: 'arjuna'
+};
+
+const LV6_KID_SEATS = [320, 535, 755, 970];
+const LV6_PLAYER_SEAT = 1190;
+const LV6_TEACHER_SEAT = 1415;
+
+function lv6Furniture(tableTexture: string): ObjectPlacement[] {
+    const objects: ObjectPlacement[] = [
+        { id: 'meja-kelas', texture: tableTexture, x: 780, y: GROUND_Y, depth: 8 }
+    ];
+    [...LV6_KID_SEATS, LV6_PLAYER_SEAT].forEach((x, i) => {
+        objects.push({ id: `kursi-siswa-${i}`, texture: 'kursi-siswa', x, y: GROUND_Y, depth: 4 });
+    });
+    objects.push({
+        id: 'kursi-guru',
+        texture: 'kursi-guru',
+        x: LV6_TEACHER_SEAT,
+        y: GROUND_Y,
+        depth: 4
+    });
+    return objects;
+}
+
+const LV6_CLASS_ACTORS = [
+    { id: 'budi', texture: 'budi-duduk', x: LV6_KID_SEATS[0], depth: 6 },
+    { id: 'edo', texture: 'edo-duduk', x: LV6_KID_SEATS[1], depth: 6 },
+    { id: 'siti', texture: 'siti-duduk', x: LV6_KID_SEATS[2], depth: 6 },
+    { id: 'ani', texture: 'ani-duduk', x: LV6_KID_SEATS[3], depth: 6 },
+    { id: 'pak-guru', texture: 'pak-guru-duduk', x: LV6_TEACHER_SEAT, depth: 6 }
+];
+
+const ARJUNA_PLAYER_LV6 = {
+    idleTexture: 'arjuna',
+    seatedTexture: 'arjuna-duduk',
+    walkRightTextures: [
+        'arjuna-langkah-kanan-1', 'arjuna-langkah-kanan-2',
+        'arjuna-langkah-kanan-3', 'arjuna-langkah-kanan-4'
+    ],
+    walkLeftTextures: [
+        'arjuna-langkah-kiri-1', 'arjuna-langkah-kiri-2',
+        'arjuna-langkah-kiri-3', 'arjuna-langkah-kiri-4'
+    ],
+    walkSpeed: 260,
+    animFps: 9
+};
+
+const LV6_SEGMENTS: SegmentDefinition[] = [
+    {
+        id: 'lv6-event-1',
+        order: 1,
+        title: 'Meminta Maaf',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: LV6_CLASS_ACTORS.map((actor) => ({ ...actor })),
+        objects: [
+            ...lv6Furniture('meja-buku'),
+            {
+                id: 'meja-kelas-tumpah',
+                texture: 'meja-buku-tumpah',
+                x: 780,
+                y: GROUND_Y,
+                depth: 8,
+                hidden: true
+            }
+        ],
+        interactions: [
+            {
+                id: 'lv6-s1-duduk',
+                order: 1,
+                triggerX: LV6_PLAYER_SEAT,
+                markerY: 310,
+                interactionRadius: 80,
+                sitAtX: LV6_PLAYER_SEAT,
+                onStartHideObjects: ['meja-kelas'],
+                onStartShowObjects: ['meja-kelas-tumpah'],
+                dialog: [{
+                    speaker: 'siti',
+                    text: 'Arjuna, tadi kamu membuat bukuku basah karena gelas airku tersenggol.'
+                }]
+            },
+            {
+                id: 'lv6-s1-tumpah',
+                order: 2,
+                triggerX: LV6_KID_SEATS[2],
+                markerY: 355,
+                interactionRadius: 100,
+                dialog: [],
+                question: {
+                    choices: [
+                        { id: 'A', text: 'Meminta maaf dan bersedia bertanggung jawab.' },
+                        { id: 'B', text: 'Diam tanpa merespons.' },
+                        { id: 'C', text: 'Marah karena merasa tidak sengaja.' }
+                    ],
+                    correctChoiceId: 'A',
+                    feedback: {
+                        A: { speaker: 'pak-guru', correct: true, text: 'Bagus, Arjuna. Walaupun tidak sengaja, meminta maaf dan bertanggung jawab adalah sikap terpuji.' },
+                        B: { speaker: 'pak-guru', correct: false, text: 'Diam saja tidak menyelesaikan masalah. Sampaikan permintaan maaf dan bantu memperbaiki keadaan.' },
+                        C: { speaker: 'pak-guru', correct: false, text: 'Jangan marah saat diminta bertanggung jawab. Permintaan maaf yang tulus sangat berarti.' }
+                    }
+                }
+            }
+        ],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv6-event-2',
+        order: 2,
+        title: 'Menjaga Tutur Kata',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: LV6_CLASS_ACTORS.map((actor) => ({ ...actor })),
+        objects: lv6Furniture('meja'),
+        interactions: [{
+            id: 'lv6-s2-budi',
+            order: 1,
+            triggerX: LV6_KID_SEATS[1],
+            markerY: 305,
+            interactionRadius: 100,
+            dialog: [{
+                speaker: 'budi',
+                text: 'Eh, Arjuna, anjay, keren banget gaya rambut kamu hari ini!'
+            }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Mengulang kata tidak sopan yang digunakan Budi.' },
+                    { id: 'B', text: 'Hanya mengucapkan terima kasih lalu pergi.' },
+                    { id: 'C', text: 'Mengucapkan terima kasih dan mengingatkan Budi dengan baik.' }
+                ],
+                correctChoiceId: 'C',
+                feedback: {
+                    A: { speaker: 'pak-guru', correct: false, text: 'Kata-kata yang tidak sopan sebaiknya tidak diulang.' },
+                    B: { speaker: 'pak-guru', correct: false, text: 'Mengucapkan terima kasih itu baik, tetapi kamu juga dapat mengingatkan teman dengan sopan.' },
+                    C: { speaker: 'pak-guru', correct: true, text: 'Bapak bangga, Arjuna. Kamu mengingatkan teman dengan cara yang baik.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv6-event-3',
+        order: 3,
+        title: 'Meminta Izin',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: LV6_CLASS_ACTORS.map((actor) => ({ ...actor })),
+        objects: [
+            ...lv6Furniture('meja'),
+            { id: 'penghapus', texture: 'penghapus', x: LV6_TEACHER_SEAT, y: 405, centered: true, depth: 9 }
+        ],
+        interactions: [
+            {
+                id: 'lv6-s3-duduk',
+                order: 1,
+                triggerX: LV6_PLAYER_SEAT,
+                markerY: 310,
+                interactionRadius: 80,
+                sitAtX: LV6_PLAYER_SEAT,
+                dialog: [
+                    { speaker: 'pak-guru', text: 'Anak-anak, jangan lupa alat tulisnya dipersiapkan, ya.' },
+                    { speaker: 'arjuna', text: 'Waduh, aku tidak membawa penghapus. Apa aku pinjam punya Pak Guru, ya?' }
+                ]
+            },
+            {
+                id: 'lv6-s3-penghapus',
+                order: 2,
+                triggerX: LV6_TEACHER_SEAT,
+                markerY: 350,
+                interactionRadius: 90,
+                dialog: [],
+                question: {
+                    choices: [
+                        { id: 'A', text: 'Langsung mengambil penghapus tanpa meminta izin.' },
+                        { id: 'B', text: 'Meminta izin sebelum meminjam penghapus.' },
+                        { id: 'C', text: 'Mengambil dahulu lalu meminta izin setelah selesai.' }
+                    ],
+                    correctChoiceId: 'B',
+                    feedback: {
+                        A: { speaker: 'pak-guru', correct: false, text: 'Mengambil barang tanpa izin tidak boleh dilakukan. Mintalah izin sebelum meminjam.' },
+                        B: { speaker: 'pak-guru', correct: true, text: 'Tentu, Arjuna. Bapak senang kamu meminta izin terlebih dahulu.' },
+                        C: { speaker: 'pak-guru', correct: false, text: 'Izin harus diminta sebelum barang digunakan, bukan setelah selesai.' }
+                    }
+                },
+                onResolveHideObjects: ['penghapus']
+            }
+        ],
+        exitX: EXIT_X
+    }
+];
+
+export const LEVEL_6: LevelDefinition = {
+    id: 6,
+    title: 'Kelas Sekolah',
+    subtitle: 'Kesopanan di Sekolah',
+    assetPrefix: 'lv6',
+    worldWidth: WORLD_WIDTH,
+    worldHeight: WORLD_HEIGHT,
+    groundY: GROUND_Y,
+    player: ARJUNA_PLAYER_LV6,
+    segments: LV6_SEGMENTS,
+    conclusionTitle: 'KESIMPULAN NILAI ETIKA',
+    conclusion:
+        'Sopan santun dapat dipahami oleh semua orang. Bertutur kata baik, meminta ' +
+        'maaf saat melakukan kesalahan, menghormati orang lain, dan meminta izin ' +
+        'sebelum meminjam menunjukkan bahwa kita adalah anak yang beretika.'
+};
+
 export const LEVELS: Record<number, LevelDefinition> = {
     1: LEVEL_1,
     2: LEVEL_2,
     3: LEVEL_3,
-    4: LEVEL_4
+    4: LEVEL_4,
+    5: LEVEL_5,
+    6: LEVEL_6
 };
 
 const SPEAKERS_BY_LEVEL: Record<number, Record<string, SpeakerStyle>> = {
     1: SPEAKERS_LV1,
     2: SPEAKERS_LV2,
     3: SPEAKERS_LV3,
-    4: SPEAKERS_LV4
+    4: SPEAKERS_LV4,
+    5: SPEAKERS_LV5,
+    6: SPEAKERS_LV6
 };
 
 export function speakersFor(levelId: number): Record<string, SpeakerStyle> {

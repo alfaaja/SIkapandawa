@@ -1,4 +1,4 @@
-/** Tipe data gameplay Level 1–2 (data-driven, satu Gameplay scene generik). */
+/** Tipe data gameplay Level 1–6 (data-driven, satu Gameplay scene generik). */
 
 export type GameplayState =
     | 'SCRIPTED'
@@ -84,6 +84,9 @@ export interface InteractionDefinition {
     /** Objek yang disembunyikan saat aksi (mis. koin diambil). */
     collectObjectId?: string;
     onStartSwaps?: ActorSwap[];
+    /** State objek yang berubah sebelum dialog dimulai (mis. buku tersenggol). */
+    onStartHideObjects?: string[];
+    onStartShowObjects?: string[];
     onResolveSwaps?: ActorSwap[];
     /** Objek dihapus/dipulihkan saat resolve (vas dibersihkan). */
     onResolveHideObjects?: string[];

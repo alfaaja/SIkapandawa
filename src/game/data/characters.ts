@@ -34,7 +34,20 @@ export const BIMA_INTRO: CharacterIntro = {
         'yang salah!'
 };
 
+export const ARJUNA_INTRO: CharacterIntro = {
+    id: 'arjuna',
+    name: 'ARJUNA',
+    panelTexture: 'lv5-perkenalan-arjuna',
+    introText:
+        'Halo, teman-teman! Namaku Arjuna, anak ketiga atau penengah dari Pandawa. ' +
+        'Aku sangat menyukai keindahan dan tutur kata yang lembut. Bagiku, anak ' +
+        'yang hebat adalah anak yang berpakaian rapi dan selalu bertutur kata sopan. ' +
+        'Yuk, temani aku hari ini. Kita buktikan bahwa bersikap sopan santun itu ' +
+        'sangat keren!'
+};
+
 export const CHARACTER_INTROS: Record<string, CharacterIntro> = {
     yudhistira: YUDHISTIRA_INTRO,
-    bima: BIMA_INTRO
+    bima: BIMA_INTRO,
+    arjuna: ARJUNA_INTRO
 };

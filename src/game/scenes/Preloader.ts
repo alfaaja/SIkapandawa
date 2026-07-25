@@ -8,7 +8,7 @@ const BAR_Y = 672;
 const HOLD_AFTER_LOAD_MS = 600;
 const FADE_MS = 300;
 
-/** Aset gameplay bersama untuk kedua level (nama file identik per folder). */
+/** Aset gameplay bersama yang memakai nama file identik di tiap folder level. */
 const GAMEPLAY_SHARED = [
     'bg', 'bintang-hasil-abu', 'bintang-hasil', 'bintang-kebaikan', 'box-menu',
     'label-sikapandawa', 'level-nama', 'pilihan', 'tanda-panah',
@@ -58,6 +58,26 @@ const GAMEPLAY_LV4 = [
     'bima-langkah-kiri-2', 'bima-langkah-kiri-3', 'bima-langkah-kiri-4',
     'budi-coret', 'budi-edo', 'coretan', 'textboxt-bima', 'textboxt-budi',
     'textboxt-edo', 'textboxt-ibu-kantin'
+];
+
+const GAMEPLAY_LV5 = [
+    'arjuna', 'arjuna-langkah-kanan-1', 'arjuna-langkah-kanan-2',
+    'arjuna-langkah-kanan-3', 'arjuna-langkah-kanan-4',
+    'arjuna-langkah-kiri-1', 'arjuna-langkah-kiri-2',
+    'arjuna-langkah-kiri-3', 'arjuna-langkah-kiri-4', 'ibu',
+    'perkenalan-arjuna', 'textboxt-arjuna', 'textboxt-ibu'
+];
+
+const GAMEPLAY_LV6 = [
+    'ani-duduk', 'arjuna', 'arjuna-duduk',
+    'arjuna-langkah-kanan-1', 'arjuna-langkah-kanan-2',
+    'arjuna-langkah-kanan-3', 'arjuna-langkah-kanan-4',
+    'arjuna-langkah-kiri-1', 'arjuna-langkah-kiri-2',
+    'arjuna-langkah-kiri-3', 'arjuna-langkah-kiri-4',
+    'budi-duduk', 'edo-duduk', 'kursi-guru', 'kursi-siswa',
+    'meja', 'meja-buku', 'meja-buku-tumpah', 'pak-guru-duduk',
+    'penghapus', 'siti-duduk', 'textboxt-arjuna', 'textboxt-budi',
+    'textboxt-pak-guru', 'textboxt-siti'
 ];
 
 /**
@@ -122,7 +142,7 @@ export class Preloader extends Scene {
         }
         this.load.image('jejak-locked', 'level-select/jejak-locked.png');
 
-        // Gameplay Level 1-2
+        // Gameplay Level 1-6
         this.load.setPath('assets/gameplay');
         for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV1]) {
             this.load.image(`lv1-${name}`, `lv1/${name}.png`);
@@ -135,6 +155,12 @@ export class Preloader extends Scene {
         }
         for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV4]) {
             this.load.image(`lv4-${name}`, `lv4/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV5]) {
+            this.load.image(`lv5-${name}`, `lv5/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV6]) {
+            this.load.image(`lv6-${name}`, `lv6/${name}.png`);
         }
     }
 
