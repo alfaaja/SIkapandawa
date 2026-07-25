@@ -51,9 +51,10 @@ export class IntroCharacter extends Scene {
             panel.setDisplaySize(660, 297);
         }
 
-        makeText(this, 640, 348, intro?.name ?? 'PANDAWA', 15, { color: '#630995' })
+        // Nama dan kalimat perkenalan sama-sama berada di dalam bidang panel.
+        makeText(this, 640, 405, intro?.name ?? 'PANDAWA', 15, { color: '#630995' })
             .setOrigin(0.5);
-        makeText(this, 640, 448, intro?.introText ?? '', 8, {
+        makeText(this, 640, 469, intro?.introText ?? '', 8, {
             align: 'center',
             wordWrapWidth: 540,
             lineSpacing: 6,

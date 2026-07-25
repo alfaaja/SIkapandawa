@@ -11,7 +11,7 @@ import {
 export const WORLD_WIDTH = 1700;
 export const WORLD_HEIGHT = 720;
 export const GROUND_Y = 560;
-const EXIT_X = 1560;
+const EXIT_X = 1600;
 
 export const SPEAKERS_LV1: Record<string, SpeakerStyle> = {
     'pak-guru': { displayName: 'Pak Guru', textboxTexture: 'lv1-textboxt-pak-guru' },
@@ -235,6 +235,7 @@ export const LEVEL_1: LevelDefinition = {
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
+    exitMarkerY: 190,
     player: {
         idleTexture: 'yudistira-tegap',
         seatedTexture: 'yudistira-duduk',
@@ -424,6 +425,7 @@ export const LEVEL_2: LevelDefinition = {
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
+    exitMarkerY: 190,
     player: {
         idleTexture: 'yudistira-olahraga',
         seatedTexture: 'yudistira-olahraga',
@@ -594,6 +596,7 @@ export const LEVEL_3: LevelDefinition = {
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
+    exitMarkerY: 190,
     player: BIMA_PLAYER,
     segments: LV3_SEGMENTS,
     conclusionTitle: 'KESIMPULAN NILAI KEBERANIAN',
@@ -720,6 +723,7 @@ export const LEVEL_4: LevelDefinition = {
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
+    exitMarkerY: 155,
     player: BIMA_PLAYER,
     segments: LV4_SEGMENTS,
     conclusionTitle: 'KESIMPULAN NILAI KETEGASAN BERGAUL',
@@ -867,6 +871,7 @@ export const LEVEL_5: LevelDefinition = {
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
+    exitMarkerY: 180,
     player: ARJUNA_PLAYER_LV5,
     segments: LV5_SEGMENTS,
     conclusionTitle: 'KESIMPULAN NILAI KESOPANAN DIRI',
@@ -1078,6 +1083,7 @@ export const LEVEL_6: LevelDefinition = {
     worldWidth: WORLD_WIDTH,
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
+    exitMarkerY: 180,
     player: ARJUNA_PLAYER_LV6,
     segments: LV6_SEGMENTS,
     conclusionTitle: 'KESIMPULAN NILAI ETIKA',
@@ -1087,13 +1093,311 @@ export const LEVEL_6: LevelDefinition = {
         'sebelum meminjam menunjukkan bahwa kita adalah anak yang beretika.'
 };
 
+export const SPEAKERS_LV7: Record<string, SpeakerStyle> = {
+    'nakula': { displayName: 'Nakula', textboxTexture: 'lv7-textboxt-nakula' },
+    'edo': { displayName: 'Edo', textboxTexture: 'lv7-textboxt-edo' }
+};
+
+export const SPEAKERS_LV8: Record<string, SpeakerStyle> = {
+    'nakula': { displayName: 'Nakula', textboxTexture: 'lv8-textboxt-nakula' },
+    'edo': { displayName: 'Edo', textboxTexture: 'lv8-textboxt-edo' }
+};
+
+const NAKULA_PLAYER = {
+    idleTexture: 'nakula',
+    seatedTexture: 'nakula',
+    walkRightTextures: [
+        'nakula-langkah-kanan-1', 'nakula-langkah-kanan-2',
+        'nakula-langkah-kanan-3', 'nakula-langkah-kanan-4'
+    ],
+    walkLeftTextures: [
+        'nakula-langkah-kiri-1', 'nakula-langkah-kiri-2',
+        'nakula-langkah-kiri-3', 'nakula-langkah-kiri-4'
+    ],
+    walkSpeed: 260,
+    animFps: 9
+};
+
+// Marker dan radius aksi berada di atas kelompok anak yang baked pada background.
+const NAKULA_EVENT_X = 1020;
+const NAKULA_MARKER_Y = 245;
+
+const LV7_SEGMENTS: SegmentDefinition[] = [
+    {
+        id: 'lv7-event-1',
+        order: 1,
+        title: 'Tontonan Sesuai Umur',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv7-s1-tontonan',
+            order: 1,
+            triggerX: NAKULA_EVENT_X,
+            markerY: NAKULA_MARKER_Y,
+            interactionRadius: 100,
+            dialog: [
+                { speaker: 'nakula', text: 'Halo teman-teman, kalian lagi pada ngapain nih?' },
+                {
+                    speaker: 'edo',
+                    text: 'Ini aku sama Budi lagi nonton penyanyi yang joget-joget pakaiannya pendek!'
+                }
+            ],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Mengajak teman mengganti tontonan ke kartun edukatif atau acara pengetahuan.' },
+                    { id: 'B', text: 'Ikut menonton karena penasaran.' },
+                    { id: 'C', text: 'Merusak HP teman secara paksa.' }
+                ],
+                correctChoiceId: 'A',
+                feedback: {
+                    A: { speaker: 'edo', correct: true, text: 'Oh iya, maaf ya Nakula, ini memang bukan tontonan anak-anak. Ayo kita ganti nonton kartun petualangan saja!' },
+                    B: { speaker: 'edo', correct: false, text: 'Menonton karena penasaran tetap bukan pilihan yang tepat. Ajaklah teman mengganti tontonan dengan acara yang sesuai usia.' },
+                    C: { speaker: 'edo', correct: false, text: 'Aku tahu aku salah, tapi merusak barang teman itu dilarang, Nakula!' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv7-event-2',
+        order: 2,
+        title: 'Permainan Sesuai Umur',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv7-s2-permainan',
+            order: 1,
+            triggerX: NAKULA_EVENT_X,
+            markerY: NAKULA_MARKER_Y,
+            interactionRadius: 100,
+            dialog: [
+                { speaker: 'nakula', text: 'Halo teman-teman, kalian lagi pada ngapain nih?' },
+                {
+                    speaker: 'edo',
+                    text: 'Ini Siti sama Budi lagi ngobrolin pacar mereka, ayo gabung sini!'
+                }
+            ],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Ikut bermain pacar-pacaran karena dianggap keren.' },
+                    { id: 'B', text: 'Mengejek teman karena meniru perilaku orang dewasa.' },
+                    { id: 'C', text: 'Menolak dengan ramah dan mengajak permainan yang sesuai untuk anak-anak.' }
+                ],
+                correctChoiceId: 'C',
+                feedback: {
+                    A: { speaker: 'edo', correct: false, text: 'Anak SD tugasnya belajar dan bermain dengan ceria, bukan meniru drama cinta-cintaan orang dewasa. Itu tidak sesuai untuk kita.' },
+                    B: { speaker: 'edo', correct: false, text: 'Nakula, jangan mengejek teman. Arahkan mereka ke permainan yang lebih baik dengan cara yang ramah.' },
+                    C: { speaker: 'edo', correct: true, text: 'Wah, ide bagus Nakula! Main petak umpet ternyata jauh lebih seru daripada main surat-suratan membosankan ini!' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv7-event-3',
+        order: 3,
+        title: 'Berdandan Sesuai Umur',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv7-s3-berdandan',
+            order: 1,
+            triggerX: NAKULA_EVENT_X,
+            markerY: NAKULA_MARKER_Y,
+            interactionRadius: 100,
+            dialog: [
+                { speaker: 'nakula', text: 'Halo teman-teman, eh, Ani kenapa kamu pakai riasan yang tebal?' },
+                { speaker: 'edo', text: 'Katanya mau jadi baddie tuh.' }
+            ],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Memuji tanpa mengingatkan.' },
+                    { id: 'B', text: 'Menasihati Ani dengan baik agar berdandan sesuai usia dan kegiatan.' },
+                    { id: 'C', text: 'Menertawakan Ani.' }
+                ],
+                correctChoiceId: 'B',
+                feedback: {
+                    A: { speaker: 'edo', correct: false, text: 'Seharusnya kamu mengingatkan temanmu, bukan malah membiarkannya.' },
+                    B: { speaker: 'edo', correct: true, text: 'Kerja bagus, Nakula. Kita ingin teman kita tetap menikmati masa kanak-kanak, bukan mengikuti gaya orang dewasa.' },
+                    C: { speaker: 'edo', correct: false, text: 'Menertawakan teman akan membuat hatinya sedih. Nasihatilah dengan kata-kata yang baik.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    }
+];
+
+export const LEVEL_7: LevelDefinition = {
+    id: 7,
+    title: 'Di Luar Sekolah',
+    subtitle: 'Berperilaku Sesuai Umur',
+    assetPrefix: 'lv7',
+    worldWidth: WORLD_WIDTH,
+    worldHeight: WORLD_HEIGHT,
+    groundY: GROUND_Y,
+    exitMarkerY: 200,
+    player: NAKULA_PLAYER,
+    segments: LV7_SEGMENTS,
+    conclusionTitle: 'KESIMPULAN PERILAKU SESUAI UMUR',
+    conclusion:
+        'Masa kanak-kanak hanya datang satu kali. Pilihlah tontonan, permainan, ' +
+        'dan kebiasaan yang sesuai usia. Jadilah anak yang ceria, aktif, dan fokus belajar.',
+    introCharacterId: 'nakula'
+};
+
+const LV8_SEGMENTS: SegmentDefinition[] = [
+    {
+        id: 'lv8-event-1',
+        order: 1,
+        title: 'Menolak Rokok',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv8-s1-rokok',
+            order: 1,
+            triggerX: NAKULA_EVENT_X,
+            markerY: NAKULA_MARKER_Y,
+            interactionRadius: 100,
+            dialog: [
+                { speaker: 'nakula', text: 'Halo teman-teman, kalian lagi pada ngapain nih?' },
+                { speaker: 'edo', text: 'Ini aku lagi ngobrol aja, tadi si Budi ngajak ngerokok tuh!' }
+            ],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Mencoba rokok karena penasaran.' },
+                    { id: 'B', text: 'Menolak dengan tegas dan mengingatkan bahwa rokok berbahaya.' },
+                    { id: 'C', text: 'Membiarkan teman merokok.' }
+                ],
+                correctChoiceId: 'B',
+                feedback: {
+                    A: { speaker: 'edo', correct: false, text: 'Astaga, Nakula! Rokok itu sangat berbahaya bagi kesehatan dan pertumbuhan anak-anak. Jangan pernah menyentuhnya!' },
+                    B: { speaker: 'edo', correct: true, text: 'Kamu benar, Nakula. Napas juga bisa sesak nanti. Lebih baik buang saja rokoknya ke tempat sampah.' },
+                    C: { speaker: 'edo', correct: false, text: 'Membiarkan teman merusak paru-parunya berarti kamu tidak sayang pada temanmu. Cegahlah perbuatan itu!' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv8-event-2',
+        order: 2,
+        title: 'Menolak Gosip',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv8-s2-gosip',
+            order: 1,
+            triggerX: NAKULA_EVENT_X,
+            markerY: NAKULA_MARKER_Y,
+            interactionRadius: 100,
+            dialog: [
+                { speaker: 'nakula', text: 'Halo teman-teman, kalian lagi pada ngapain nih?' },
+                {
+                    speaker: 'edo',
+                    text: 'Ini Siti sama Ani lagi ngomongin artis yang viral itu, katanya ada info baru dari berita gosip.'
+                }
+            ],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Menolak ikut bergosip, mengingatkan dengan baik, lalu memilih kegiatan bermanfaat.' },
+                    { id: 'B', text: 'Ikut mendengarkan dan menyebarkan gosip.' },
+                    { id: 'C', text: 'Berteriak kasar menyuruh semua orang diam.' }
+                ],
+                correctChoiceId: 'A',
+                feedback: {
+                    A: { speaker: 'edo', correct: true, text: 'Pikiran anak-anak harus diisi dengan ilmu dan cerita yang bermanfaat, bukan gosip orang dewasa. Membaca buku jauh lebih seru!' },
+                    B: { speaker: 'edo', correct: false, text: 'Mendengarkan gosip dan istilah dewasa akan mengotori pikiran bersihmu. Tinggalkan obrolan tidak bermanfaat itu.' },
+                    C: { speaker: 'edo', correct: false, text: 'Tindakanmu berlebihan. Lebih baik cukup tinggalkan mereka dan berikan contoh dengan melakukan hal positif.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv8-event-3',
+        order: 3,
+        title: 'Menolak Judi',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv8-s3-judi',
+            order: 1,
+            triggerX: NAKULA_EVENT_X,
+            markerY: NAKULA_MARKER_Y,
+            interactionRadius: 100,
+            dialog: [
+                { speaker: 'nakula', text: 'Halo teman-teman, kalian lagi pada ngapain nih?' },
+                { speaker: 'edo', text: 'Ini Budi mau top up buat judi, aku lagi coba mencegahnya.' }
+            ],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Ikut memakai uang jajan untuk top-up judi.' },
+                    { id: 'B', text: 'Merebut lalu membuang HP teman.' },
+                    { id: 'C', text: 'Menasihati bahwa anak-anak tidak boleh berjudi dan meminta teman berhenti.' }
+                ],
+                correctChoiceId: 'C',
+                feedback: {
+                    A: { speaker: 'edo', correct: false, text: 'Nakula! Game penuh kekerasan dan judi dilarang untuk anak-anak. Itu merusak mental dan menghabiskan uang secara sia-sia!' },
+                    B: { speaker: 'edo', correct: false, text: 'Membuang barang milik orang lain itu melanggar aturan. Jangan selesaikan masalah dengan merusak barang.' },
+                    C: { speaker: 'edo', correct: true, text: 'Betul itu, Nakula! Uang jajan akan terus habis karena judi. Terima kasih, Budi sudah tersadar sekarang.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    }
+];
+
+export const LEVEL_8: LevelDefinition = {
+    id: 8,
+    title: 'Di Luar Sekolah',
+    subtitle: 'Menolak Kebiasaan Berbahaya',
+    assetPrefix: 'lv8',
+    worldWidth: WORLD_WIDTH,
+    worldHeight: WORLD_HEIGHT,
+    groundY: GROUND_Y,
+    exitMarkerY: 200,
+    player: NAKULA_PLAYER,
+    segments: LV8_SEGMENTS,
+    conclusionTitle: 'KESIMPULAN KEBIASAAN SEHAT',
+    conclusion:
+        'Jangan meniru kebiasaan berbahaya seperti merokok, bergosip, atau berjudi. ' +
+        'Pilihlah pergaulan dan permainan yang sehat, serta gunakan waktu untuk ' +
+        'belajar dan meraih cita-cita.'
+};
+
 export const LEVELS: Record<number, LevelDefinition> = {
     1: LEVEL_1,
     2: LEVEL_2,
     3: LEVEL_3,
     4: LEVEL_4,
     5: LEVEL_5,
-    6: LEVEL_6
+    6: LEVEL_6,
+    7: LEVEL_7,
+    8: LEVEL_8
 };
 
 const SPEAKERS_BY_LEVEL: Record<number, Record<string, SpeakerStyle>> = {
@@ -1102,7 +1406,9 @@ const SPEAKERS_BY_LEVEL: Record<number, Record<string, SpeakerStyle>> = {
     3: SPEAKERS_LV3,
     4: SPEAKERS_LV4,
     5: SPEAKERS_LV5,
-    6: SPEAKERS_LV6
+    6: SPEAKERS_LV6,
+    7: SPEAKERS_LV7,
+    8: SPEAKERS_LV8
 };
 
 export function speakersFor(levelId: number): Record<string, SpeakerStyle> {

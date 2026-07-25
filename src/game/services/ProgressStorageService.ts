@@ -19,8 +19,8 @@ export interface LevelResultOutcome {
 
 const PROGRESS_KEY_PREFIX = 'sikapandawa.progress.';
 export const TOTAL_LEVELS = 10;
-/** Level yang memiliki gameplay sampai Progress 05. */
-export const PLAYABLE_LEVELS = 6;
+/** Level yang memiliki gameplay sampai Progress 06. */
+export const PLAYABLE_LEVELS = 8;
 
 function progressKey(accountId: string): string {
     return `${PROGRESS_KEY_PREFIX}${accountId}`;

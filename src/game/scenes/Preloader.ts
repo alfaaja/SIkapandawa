@@ -80,6 +80,14 @@ const GAMEPLAY_LV6 = [
     'textboxt-pak-guru', 'textboxt-siti'
 ];
 
+const GAMEPLAY_LV7_LV8 = [
+    'nakula', 'nakula-langkah-kanan-1', 'nakula-langkah-kanan-2',
+    'nakula-langkah-kanan-3', 'nakula-langkah-kanan-4',
+    'nakula-langkah-kiri-1', 'nakula-langkah-kiri-2',
+    'nakula-langkah-kiri-3', 'nakula-langkah-kiri-4',
+    'perkenalan-nakula', 'textboxt-edo', 'textboxt-nakula'
+];
+
 /**
  * Preloader — Loading/Splash dalam satu flow:
  * splash tampil → progress asli + persentase → 100% → indikator hilang
@@ -142,7 +150,7 @@ export class Preloader extends Scene {
         }
         this.load.image('jejak-locked', 'level-select/jejak-locked.png');
 
-        // Gameplay Level 1-6
+        // Gameplay Level 1-8
         this.load.setPath('assets/gameplay');
         for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV1]) {
             this.load.image(`lv1-${name}`, `lv1/${name}.png`);
@@ -161,6 +169,12 @@ export class Preloader extends Scene {
         }
         for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV6]) {
             this.load.image(`lv6-${name}`, `lv6/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV7_LV8]) {
+            this.load.image(`lv7-${name}`, `lv7/${name}.png`);
+        }
+        for (const name of [...GAMEPLAY_SHARED, ...GAMEPLAY_LV7_LV8]) {
+            this.load.image(`lv8-${name}`, `lv8/${name}.png`);
         }
     }
 

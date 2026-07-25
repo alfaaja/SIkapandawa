@@ -1,4 +1,4 @@
-/** Tipe data gameplay Level 1–6 (data-driven, satu Gameplay scene generik). */
+/** Tipe data gameplay Level 1–8 (data-driven, satu Gameplay scene generik). */
 
 export type GameplayState =
     | 'SCRIPTED'
@@ -74,7 +74,7 @@ export interface ActorSwap {
 export interface InteractionDefinition {
     id: string;
     order: number;
-    /** Posisi X target di world; marker tanda panah muncul di atasnya. */
+    /** Posisi X target; marker dan pusat radius aksi memakai koordinat ini. */
     triggerX: number;
     /** Y ujung atas target untuk penempatan marker (world). */
     markerY: number;
@@ -126,11 +126,13 @@ export interface LevelDefinition {
     id: number;
     title: string;
     subtitle: string;
-    /** Prefix asset: 'lv1' | 'lv2'. */
+    /** Prefix aset runtime level, misalnya 'lv1' atau 'lv8'. */
     assetPrefix: string;
     worldWidth: number;
     worldHeight: number;
     groundY: number;
+    /** Posisi Y ujung panah keluar di atas pintu kanan. */
+    exitMarkerY: number;
     player: PlayerDefinition;
     segments: SegmentDefinition[];
     conclusionTitle: string;

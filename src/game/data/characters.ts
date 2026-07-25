@@ -46,8 +46,20 @@ export const ARJUNA_INTRO: CharacterIntro = {
         'sangat keren!'
 };
 
+export const NAKULA_INTRO: CharacterIntro = {
+    id: 'nakula',
+    name: 'NAKULA',
+    panelTexture: 'lv7-perkenalan-nakula',
+    introText:
+        'Halo, teman-teman! Namaku Nakula, anak keempat dari Pandawa. Aku sangat ' +
+        'suka belajar dan bermain permainan yang seru. Bagiku, masa kanak-kanak ' +
+        'adalah masa yang menyenangkan. Yuk, ikuti petualanganku untuk menjadi ' +
+        'anak yang cerdas, sehat, dan bahagia!'
+};
+
 export const CHARACTER_INTROS: Record<string, CharacterIntro> = {
     yudhistira: YUDHISTIRA_INTRO,
     bima: BIMA_INTRO,
-    arjuna: ARJUNA_INTRO
+    arjuna: ARJUNA_INTRO,
+    nakula: NAKULA_INTRO
 };

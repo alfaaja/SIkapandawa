@@ -15,7 +15,7 @@ const GRID_ROW_YS = [240, 350];
 /**
  * LevelSelect — panel user, total bintang, grid 10 level, Jejak Pandawa, logout.
  * Level 1–6 membuka Gameplay (Level 1, 3, dan 5 lewat Intro pada first entry);
- * Level 7+ placeholder untuk progress berikutnya.
+ * Level 9+ placeholder untuk progress berikutnya.
  */
 export class LevelSelect extends Scene {
     private modal: MessageModal;

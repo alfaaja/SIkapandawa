@@ -49,26 +49,26 @@ export class Result extends Scene {
         starXs.forEach((x, i) => {
             const key = i < this.runStars ? `${prefix}-bintang-hasil` : `${prefix}-bintang-hasil-abu`;
             if (this.textures.exists(key)) {
-                this.add.image(x, 168, key).setDisplaySize(88, 82);
+                this.add.image(x, 174, key).setDisplaySize(88, 82);
             }
         });
 
         // Panel kesimpulan.
         if (this.textures.exists(`${prefix}-teksboxt-kesimpulan`)) {
-            this.add.image(640, 402, `${prefix}-teksboxt-kesimpulan`).setDisplaySize(830, 220);
+            this.add.image(640, 383, `${prefix}-teksboxt-kesimpulan`).setDisplaySize(830, 220);
         } else {
-            this.add.rectangle(640, 402, 830, 220, 0x630995, 0.95);
+            this.add.rectangle(640, 383, 830, 220, 0x630995, 0.95);
         }
-        makeText(this, 640, 328, level?.conclusionTitle ?? 'KESIMPULAN', 14, { color: '#ffffff' })
+        makeText(this, 640, 314, level?.conclusionTitle ?? 'KESIMPULAN', 14, { color: '#ffffff' })
             .setOrigin(0.5);
-        makeText(this, 640, 418, level?.conclusion ?? '', 9, {
+        makeText(this, 640, 348, level?.conclusion ?? '', 9, {
             align: 'center',
             wordWrapWidth: 730,
             lineSpacing: 6,
             color: '#ffffff'
-        }).setOrigin(0.5);
+        }).setOrigin(0.5, 0);
 
-        makeText(this, 640, 236, `Terbaik: ${bestStars}/3`, 10, { color: '#ffd24a' })
+        makeText(this, 640, 229, `Terbaik: ${bestStars}/3`, 10, { color: '#ffd24a' })
             .setOrigin(0.5);
 
         // Tombol: BACK, REPLAY (ikon), NEXT (bila level berikut playable & terbuka).

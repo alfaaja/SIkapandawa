@@ -29,7 +29,7 @@ interface GameplayKeys {
 }
 
 /**
- * Gameplay generik Level 1–6 (data-driven; tidak ada scene per level/kasus).
+ * Gameplay generik Level 1–8 (data-driven; tidak ada scene per level/kasus).
  * State machine: SCRIPTED → EXPLORE → DIALOG → CHOICE → FEEDBACK → … → COMPLETE.
  */
 export class Gameplay extends Scene {
@@ -103,7 +103,7 @@ export class Gameplay extends Scene {
 
         const muted = SettingsStorageService.getSettings().muted;
         this.touch = new TouchControls(this, this.prefix);
-        this.hud = new Hud(this, this.prefix, this.level.id, account.displayName, muted, {
+        this.hud = new Hud(this, this.prefix, this.level.id, account.username, muted, {
             onPause: () => this.pauseGame(),
             onQuit: () => this.quitToLevelSelect(),
             onToggleMute: () => this.toggleMute(),
@@ -256,10 +256,24 @@ export class Gameplay extends Scene {
         return pending[0] ?? null;
     }
 
-    private currentTarget(): { x: number; markerY: number; radius: number } | null {
+    private currentTarget(): {
+        x: number;
+        markerY: number;
+        radius: number;
+    } | null {
         const inter = this.nextInteraction();
-        if (inter) return { x: inter.triggerX, markerY: inter.markerY, radius: inter.interactionRadius };
-        return { x: this.segment.exitX, markerY: 250, radius: EXIT_RADIUS };
+        if (inter) {
+            return {
+                x: inter.triggerX,
+                markerY: inter.markerY,
+                radius: inter.interactionRadius
+            };
+        }
+        return {
+            x: this.segment.exitX,
+            markerY: this.level.exitMarkerY,
+            radius: EXIT_RADIUS
+        };
     }
 
     private updateMarkerAndAction(): void {
