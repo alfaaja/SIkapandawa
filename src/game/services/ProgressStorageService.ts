@@ -8,6 +8,7 @@ export interface LocalProgress {
     introSeen: string[];
     completedLevels: number[];
     jejakPandawaUnlocked: boolean;
+    jejakPandawaBestScore: number;
 }
 
 export interface LevelResultOutcome {
@@ -15,6 +16,13 @@ export interface LevelResultOutcome {
     bestStars: number;
     isNewBest: boolean;
     unlockedLevel: number | null;
+    saved: boolean;
+}
+
+export interface JejakResultOutcome {
+    score: number;
+    bestScore: number;
+    isNewBest: boolean;
     saved: boolean;
 }
 
@@ -37,7 +45,8 @@ function initialProgress(): LocalProgress {
         levelStars,
         introSeen: [],
         completedLevels: [],
-        jejakPandawaUnlocked: false
+        jejakPandawaUnlocked: false,
+        jejakPandawaBestScore: 0
     };
 }
 
@@ -81,6 +90,10 @@ function sanitize(raw: unknown): LocalProgress {
     }
 
     progress.jejakPandawaUnlocked = candidate.jejakPandawaUnlocked === true;
+    const jejakBest = Number(candidate.jejakPandawaBestScore);
+    if (Number.isFinite(jejakBest)) {
+        progress.jejakPandawaBestScore = Math.max(0, Math.min(10, Math.floor(jejakBest)));
+    }
     return progress;
 }
 
@@ -121,6 +134,39 @@ export const ProgressStorageService = {
             total += progress.levelStars[level] ?? 0;
         }
         return total;
+    },
+
+    hasCompletedAllLevels(progress: LocalProgress): boolean {
+        for (let level = 1; level <= TOTAL_LEVELS; level++) {
+            if (!progress.completedLevels.includes(level)) return false;
+        }
+        return true;
+    },
+
+    /**
+     * Buka Jejak Pandawa hanya setelah seluruh level selesai.
+     * Unlock bersifat monotonic: nilai true tidak pernah diturunkan.
+     */
+    unlockJejakPandawa(accountId: string): boolean {
+        const progress = this.getProgress(accountId);
+        if (progress.jejakPandawaUnlocked) return true;
+        if (!this.hasCompletedAllLevels(progress)) return false;
+        progress.jejakPandawaUnlocked = true;
+        return this.saveProgress(accountId, progress);
+    },
+
+    recordJejakResult(accountId: string, runScore: number): JejakResultOutcome {
+        const progress = this.getProgress(accountId);
+        const score = Math.max(0, Math.min(10, Math.floor(runScore)));
+        const previousBest = progress.jejakPandawaBestScore;
+        progress.jejakPandawaBestScore = Math.max(previousBest, score);
+        const saved = this.saveProgress(accountId, progress);
+        return {
+            score,
+            bestScore: progress.jejakPandawaBestScore,
+            isNewBest: progress.jejakPandawaBestScore > previousBest,
+            saved
+        };
     },
 
     hasSeenIntro(accountId: string, characterId: string): boolean {

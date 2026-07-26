@@ -17,6 +17,8 @@ const VIEWPORT_W = 1280;
 const EXIT_RADIUS = 85;
 const CAMERA_LERP = 0.14;
 const FADE_MS = 280;
+const PLAYER_SEATED_DEPTH = 7;
+const PLAYER_FOREGROUND_DEPTH = 50;
 
 interface GameplayKeys {
     left: Input.Keyboard.Key;
@@ -151,12 +153,17 @@ export class Gameplay extends Scene {
 
         this.seated = seg.spawnSeated === true;
         const playerTexture = this.seated ? this.level.player.seatedTexture : this.level.player.idleTexture;
-        this.player = this.add.image(seg.spawnX, this.level.groundY, `${this.prefix}-${playerTexture}`)
-            .setOrigin(0.5, 1).setScale(0.5).setDepth(7);
+        const playerY = this.seated ? this.seatedY() : this.level.groundY;
+        const playerScale = this.seated ? this.seatedScale() : 0.5;
+        const playerDepth = this.seated ? PLAYER_SEATED_DEPTH : PLAYER_FOREGROUND_DEPTH;
+        this.player = this.add.image(seg.spawnX, playerY, `${this.prefix}-${playerTexture}`)
+            .setOrigin(0.5, 1).setScale(playerScale).setDepth(playerDepth);
         this.addWorld(this.player);
 
         this.marker = this.add.image(0, 0, `${this.prefix}-tanda-panah`)
-            .setOrigin(0.5, 1).setScale(0.6).setDepth(40).setVisible(false);
+            // Marker tetap terlihat di atas background/aktor statis, tetapi
+            // selalu berada di belakang karakter playable (depth 7).
+            .setOrigin(0.5, 1).setScale(0.6).setDepth(6.5).setVisible(false);
         this.addWorld(this.marker);
 
         // Container merender anak sesuai urutan; urutkan berdasar depth agar
@@ -380,13 +387,30 @@ export class Gameplay extends Scene {
 
     private sitDown(x: number): void {
         this.seated = true;
-        this.player.setX(x);
-        this.player.setTexture(`${this.prefix}-${this.level.player.seatedTexture}`).setScale(0.5);
+        this.player
+            .setPosition(x, this.seatedY())
+            .setTexture(`${this.prefix}-${this.level.player.seatedTexture}`)
+            .setScale(this.seatedScale())
+            .setDepth(PLAYER_SEATED_DEPTH);
+        this.worldLayer.sort('depth');
     }
 
     private standUp(): void {
         this.seated = false;
-        this.player.setTexture(`${this.prefix}-${this.level.player.idleTexture}`).setScale(0.5);
+        this.player
+            .setY(this.level.groundY)
+            .setTexture(`${this.prefix}-${this.level.player.idleTexture}`)
+            .setScale(0.5)
+            .setDepth(PLAYER_FOREGROUND_DEPTH);
+        this.worldLayer.sort('depth');
+    }
+
+    private seatedScale(): number {
+        return this.level.player.seatedScale ?? 0.5;
+    }
+
+    private seatedY(): number {
+        return this.level.groundY + (this.level.player.seatedYOffset ?? 0);
     }
 
     private finishSegment(): void {

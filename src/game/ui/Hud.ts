@@ -7,8 +7,9 @@ const PLATE_X = 139;
 const PLATE_Y = 51;
 const PLATE_W = 230;
 const PLATE_H = 54;
-const LEVEL_NUMBER_X = 50;
-const PLAYER_NAME_X = 165;
+/** Pusat visual area kotak kuning dan bidang ungu pada texture 534x124. */
+const LEVEL_NUMBER_X = 52;
+const PLAYER_NAME_X = 167;
 const MENU_Y = 51;
 const MENU_BOX_X = 1070;
 const MENU_BOX_W = 380;
@@ -49,7 +50,15 @@ export class Hud {
             .setDisplaySize(PLATE_W, PLATE_H).setDepth(DEPTH_HUD);
         const levelNumber = makeText(scene, LEVEL_NUMBER_X, PLATE_Y, String(levelId), 18, { color: '#3a0a52' })
             .setOrigin(0.5).setDepth(DEPTH_HUD + 1);
-        const name = makeText(scene, PLAYER_NAME_X, PLATE_Y, this.fitName(playerName), 11, { color: '#3a0a52' })
+        const fittedName = this.fitName(playerName);
+        const name = makeText(
+            scene,
+            PLAYER_NAME_X,
+            PLATE_Y,
+            fittedName,
+            this.nameFontSize(fittedName),
+            { color: '#3a0a52' }
+        )
             .setOrigin(0.5).setDepth(DEPTH_HUD + 1);
 
         // Bintang kebaikan + counter.
@@ -90,6 +99,12 @@ export class Hud {
 
     private fitName(name: string): string {
         return name.length > 12 ? `${name.slice(0, 11)}…` : name;
+    }
+
+    private nameFontSize(name: string): number {
+        if (name.length <= 7) return 17;
+        if (name.length <= 10) return 14;
+        return 11;
     }
 
     setStars(earned: number): void {

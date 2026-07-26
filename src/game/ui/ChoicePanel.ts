@@ -68,8 +68,11 @@ export class ChoicePanel {
                 .setDepth(DEPTH_CHOICE + 2)
                 .setInteractive({ useHandCursor: true });
             const label = makeText(
-                this.scene, PANEL_X - ROW_W / 2 + 14, rowY, `${choice.id}. ${choice.text}`, 9,
-                { wordWrapWidth: ROW_W - 28, lineSpacing: 3 }
+                this.scene,
+                PANEL_X - ROW_W / 2 + 14,
+                rowY,
+                `${choice.id}. ${choice.text}`,
+                9
             ).setOrigin(0, 0.5).setDepth(DEPTH_CHOICE + 1);
 
             zone.on('pointerover', () => zone.setFillStyle(0x9441c0, 0.25));

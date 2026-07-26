@@ -105,7 +105,7 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
                     choices: [
                         { id: 'A', text: 'Pura-pura tidak tahu apa-apa.' },
                         { id: 'B', text: 'Menunjuk Budi dan berkata bahwa Budi yang menyenggol vas.' },
-                        { id: 'C', text: 'Mengakui kesalahan, meminta maaf kepada Pak Guru, dan membantu membersihkan.' }
+                        { id: 'C', text: 'Mengaku kepada Pak Guru, meminta maaf, lalu membersihkan.' }
                     ],
                     correctChoiceId: 'C',
                     feedback: {
@@ -162,7 +162,7 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
                     choices: [
                         { id: 'A', text: 'Menyerahkan uang itu kepada Pak Guru di depan kelas.' },
                         { id: 'B', text: 'Menyembunyikan uang itu di saku untuk dipakai jajan.' },
-                        { id: 'C', text: 'Membiarkan uang itu di lantai dan berpura-pura tidak melihatnya.' }
+                        { id: 'C', text: 'Membiarkan uang di lantai dan pura-pura tidak melihat.' }
                     ],
                     correctChoiceId: 'A',
                     feedback: {
@@ -209,9 +209,9 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
                 ],
                 question: {
                     choices: [
-                        { id: 'A', text: 'Menuliskan jawaban yang benar dan melemparkannya kembali karena ingin permen.' },
-                        { id: 'B', text: 'Menggeleng sambil tersenyum untuk menolak, lalu kembali fokus mengerjakan soal sendiri.' },
-                        { id: 'C', text: 'Menuliskan jawaban yang salah dengan sengaja agar Edo kesal, lalu melemparkannya kembali.' }
+                        { id: 'A', text: 'Memberi jawaban benar kepada Edo demi mendapat permen.' },
+                        { id: 'B', text: 'Menolak dengan senyum lalu fokus mengerjakan soal sendiri.' },
+                        { id: 'C', text: 'Memberi jawaban salah agar Edo kesal.' }
                     ],
                     correctChoiceId: 'B',
                     feedback: {
@@ -308,7 +308,7 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
                     choices: [
                         { id: 'A', text: 'Menuruti Budi dan menyuruh Siti pindah.' },
                         { id: 'B', text: 'Membiarkan mereka berdua bertengkar.' },
-                        { id: 'C', text: 'Melerai mereka, menyemangati keduanya, dan melanjutkan olahraga bersama.' }
+                        { id: 'C', text: 'Melerai mereka dan mengajak olahraga bersama.' }
                     ],
                     correctChoiceId: 'C',
                     feedback: {
@@ -357,9 +357,9 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
                 dialog: [],
                 question: {
                     choices: [
-                        { id: 'A', text: 'Mengambil dua botol untuk diri sendiri karena sangat haus, lalu membagikan sisanya.' },
+                        { id: 'A', text: 'Mengambil dua botol lalu membagi sisanya.' },
                         { id: 'B', text: 'Membagikan air hanya kepada teman-teman dekatnya.' },
-                        { id: 'C', text: 'Membagikan satu botol kepada setiap teman dan mengambil satu botol untuk dirinya sendiri.' }
+                        { id: 'C', text: 'Membagi satu botol untuk tiap teman dan dirinya.' }
                     ],
                     correctChoiceId: 'C',
                     feedback: {
@@ -400,9 +400,9 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
                 ],
                 question: {
                     choices: [
-                        { id: 'A', text: 'Menengahi mereka, memeriksa urutan giliran, dan meminta mereka bermain bergantian tanpa pilih kasih.' },
-                        { id: 'B', text: 'Membela Siti dan langsung menyuruh Budi mengalah hanya karena Siti adalah teman dekatnya.' },
-                        { id: 'C', text: 'Marah-marah, menyita bola, dan membubarkan permainan karena mereka berisik.' }
+                        { id: 'A', text: 'Menengahi dan meminta mereka bergiliran secara adil.' },
+                        { id: 'B', text: 'Membela Siti karena ia teman dekatnya.' },
+                        { id: 'C', text: 'Menyita bola dan membubarkan permainan dengan marah.' }
                     ],
                     correctChoiceId: 'A',
                     feedback: {
@@ -503,9 +503,9 @@ const LV3_SEGMENTS: SegmentDefinition[] = [
             ],
             question: {
                 choices: [
-                    { id: 'A', text: 'Pura-pura tidak melihat dan pergi bermain ke tempat lain karena takut dimusuhi.' },
-                    { id: 'B', text: 'Mendekati mereka, menyemangati Budi dan Edo, lalu ikut meminta uang Siti.' },
-                    { id: 'C', text: 'Mendekati mereka, berdiri melindungi Siti, dan menegur Budi serta Edo dengan tegas.' }
+                    { id: 'A', text: 'Pura-pura tidak melihat lalu pergi karena takut dimusuhi.' },
+                    { id: 'B', text: 'Ikut meminta uang Siti bersama Budi dan Edo.' },
+                    { id: 'C', text: 'Melindungi Siti dan menegur Budi serta Edo dengan tegas.' }
                 ],
                 correctChoiceId: 'C',
                 feedback: {
@@ -539,9 +539,9 @@ const LV3_SEGMENTS: SegmentDefinition[] = [
             ],
             question: {
                 choices: [
-                    { id: 'A', text: 'Mendekati Edo dan menegurnya dengan tegas agar berhenti menyakiti makhluk hidup.' },
-                    { id: 'B', text: 'Mengambil batu yang lebih besar dan ikut melempari kucing karena terlihat seru.' },
-                    { id: 'C', text: 'Berdiri menonton sambil tertawa melihat kucing itu berlari ketakutan.' }
+                    { id: 'A', text: 'Menegur Edo agar berhenti menyakiti kucing.' },
+                    { id: 'B', text: 'Ikut melempari kucing dengan batu karena terlihat seru.' },
+                    { id: 'C', text: 'Menonton sambil tertawa saat kucing ketakutan.' }
                 ],
                 correctChoiceId: 'A',
                 feedback: {
@@ -572,8 +572,8 @@ const LV3_SEGMENTS: SegmentDefinition[] = [
             dialog: [{ speaker: 'edo', text: 'Yah, sepatunya jelek dan sudah rusak!' }],
             question: {
                 choices: [
-                    { id: 'A', text: 'Ikut mengejek sepatu Ani agar Edo dan Budi menganggap Bima sebagai teman yang asyik.' },
-                    { id: 'B', text: 'Membela Ani dengan mengatakan bahwa semangat belajarnya lebih penting, lalu meminta Edo dan Budi berhenti mengejek.' },
+                    { id: 'A', text: 'Ikut mengejek Ani agar dianggap teman yang asyik.' },
+                    { id: 'B', text: 'Membela Ani dan meminta Edo serta Budi berhenti mengejek.' },
                     { id: 'C', text: 'Marah besar dan memukul Edo serta Budi sampai menangis.' }
                 ],
                 correctChoiceId: 'B',
@@ -631,8 +631,8 @@ const LV4_SEGMENTS: SegmentDefinition[] = [
             question: {
                 choices: [
                     { id: 'A', text: 'Mengangguk setuju dan ikut membolos.' },
-                    { id: 'B', text: 'Menolak dengan tegas, menasihati Edo dan Budi bahwa bolos merugikan masa depan, lalu kembali ke kelas.' },
-                    { id: 'C', text: 'Mengancam akan memukul Edo dan Budi jika mereka mengajak bolos lagi.' }
+                    { id: 'B', text: 'Menolak bolos, menasihati mereka, lalu kembali ke kelas.' },
+                    { id: 'C', text: 'Mengancam memukul Edo dan Budi jika mengajak bolos lagi.' }
                 ],
                 correctChoiceId: 'B',
                 feedback: {
@@ -663,9 +663,9 @@ const LV4_SEGMENTS: SegmentDefinition[] = [
             dialog: [{ speaker: 'budi', text: 'Eh, Bima, ayo kita ambil jajanan ini. Kebetulan tidak ada yang menjaga.' }],
             question: {
                 choices: [
-                    { id: 'A', text: 'Menolak dengan tegas, menjelaskan bahwa mengambil tanpa izin adalah perbuatan salah, dan mencegah mereka mencuri.' },
-                    { id: 'B', text: 'Ikut mengambil satu roti karena mengira Ibu Kantin tidak akan menyadarinya.' },
-                    { id: 'C', text: 'Pura-pura tidak mendengar dan membiarkan Budi serta Edo mengambil makanan.' }
+                    { id: 'A', text: 'Menolak dan mencegah mereka mengambil barang tanpa izin.' },
+                    { id: 'B', text: 'Ikut mengambil roti karena merasa tidak akan ketahuan.' },
+                    { id: 'C', text: 'Membiarkan Budi dan Edo mengambil makanan.' }
                 ],
                 correctChoiceId: 'A',
                 feedback: {
@@ -699,9 +699,9 @@ const LV4_SEGMENTS: SegmentDefinition[] = [
             ],
             question: {
                 choices: [
-                    { id: 'A', text: 'Mengambil spidol dan menulis nama Bima dengan huruf besar di tembok.' },
-                    { id: 'B', text: 'Mengambil spidol lalu mencoret wajah Budi dan Edo agar mereka kapok.' },
-                    { id: 'C', text: 'Menolak ikut mencoret dan meminta mereka membersihkan coretan karena merusak fasilitas sekolah.' }
+                    { id: 'A', text: 'Menulis nama Bima dengan spidol di tembok.' },
+                    { id: 'B', text: 'Mencoret wajah Budi dan Edo agar mereka kapok.' },
+                    { id: 'C', text: 'Menolak mencoret dan meminta mereka membersihkan tembok.' }
                 ],
                 correctChoiceId: 'C',
                 feedback: {
@@ -781,9 +781,9 @@ const LV5_SEGMENTS: SegmentDefinition[] = [
             dialog: [{ speaker: 'arjuna', text: 'Apa aku pakai kaos tengkorak saja, ya?' }],
             question: {
                 choices: [
-                    { id: 'A', text: 'Memakai kaos oblong bergambar tengkorak ke sekolah karena dianggap keren.' },
-                    { id: 'B', text: 'Memakai seragam merah putih dengan rapi, mengancingkan baju, memasukkannya ke celana, dan menyisir rambut.' },
-                    { id: 'C', text: 'Memakai seragam tetapi membiarkan kancing terbuka dan baju tidak rapi.' }
+                    { id: 'A', text: 'Memakai kaos tengkorak ke sekolah karena dianggap keren.' },
+                    { id: 'B', text: 'Memakai seragam lengkap dengan rapi dan menyisir rambut.' },
+                    { id: 'C', text: 'Memakai seragam dengan kancing terbuka dan tidak rapi.' }
                 ],
                 correctChoiceId: 'B',
                 feedback: {
@@ -816,7 +816,7 @@ const LV5_SEGMENTS: SegmentDefinition[] = [
                 choices: [
                     { id: 'A', text: 'Berteriak dari luar pagar sambil terus berlari.' },
                     { id: 'B', text: 'Pergi diam-diam tanpa berpamitan.' },
-                    { id: 'C', text: 'Mendekati Ibu, mencium tangan, mengucapkan salam, dan meminta doa.' }
+                    { id: 'C', text: 'Mencium tangan Ibu, berpamitan, dan meminta doa.' }
                 ],
                 correctChoiceId: 'C',
                 feedback: {
@@ -1010,7 +1010,7 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
                 choices: [
                     { id: 'A', text: 'Mengulang kata tidak sopan yang digunakan Budi.' },
                     { id: 'B', text: 'Hanya mengucapkan terima kasih lalu pergi.' },
-                    { id: 'C', text: 'Mengucapkan terima kasih dan mengingatkan Budi dengan baik.' }
+                    { id: 'C', text: 'Berterima kasih dan mengingatkan Budi dengan baik.' }
                 ],
                 correctChoiceId: 'C',
                 feedback: {
@@ -1148,7 +1148,7 @@ const LV7_SEGMENTS: SegmentDefinition[] = [
             ],
             question: {
                 choices: [
-                    { id: 'A', text: 'Mengajak teman mengganti tontonan ke kartun edukatif atau acara pengetahuan.' },
+                    { id: 'A', text: 'Mengajak teman mengganti tontonan dengan acara edukatif.' },
                     { id: 'B', text: 'Ikut menonton karena penasaran.' },
                     { id: 'C', text: 'Merusak HP teman secara paksa.' }
                 ],
@@ -1189,7 +1189,7 @@ const LV7_SEGMENTS: SegmentDefinition[] = [
                 choices: [
                     { id: 'A', text: 'Ikut bermain pacar-pacaran karena dianggap keren.' },
                     { id: 'B', text: 'Mengejek teman karena meniru perilaku orang dewasa.' },
-                    { id: 'C', text: 'Menolak dengan ramah dan mengajak permainan yang sesuai untuk anak-anak.' }
+                    { id: 'C', text: 'Menolak dengan ramah dan mengajak permainan sesuai usia.' }
                 ],
                 correctChoiceId: 'C',
                 feedback: {
@@ -1224,7 +1224,7 @@ const LV7_SEGMENTS: SegmentDefinition[] = [
             question: {
                 choices: [
                     { id: 'A', text: 'Memuji tanpa mengingatkan.' },
-                    { id: 'B', text: 'Menasihati Ani dengan baik agar berdandan sesuai usia dan kegiatan.' },
+                    { id: 'B', text: 'Menasihati Ani agar berdandan sesuai usia.' },
                     { id: 'C', text: 'Menertawakan Ani.' }
                 ],
                 correctChoiceId: 'B',
@@ -1281,7 +1281,7 @@ const LV8_SEGMENTS: SegmentDefinition[] = [
             question: {
                 choices: [
                     { id: 'A', text: 'Mencoba rokok karena penasaran.' },
-                    { id: 'B', text: 'Menolak dengan tegas dan mengingatkan bahwa rokok berbahaya.' },
+                    { id: 'B', text: 'Menolak dan mengingatkan bahwa rokok berbahaya.' },
                     { id: 'C', text: 'Membiarkan teman merokok.' }
                 ],
                 correctChoiceId: 'B',
@@ -1319,7 +1319,7 @@ const LV8_SEGMENTS: SegmentDefinition[] = [
             ],
             question: {
                 choices: [
-                    { id: 'A', text: 'Menolak ikut bergosip, mengingatkan dengan baik, lalu memilih kegiatan bermanfaat.' },
+                    { id: 'A', text: 'Menolak bergosip dan memilih kegiatan bermanfaat.' },
                     { id: 'B', text: 'Ikut mendengarkan dan menyebarkan gosip.' },
                     { id: 'C', text: 'Berteriak kasar menyuruh semua orang diam.' }
                 ],
@@ -1357,7 +1357,7 @@ const LV8_SEGMENTS: SegmentDefinition[] = [
                 choices: [
                     { id: 'A', text: 'Ikut memakai uang jajan untuk top-up judi.' },
                     { id: 'B', text: 'Merebut lalu membuang HP teman.' },
-                    { id: 'C', text: 'Menasihati bahwa anak-anak tidak boleh berjudi dan meminta teman berhenti.' }
+                    { id: 'C', text: 'Menasihati teman agar berhenti berjudi.' }
                 ],
                 correctChoiceId: 'C',
                 feedback: {
@@ -1412,6 +1412,13 @@ const SADEWA_PLAYER = {
     ],
     walkSpeed: 260,
     animFps: 9
+};
+
+const SADEWA_LEVEL10_PLAYER = {
+    ...SADEWA_PLAYER,
+    seatedTexture: 'sadewa-duduk',
+    seatedScale: 0.39,
+    seatedYOffset: -31
 };
 
 const LV9_SEGMENTS: SegmentDefinition[] = [
@@ -1561,11 +1568,17 @@ export const LEVEL_9: LevelDefinition = {
     introCharacterId: 'sadewa'
 };
 
-// Preview Level 10 memperlihatkan briefing/duduk sebelum target kebersihan.
-// Furniture dan pose duduk tidak tersedia sebagai source terpisah, sehingga
-// setiap segmen memakai interaction briefing lalu interaction target.
-const LV10_BRIEFING_X = 1120;
-const LV10_BRIEFING_MARKER_Y = 340;
+// Sadewa masuk dari pintu kiri, berjalan ke kursi kosong, lalu duduk saat
+// pemain menekan aksi. Setelah briefing selesai, Sadewa berdiri untuk bertugas.
+const LV10_CHAIR_X = 1133;
+const LV10_BRIEFING_MARKER_Y = 270;
+const LV10_DESK_FOREGROUND: ObjectPlacement = {
+    id: 'meja-kursi-sadewa-foreground',
+    texture: 'meja-foreground',
+    x: 1235,
+    y: 494,
+    depth: 8
+};
 
 const LV10_SEGMENTS: SegmentDefinition[] = [
     {
@@ -1578,14 +1591,15 @@ const LV10_SEGMENTS: SegmentDefinition[] = [
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [],
-        objects: [],
+        objects: [{ ...LV10_DESK_FOREGROUND }],
         interactions: [
             {
                 id: 'lv10-s1-briefing',
                 order: 1,
-                triggerX: LV10_BRIEFING_X,
+                triggerX: LV10_CHAIR_X,
                 markerY: LV10_BRIEFING_MARKER_Y,
                 interactionRadius: 90,
+                sitAtX: LV10_CHAIR_X,
                 dialog: [{
                     speaker: 'pak-guru',
                     text: 'Sebelum pelajaran dimulai, anak yang piket tolong pel genangan air di depan pintu, ya.'
@@ -1601,7 +1615,7 @@ const LV10_SEGMENTS: SegmentDefinition[] = [
                 question: {
                     choices: [
                         { id: 'A', text: 'Mengabaikan genangan dan langsung duduk.' },
-                        { id: 'B', text: 'Mengambil alat pel dan membersihkan genangan sampai kering.' },
+                        { id: 'B', text: 'Mengepel genangan sampai kering.' },
                         { id: 'C', text: 'Mengeluh lalu menyuruh teman lain membersihkannya.' }
                     ],
                     correctChoiceId: 'B',
@@ -1625,14 +1639,15 @@ const LV10_SEGMENTS: SegmentDefinition[] = [
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [],
-        objects: [],
+        objects: [{ ...LV10_DESK_FOREGROUND }],
         interactions: [
             {
                 id: 'lv10-s2-briefing',
                 order: 1,
-                triggerX: LV10_BRIEFING_X,
+                triggerX: LV10_CHAIR_X,
                 markerY: LV10_BRIEFING_MARKER_Y,
                 interactionRadius: 90,
+                sitAtX: LV10_CHAIR_X,
                 dialog: [{
                     speaker: 'pak-guru',
                     text: 'Tempat sampah di pojok kelas sudah penuh. Tolong buang kantongnya dan pasang plastik baru.'
@@ -1672,20 +1687,24 @@ const LV10_SEGMENTS: SegmentDefinition[] = [
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [],
-        objects: [{
-            id: 'sampah-jatuh',
-            texture: 'sampah-jatuh',
-            x: 285,
-            y: GROUND_Y,
-            depth: 8
-        }],
+        objects: [
+            { ...LV10_DESK_FOREGROUND },
+            {
+                id: 'sampah-jatuh',
+                texture: 'sampah-jatuh',
+                x: 285,
+                y: GROUND_Y,
+                depth: 8
+            }
+        ],
         interactions: [
             {
                 id: 'lv10-s3-briefing',
                 order: 1,
-                triggerX: LV10_BRIEFING_X,
+                triggerX: LV10_CHAIR_X,
                 markerY: LV10_BRIEFING_MARKER_Y,
                 interactionRadius: 90,
+                sitAtX: LV10_CHAIR_X,
                 dialog: [{
                     speaker: 'pak-guru',
                     text: 'Tolong pungut sampah yang berserakan di depan tong dan masukkan ke tempatnya.'
@@ -1727,7 +1746,7 @@ export const LEVEL_10: LevelDefinition = {
     worldHeight: WORLD_HEIGHT,
     groundY: GROUND_Y,
     exitMarkerY: 190,
-    player: SADEWA_PLAYER,
+    player: SADEWA_LEVEL10_PLAYER,
     segments: LV10_SEGMENTS,
     conclusionTitle: 'KESIMPULAN NILAI KEBERSIHAN LINGKUNGAN',
     conclusion:

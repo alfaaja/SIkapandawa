@@ -103,7 +103,8 @@ const GAMEPLAY_LV9 = [
 ];
 
 const GAMEPLAY_LV10 = [
-    ...SADEWA_PLAYER, 'bg-scene', 'sampah-jatuh', 'textboxt-pak-guru'
+    ...SADEWA_PLAYER, 'bg-scene', 'meja-foreground', 'sadewa-duduk',
+    'sampah-jatuh', 'textboxt-pak-guru'
 ];
 
 /**
@@ -167,6 +168,36 @@ export class Preloader extends Scene {
             }
         }
         this.load.image('jejak-locked', 'level-select/jejak-locked.png');
+        this.load.image('jejak-unlocked', 'level-select/jejak-unlocked.png');
+
+        // Rapor Misi Pandawa
+        this.load.setPath('assets/mission-report');
+        this.load.image('mission-report-background', 'background.png');
+        this.load.image('mission-report-star', 'star.png');
+        this.load.image('mission-report-message-panel', 'message-panel.png');
+        this.load.image('mission-report-button-back', 'button-back.png');
+
+        // Jejak Pandawa
+        this.load.setPath('assets/jejak-pandawa');
+        this.load.image('jejak-background', 'background.png');
+        this.load.image('jejak-card', 'card.png');
+        this.load.image('jejak-baskets', 'baskets.png');
+        this.load.image('jejak-menu-panel', 'menu-panel.png');
+        this.load.image('jejak-user-panel', 'user-panel.png');
+        this.load.image('jejak-message-panel', 'message-panel.png');
+        this.load.image('jejak-button-back', 'button-back.png');
+        this.load.image('jejak-button-pause', 'button-pause.png');
+        this.load.image('jejak-button-resume', 'button-resume.png');
+        this.load.image('jejak-button-quit', 'button-quit.png');
+        this.load.image('jejak-button-replay', 'button-replay.png');
+        this.load.image('jejak-button-muted', 'button-muted.png');
+        this.load.image('jejak-button-unmuted', 'button-unmuted.png');
+        // Alias yang diharapkan PauseOverlay; nama runtime mengikuti makna ikon.
+        this.load.image('jejak-tombol-play-game', 'button-resume.png');
+        this.load.image('jejak-tombol-replay', 'button-replay.png');
+        this.load.image('jejak-tombol-quit', 'button-quit.png');
+        this.load.image('jejak-tombol-mute', 'button-muted.png');
+        this.load.image('jejak-tombol-unmute', 'button-unmuted.png');
 
         // Gameplay Level 1-10
         this.load.setPath('assets/gameplay');

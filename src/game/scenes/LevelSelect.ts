@@ -72,10 +72,19 @@ export class LevelSelect extends Scene {
             });
         }
 
-        // Jejak Pandawa (terkunci pada MVP awal).
-        new SpriteButton(this, 640, 575, 'jejak-locked', () => {
+        const jejakTexture = progress.jejakPandawaUnlocked
+            ? 'jejak-unlocked'
+            : 'jejak-locked';
+        new SpriteButton(this, 640, 575, jejakTexture, () => {
             if (this.modal.isOpen) return;
-            this.modal.show('Jejak Pandawa terbuka setelah seluruh misi selesai.');
+            if (progress.jejakPandawaUnlocked) {
+                this.cameras.main.fadeOut(220, 255, 244, 214);
+                this.cameras.main.once('camerafadeoutcomplete', () => {
+                    this.scene.start('JejakPandawa');
+                });
+            } else {
+                this.modal.show('Jejak Pandawa terbuka setelah seluruh misi selesai.');
+            }
         });
     }
 

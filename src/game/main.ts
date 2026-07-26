@@ -8,6 +8,9 @@ import { LevelSelect } from './scenes/LevelSelect';
 import { IntroCharacter } from './scenes/IntroCharacter';
 import { Gameplay } from './scenes/Gameplay';
 import { Result } from './scenes/Result';
+import { MissionReport } from './scenes/MissionReport';
+import { JejakPandawa } from './scenes/JejakPandawa';
+import { JejakResult } from './scenes/JejakResult';
 
 //  Baseline HD (disetujui pengguna): backing 2560x1440 dengan kamera zoom 2.
 //  Seluruh layout tetap memakai koordinat logis 1280x720 (Game Bible);
@@ -39,7 +42,10 @@ const config: Phaser.Types.Core.GameConfig = {
         LevelSelect,
         IntroCharacter,
         Gameplay,
-        Result
+        Result,
+        MissionReport,
+        JejakPandawa,
+        JejakResult
     ]
 };
 

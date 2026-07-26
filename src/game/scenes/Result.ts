@@ -71,13 +71,26 @@ export class Result extends Scene {
         makeText(this, 640, 229, `Terbaik: ${bestStars}/3`, 10, { color: '#ffd24a' })
             .setOrigin(0.5);
 
-        // Tombol: BACK, REPLAY (ikon), NEXT (bila level berikut playable & terbuka).
+        // Tombol: BACK, REPLAY (ikon), NEXT (level berikut atau Rapor Misi).
         new SpriteButton(this, 500, 596, `${prefix}-tombol-back`, () => this.goLevelSelect(), 147, 46);
         new SpriteButton(this, 640, 596, `${prefix}-tombol-replay`, () => this.replay(), 46, 46);
 
         const nextId = this.levelId + 1;
         const nextUnlocked = (progress?.highestUnlockedLevel ?? 1) >= nextId;
-        if (nextId <= PLAYABLE_LEVELS && nextUnlocked) {
+        const allMissionLevelsCompleted = this.levelId === 10
+            && progress !== null
+            && ProgressStorageService.hasCompletedAllLevels(progress);
+        if (allMissionLevelsCompleted) {
+            new SpriteButton(
+                this,
+                780,
+                596,
+                `${prefix}-tombol-next`,
+                () => this.goMissionReport(),
+                147,
+                46
+            );
+        } else if (nextId <= PLAYABLE_LEVELS && nextUnlocked) {
             new SpriteButton(this, 780, 596, `${prefix}-tombol-next`, () => this.goNext(nextId), 147, 46);
         }
     }
@@ -104,6 +117,10 @@ export class Result extends Scene {
 
     private goLevelSelect(): void {
         this.fadeTo(() => this.scene.start('LevelSelect'));
+    }
+
+    private goMissionReport(): void {
+        this.fadeTo(() => this.scene.start('MissionReport'));
     }
 
     private fadeTo(action: () => void): void {

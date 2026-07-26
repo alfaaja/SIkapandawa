@@ -118,6 +118,8 @@ export interface SegmentDefinition {
 export interface PlayerDefinition {
     idleTexture: string;
     seatedTexture: string;
+    seatedScale?: number;
+    seatedYOffset?: number;
     walkRightTextures: string[];
     walkLeftTextures: string[];
     walkSpeed: number;
