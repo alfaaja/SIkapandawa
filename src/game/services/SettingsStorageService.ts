@@ -1,6 +1,6 @@
 /**
  * SettingsStorageService — pengaturan global (mute) di key sikapandawa.settings.
- * Audio final belum ada pada Progress 03; state mute disimpan agar konsisten.
+ * State mute diterapkan ke sound manager dan disimpan agar konsisten antar-sesi.
  */
 
 export interface LocalSettings {

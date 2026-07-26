@@ -8,6 +8,7 @@ import {
     ProgressService, TOTAL_LEVELS, PLAYABLE_LEVELS
 } from '../services/ProgressService';
 import { LEVELS } from '../data/levels';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 
 const GRID_XS = [380, 510, 640, 770, 900];
 const GRID_ROW_YS = [240, 350];
@@ -33,6 +34,7 @@ export class LevelSelect extends Scene {
         }
 
         applyLogicalCamera(this);
+        BackgroundMusicService.stop(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
         addBackground(this, 'bg-level');
         this.modal = new MessageModal(this);

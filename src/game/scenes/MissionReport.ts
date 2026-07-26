@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import { getMissionRank } from '../data/missionReport';
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 import { applyLogicalCamera, DESIGN_HEIGHT, DESIGN_WIDTH } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
@@ -25,6 +26,7 @@ export class MissionReport extends Scene {
         }
 
         applyLogicalCamera(this);
+        BackgroundMusicService.ensurePlaying(this);
         let progress = ProgressService.getProgress(account.id);
         if (!ProgressService.hasCompletedAllLevels(progress)) {
             this.scene.start('LevelSelect');

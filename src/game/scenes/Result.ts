@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { applyLogicalCamera, DESIGN_WIDTH, DESIGN_HEIGHT } from '../ui/backdrop';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
 import { LEVELS } from '../data/levels';
@@ -29,6 +30,7 @@ export class Result extends Scene {
     }
 
     create(): void {
+        BackgroundMusicService.ensurePlaying(this);
         applyLogicalCamera(this);
         this.cameras.main.fadeIn(280, 20, 6, 40);
 

@@ -1,6 +1,7 @@
 import { Scene, GameObjects } from 'phaser';
 import { addBackground, applyLogicalCamera, DESIGN_WIDTH } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 
 const BAR_WIDTH = 420;
 const BAR_HEIGHT = 16;
@@ -123,6 +124,7 @@ export class Preloader extends Scene {
     }
 
     init(): void {
+        BackgroundMusicService.stop(this);
         applyLogicalCamera(this);
         addBackground(this, 'bg-splash');
 
@@ -145,6 +147,7 @@ export class Preloader extends Scene {
     }
 
     preload(): void {
+        this.load.audio('backsound-game', 'assets/audio/backsound-game.mp3');
         this.load.setPath('assets/frontend');
 
         // Auth (MainMenu, Register, Login)

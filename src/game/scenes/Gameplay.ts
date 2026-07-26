@@ -6,6 +6,7 @@ import { LEVELS, speakersFor } from '../data/levels';
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
 import { SettingsStorageService } from '../services/SettingsStorageService';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 import { DialogBox } from '../ui/DialogBox';
 import { ChoicePanel } from '../ui/ChoicePanel';
 import { TouchControls } from '../ui/TouchControls';
@@ -106,6 +107,7 @@ export class Gameplay extends Scene {
         this.worldLayer = this.add.container(0, 0).setDepth(0);
 
         const muted = SettingsStorageService.getSettings().muted;
+        BackgroundMusicService.restartForLevel(this);
         this.touch = new TouchControls(this, this.prefix);
         this.hud = new Hud(this, this.prefix, this.level.id, account.username, muted, {
             onPause: () => this.pauseGame(),
@@ -507,6 +509,7 @@ export class Gameplay extends Scene {
     private toggleMute(): void {
         const muted = !SettingsStorageService.getSettings().muted;
         SettingsStorageService.setMuted(muted);
+        BackgroundMusicService.setMuted(this, muted);
         this.hud.setMuted(muted);
         this.pauseOverlay.setMuted(muted);
     }

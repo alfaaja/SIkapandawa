@@ -8,6 +8,7 @@ import {
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
 import { SettingsStorageService } from '../services/SettingsStorageService';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
 import { PauseOverlay } from '../ui/PauseOverlay';
@@ -89,6 +90,7 @@ export class JejakPandawa extends Scene {
         this.resetRunState();
 
         applyLogicalCamera(this);
+        BackgroundMusicService.ensurePlaying(this);
         addBackground(this, 'jejak-background');
         this.cameras.main.fadeIn(220, 245, 255, 214);
 
@@ -381,6 +383,7 @@ export class JejakPandawa extends Scene {
     private toggleMute(): void {
         const muted = !SettingsStorageService.getSettings().muted;
         SettingsStorageService.setMuted(muted);
+        BackgroundMusicService.setMuted(this, muted);
         this.muteButton.image.setTexture(
             muted ? 'jejak-button-muted' : 'jejak-button-unmuted'
         );

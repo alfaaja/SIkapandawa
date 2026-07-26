@@ -1101,11 +1101,15 @@ export const LEVEL_5: LevelDefinition = {
 
 const LV6_SEATED_Y = 536;
 const LV6_DESK_Y = 495;
+// Kanvas meja tumpah 22 px lebih tinggi, sedangkan pola mejanya hanya bergeser
+// 12 px pada aset runtime. Kompensasi 5 px menjaga badan meja tetap bertumpuk
+// tepat dengan meja buku saat texture berganti pada scale 0.5.
+const LV6_SPILLED_DESK_Y = LV6_DESK_Y + 5;
 const LV6_DESK_CENTER_X = 870;
 const LV6_KID_SEATS = [266, 484, 702, 920];
 const LV6_PLAYER_SEAT = 1139;
 const LV6_TEACHER_SEAT = 1463;
-const LV6_TEACHER_DESK_X = 1377;
+const LV6_TEACHER_DESK_X = 1345;
 
 function lv6Furniture(tableTexture: string): ObjectPlacement[] {
     return [
@@ -1167,7 +1171,7 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
                 id: 'meja-kelas-tumpah',
                 texture: 'meja-buku-tumpah',
                 x: LV6_DESK_CENTER_X,
-                y: LV6_DESK_Y,
+                y: LV6_SPILLED_DESK_Y,
                 depth: 8,
                 hidden: true
             }

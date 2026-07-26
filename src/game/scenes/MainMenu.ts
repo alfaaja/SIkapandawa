@@ -4,6 +4,7 @@ import { SpriteButton } from '../ui/SpriteButton';
 import { makeText } from '../ui/fonts';
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 
 const PANEL_CENTER_X = 648;
 
@@ -16,6 +17,7 @@ export class MainMenu extends Scene {
     }
 
     create(): void {
+        BackgroundMusicService.stop(this);
         applyLogicalCamera(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
         addBackground(this, 'bg-panel-empty');

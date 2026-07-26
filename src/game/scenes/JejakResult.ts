@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import { getJejakResultTier } from '../data/jejakPandawa';
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 import { addBackground, applyLogicalCamera, DESIGN_HEIGHT, DESIGN_WIDTH } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
@@ -34,6 +35,7 @@ export class JejakResult extends Scene {
         }
 
         applyLogicalCamera(this);
+        BackgroundMusicService.ensurePlaying(this);
         addBackground(this, 'jejak-background');
         this.add.rectangle(
             DESIGN_WIDTH / 2,

@@ -6,6 +6,7 @@ import { MessageModal } from '../ui/MessageModal';
 import { AuthForm } from '../ui/AuthForm';
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
+import { BackgroundMusicService } from '../services/BackgroundMusicService';
 
 const PANEL_CENTER_X = 648;
 const TEXTBOX_X = 445;   // kiri sprite textbox-daftar (406x295)
@@ -29,6 +30,7 @@ export class Register extends Scene {
     }
 
     create(): void {
+        BackgroundMusicService.stop(this);
         this.processing = false;
         applyLogicalCamera(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
