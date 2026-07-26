@@ -168,5 +168,18 @@ export const AuthStorageService = {
     /** Logout: hanya menghapus akun aktif, tidak menghapus akun/progress. */
     clearActiveAccount(): void {
         safeRemove(KEYS.activeAccountId);
+    },
+
+    /**
+     * Bersihkan kredensial legacy hanya setelah akun dan progress remote
+     * terverifikasi. Data profil lokal tetap dipertahankan sebagai fallback.
+     */
+    removeLegacyCredentials(accountId: string): boolean {
+        const accounts = this.listAccounts();
+        const account = accounts.find((item) => item.id === accountId);
+        if (!account) return false;
+        account.passwordSalt = '';
+        account.passwordHash = '';
+        return safeSet(KEYS.accounts, JSON.stringify(accounts));
     }
 };

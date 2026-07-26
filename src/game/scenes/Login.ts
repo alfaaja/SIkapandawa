@@ -4,7 +4,8 @@ import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
 import { MessageModal } from '../ui/MessageModal';
 import { AuthForm } from '../ui/AuthForm';
-import { AuthStorageService } from '../services/AuthStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 
 const PANEL_CENTER_X = 648;
 const TEXTBOX_X = 445;   // kiri sprite textbox-masuk (406x181)
@@ -85,22 +86,16 @@ export class Login extends Scene {
         this.submitButton.setEnabled(false);
         this.form.setEnabled(false);
 
-        const account = await AuthStorageService.verifyLogin(username, password);
-        if (!account) {
+        const result = await AuthService.login(username, password);
+        if (!result.ok) {
             this.processing = false;
             this.submitButton.setEnabled(true);
             this.form.setEnabled(true);
-            this.showFormError('Akun tidak ditemukan atau password salah.');
+            this.showFormError(result.error);
             return;
         }
 
-        if (!AuthStorageService.setActiveAccount(account.id)) {
-            this.processing = false;
-            this.submitButton.setEnabled(true);
-            this.form.setEnabled(true);
-            this.showFormError('Penyimpanan browser tidak tersedia. Coba lagi.');
-            return;
-        }
+        await ProgressService.hydrate(result.account.id);
 
         this.goTo('LevelSelect');
     }

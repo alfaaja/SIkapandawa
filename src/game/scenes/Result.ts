@@ -3,8 +3,8 @@ import { applyLogicalCamera, DESIGN_WIDTH, DESIGN_HEIGHT } from '../ui/backdrop'
 import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
 import { LEVELS } from '../data/levels';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService, PLAYABLE_LEVELS } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService, PLAYABLE_LEVELS } from '../services/ProgressService';
 
 export interface ResultData {
     levelId: number;
@@ -34,8 +34,8 @@ export class Result extends Scene {
 
         const level = LEVELS[this.levelId];
         const prefix = level?.assetPrefix ?? 'lv1';
-        const account = AuthStorageService.getActiveAccount();
-        const progress = account ? ProgressStorageService.getProgress(account.id) : null;
+        const account = AuthService.getActiveAccount();
+        const progress = account ? ProgressService.getProgress(account.id) : null;
         const bestStars = progress?.levelStars[this.levelId] ?? this.runStars;
 
         // Latar world diredupkan (sesuai preview result).
@@ -79,7 +79,7 @@ export class Result extends Scene {
         const nextUnlocked = (progress?.highestUnlockedLevel ?? 1) >= nextId;
         const allMissionLevelsCompleted = this.levelId === 10
             && progress !== null
-            && ProgressStorageService.hasCompletedAllLevels(progress);
+            && ProgressService.hasCompletedAllLevels(progress);
         if (allMissionLevelsCompleted) {
             new SpriteButton(
                 this,
@@ -100,12 +100,12 @@ export class Result extends Scene {
     }
 
     private goNext(nextId: number): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         const nextLevel = LEVELS[nextId];
         const introId = nextLevel?.introCharacterId;
         const needsIntro = account !== null
             && introId !== undefined
-            && !ProgressStorageService.hasSeenIntro(account.id, introId);
+            && !ProgressService.hasSeenIntro(account.id, introId);
         this.fadeTo(() => {
             if (needsIntro && introId) {
                 this.scene.start('IntroCharacter', { levelId: nextId, characterId: introId });

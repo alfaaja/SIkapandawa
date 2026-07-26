@@ -4,8 +4,8 @@ import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
 import { CHARACTER_INTROS } from '../data/characters';
 import { LEVELS } from '../data/levels';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 
 export interface IntroCharacterData {
     levelId: number;
@@ -67,9 +67,9 @@ export class IntroCharacter extends Scene {
     }
 
     private play(): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (account) {
-            ProgressStorageService.markIntroSeen(account.id, this.characterId);
+            ProgressService.markIntroSeen(account.id, this.characterId);
         }
         this.cameras.main.fadeOut(220, 20, 6, 40);
         this.cameras.main.once('camerafadeoutcomplete', () => {

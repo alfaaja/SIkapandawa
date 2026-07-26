@@ -5,8 +5,8 @@ import {
     JejakBasket,
     JejakCard
 } from '../data/jejakPandawa';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 import { SettingsStorageService } from '../services/SettingsStorageService';
 import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
@@ -75,12 +75,12 @@ export class JejakPandawa extends Scene {
     }
 
     create(): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (!account) {
             this.scene.start('MainMenu');
             return;
         }
-        const progress = ProgressStorageService.getProgress(account.id);
+        const progress = ProgressService.getProgress(account.id);
         if (!progress.jejakPandawaUnlocked) {
             this.scene.start('LevelSelect');
             return;
@@ -409,7 +409,7 @@ export class JejakPandawa extends Scene {
         this.state = 'COMPLETE';
         this.inputLocked = true;
         this.destroyCard();
-        ProgressStorageService.recordJejakResult(this.accountId, this.score);
+        ProgressService.recordJejakResult(this.accountId, this.score);
         this.cameras.main.fadeOut(220, 20, 6, 40);
         this.cameras.main.once('camerafadeoutcomplete', () => {
             this.scene.start('JejakResult', { score: this.score });

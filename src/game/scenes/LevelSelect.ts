@@ -3,10 +3,10 @@ import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backd
 import { SpriteButton } from '../ui/SpriteButton';
 import { MessageModal } from '../ui/MessageModal';
 import { makeText } from '../ui/fonts';
-import { AuthStorageService } from '../services/AuthStorageService';
+import { AuthService } from '../services/AuthService';
 import {
-    ProgressStorageService, TOTAL_LEVELS, PLAYABLE_LEVELS
-} from '../services/ProgressStorageService';
+    ProgressService, TOTAL_LEVELS, PLAYABLE_LEVELS
+} from '../services/ProgressService';
 import { LEVELS } from '../data/levels';
 
 const GRID_XS = [380, 510, 640, 770, 900];
@@ -25,7 +25,7 @@ export class LevelSelect extends Scene {
     }
 
     create(): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (!account) {
             // Tidak ada akun aktif (mis. storage dibersihkan) — kembali ke menu.
             this.scene.start('MainMenu');
@@ -37,17 +37,17 @@ export class LevelSelect extends Scene {
         addBackground(this, 'bg-level');
         this.modal = new MessageModal(this);
 
-        const progress = ProgressStorageService.getProgress(account.id);
-        const totalStars = ProgressStorageService.totalStars(progress);
+        const progress = ProgressService.getProgress(account.id);
+        const totalStars = ProgressService.totalStars(progress);
 
         // Panel user (kiri atas): nama pada kotak lavender, total bintang di area ungu.
         const panel = addImageIfExists(this, 18 + 190, 22 + 24, 'panel-user');
         if (!panel) {
             this.add.rectangle(208, 46, 380, 47, 0x630995).setStrokeStyle(3, 0x3a0a52);
         }
-        const displayName = account.displayName.length > 16
-            ? `${account.displayName.slice(0, 15)}…`
-            : account.displayName;
+        const displayName = account.username.length > 16
+            ? `${account.username.slice(0, 15)}…`
+            : account.username;
         makeText(this, 151, 45, displayName, 13).setOrigin(0.5);
         makeText(this, 367, 45, String(totalStars), 15, { color: '#ffffff' }).setOrigin(0.5);
 
@@ -103,7 +103,7 @@ export class LevelSelect extends Scene {
         const definition = LEVELS[level];
         const introId = definition?.introCharacterId;
         const needIntro = introId !== undefined
-            && !ProgressStorageService.hasSeenIntro(accountId, introId);
+            && !ProgressService.hasSeenIntro(accountId, introId);
 
         this.cameras.main.fadeOut(220, 255, 244, 214);
         this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -118,10 +118,11 @@ export class LevelSelect extends Scene {
     private logout(): void {
         if (this.modal.isOpen) return;
         // Logout hanya menghapus akun aktif; akun dan progress tetap tersimpan.
-        AuthStorageService.clearActiveAccount();
-        this.cameras.main.fadeOut(200, 255, 244, 214);
-        this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start('MainMenu');
+        void AuthService.logout().finally(() => {
+            this.cameras.main.fadeOut(200, 255, 244, 214);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start('MainMenu');
+            });
         });
     }
 }

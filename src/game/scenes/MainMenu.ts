@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backdrop';
 import { SpriteButton } from '../ui/SpriteButton';
 import { makeText } from '../ui/fonts';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 
 const PANEL_CENTER_X = 648;
 
@@ -32,6 +34,12 @@ export class MainMenu extends Scene {
         });
         new SpriteButton(this, PANEL_CENTER_X + 90, 565, 'button-masuk', () => {
             this.goTo('Login');
+        });
+
+        void AuthService.restoreSession().then(async (account) => {
+            if (!account || !this.scene.isActive()) return;
+            await ProgressService.hydrate(account.id);
+            if (this.scene.isActive()) this.goTo('LevelSelect');
         });
     }
 

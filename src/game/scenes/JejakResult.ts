@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { getJejakResultTier } from '../data/jejakPandawa';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 import { addBackground, applyLogicalCamera, DESIGN_HEIGHT, DESIGN_WIDTH } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
@@ -22,12 +22,12 @@ export class JejakResult extends Scene {
     }
 
     create(): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (!account) {
             this.scene.start('MainMenu');
             return;
         }
-        const progress = ProgressStorageService.getProgress(account.id);
+        const progress = ProgressService.getProgress(account.id);
         if (!progress.jejakPandawaUnlocked) {
             this.scene.start('LevelSelect');
             return;

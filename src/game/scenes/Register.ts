@@ -4,8 +4,8 @@ import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
 import { MessageModal } from '../ui/MessageModal';
 import { AuthForm } from '../ui/AuthForm';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 
 const PANEL_CENTER_X = 648;
 const TEXTBOX_X = 445;   // kiri sprite textbox-daftar (406x295)
@@ -80,7 +80,7 @@ export class Register extends Scene {
         this.submitButton.setEnabled(false);
         this.form.setEnabled(false);
 
-        const result = await AuthStorageService.register(
+        const result = await AuthService.register(
             this.form.value('displayName'),
             this.form.value('username'),
             password
@@ -94,14 +94,7 @@ export class Register extends Scene {
             return;
         }
 
-        ProgressStorageService.createInitialProgress(result.account.id);
-        if (!AuthStorageService.setActiveAccount(result.account.id)) {
-            this.processing = false;
-            this.submitButton.setEnabled(true);
-            this.form.setEnabled(true);
-            this.showFormError('Penyimpanan browser tidak tersedia. Coba lagi.');
-            return;
-        }
+        await ProgressService.hydrate(result.account.id);
 
         this.goTo('LevelSelect');
     }

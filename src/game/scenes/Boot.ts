@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { ensureFontsLoaded } from '../ui/fonts';
+import { ProgressSyncService } from '../services/ProgressSyncService';
 
 /**
  * Boot — konfigurasi awal ringan: memuat background splash dan menunggu
@@ -15,6 +16,7 @@ export class Boot extends Scene {
     }
 
     create(): void {
+        ProgressSyncService.initialize();
         ensureFontsLoaded().then(() => {
             this.scene.start('Preloader');
         });

@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { getMissionRank } from '../data/missionReport';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 import { applyLogicalCamera, DESIGN_HEIGHT, DESIGN_WIDTH } from '../ui/backdrop';
 import { makeText } from '../ui/fonts';
 import { SpriteButton } from '../ui/SpriteButton';
@@ -18,25 +18,25 @@ export class MissionReport extends Scene {
     }
 
     create(): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (!account) {
             this.scene.start('MainMenu');
             return;
         }
 
         applyLogicalCamera(this);
-        let progress = ProgressStorageService.getProgress(account.id);
-        if (!ProgressStorageService.hasCompletedAllLevels(progress)) {
+        let progress = ProgressService.getProgress(account.id);
+        if (!ProgressService.hasCompletedAllLevels(progress)) {
             this.scene.start('LevelSelect');
             return;
         }
-        if (!ProgressStorageService.unlockJejakPandawa(account.id)) {
+        if (!ProgressService.unlockJejakPandawa(account.id)) {
             this.scene.start('LevelSelect');
             return;
         }
-        progress = ProgressStorageService.getProgress(account.id);
+        progress = ProgressService.getProgress(account.id);
 
-        const totalStars = Math.max(0, Math.min(30, ProgressStorageService.totalStars(progress)));
+        const totalStars = Math.max(0, Math.min(30, ProgressService.totalStars(progress)));
         const rank = getMissionRank(totalStars);
 
         this.cameras.main.fadeIn(FADE_MS, 20, 6, 40);

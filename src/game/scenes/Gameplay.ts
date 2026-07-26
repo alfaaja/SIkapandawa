@@ -3,8 +3,8 @@ import {
     GameplayState, LevelDefinition, SegmentDefinition, InteractionDefinition, ScriptStep
 } from '../types/gameplay';
 import { LEVELS, speakersFor } from '../data/levels';
-import { AuthStorageService } from '../services/AuthStorageService';
-import { ProgressStorageService } from '../services/ProgressStorageService';
+import { AuthService } from '../services/AuthService';
+import { ProgressService } from '../services/ProgressService';
 import { SettingsStorageService } from '../services/SettingsStorageService';
 import { DialogBox } from '../ui/DialogBox';
 import { ChoicePanel } from '../ui/ChoicePanel';
@@ -90,7 +90,7 @@ export class Gameplay extends Scene {
     }
 
     create(): void {
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (!account) {
             this.scene.start('MainMenu');
             return;
@@ -433,9 +433,9 @@ export class Gameplay extends Scene {
 
     private completeLevel(): void {
         this.state = 'COMPLETE';
-        const account = AuthStorageService.getActiveAccount();
+        const account = AuthService.getActiveAccount();
         if (account) {
-            ProgressStorageService.recordLevelResult(account.id, this.level.id, this.starsEarned);
+            ProgressService.recordLevelResult(account.id, this.level.id, this.starsEarned);
         }
         this.scene.start('Result', { levelId: this.level.id, runStars: this.starsEarned });
     }

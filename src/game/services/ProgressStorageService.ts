@@ -35,7 +35,7 @@ function progressKey(accountId: string): string {
     return `${PROGRESS_KEY_PREFIX}${accountId}`;
 }
 
-function initialProgress(): LocalProgress {
+export function createEmptyProgress(): LocalProgress {
     const levelStars: Record<number, number> = {};
     for (let level = 1; level <= TOTAL_LEVELS; level++) {
         levelStars[level] = 0;
@@ -56,7 +56,7 @@ function initialProgress(): LocalProgress {
  * tanpa menghapus field lain — akun dan bintang tidak pernah hilang.
  */
 function sanitize(raw: unknown): LocalProgress {
-    const progress = initialProgress();
+    const progress = createEmptyProgress();
     if (typeof raw !== 'object' || raw === null) return progress;
     const candidate = raw as Record<string, unknown>;
 
@@ -104,13 +104,13 @@ export const ProgressStorageService = {
         try {
             raw = window.localStorage.getItem(progressKey(accountId));
         } catch {
-            return initialProgress();
+            return createEmptyProgress();
         }
-        if (!raw) return initialProgress();
+        if (!raw) return createEmptyProgress();
         try {
             return sanitize(JSON.parse(raw));
         } catch {
-            return initialProgress();
+            return createEmptyProgress();
         }
     },
 
@@ -125,7 +125,7 @@ export const ProgressStorageService = {
 
     /** Dipanggil saat register: pastikan progress awal tersimpan. */
     createInitialProgress(accountId: string): boolean {
-        return this.saveProgress(accountId, initialProgress());
+        return this.saveProgress(accountId, createEmptyProgress());
     },
 
     totalStars(progress: LocalProgress): number {
@@ -219,5 +219,42 @@ export const ProgressStorageService = {
             unlockedLevel,
             saved
         };
+    },
+
+    mergeProgress(local: LocalProgress, incoming: LocalProgress): LocalProgress {
+        const merged = createEmptyProgress();
+        merged.highestUnlockedLevel = Math.max(
+            local.highestUnlockedLevel,
+            incoming.highestUnlockedLevel
+        );
+        for (let level = 1; level <= TOTAL_LEVELS; level++) {
+            merged.levelStars[level] = Math.max(
+                local.levelStars[level] ?? 0,
+                incoming.levelStars[level] ?? 0
+            );
+        }
+        merged.introSeen = Array.from(new Set([
+            ...local.introSeen,
+            ...incoming.introSeen
+        ])).sort();
+        merged.completedLevels = Array.from(new Set([
+            ...local.completedLevels,
+            ...incoming.completedLevels
+        ])).sort((a, b) => a - b);
+        merged.jejakPandawaUnlocked =
+            local.jejakPandawaUnlocked || incoming.jejakPandawaUnlocked;
+        merged.jejakPandawaBestScore = Math.max(
+            local.jejakPandawaBestScore,
+            incoming.jejakPandawaBestScore
+        );
+        return merged;
+    },
+
+    copyProgress(sourceAccountId: string, targetAccountId: string): LocalProgress {
+        const source = this.getProgress(sourceAccountId);
+        const target = this.getProgress(targetAccountId);
+        const merged = this.mergeProgress(target, source);
+        this.saveProgress(targetAccountId, merged);
+        return merged;
     }
 };
