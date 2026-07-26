@@ -6,6 +6,7 @@ export interface LocalProgress {
     highestUnlockedLevel: number;
     levelStars: Record<number, number>;
     introSeen: string[];
+    completedLevels: number[];
     jejakPandawaUnlocked: boolean;
 }
 
@@ -19,8 +20,8 @@ export interface LevelResultOutcome {
 
 const PROGRESS_KEY_PREFIX = 'sikapandawa.progress.';
 export const TOTAL_LEVELS = 10;
-/** Level yang memiliki gameplay sampai Progress 06. */
-export const PLAYABLE_LEVELS = 8;
+/** Level yang memiliki gameplay sampai Progress 07. */
+export const PLAYABLE_LEVELS = 10;
 
 function progressKey(accountId: string): string {
     return `${PROGRESS_KEY_PREFIX}${accountId}`;
@@ -35,6 +36,7 @@ function initialProgress(): LocalProgress {
         highestUnlockedLevel: 1,
         levelStars,
         introSeen: [],
+        completedLevels: [],
         jejakPandawaUnlocked: false
     };
 }
@@ -68,6 +70,14 @@ function sanitize(raw: unknown): LocalProgress {
         progress.introSeen = candidate.introSeen.filter(
             (v): v is string => typeof v === 'string'
         );
+    }
+
+    if (Array.isArray(candidate.completedLevels)) {
+        progress.completedLevels = Array.from(new Set(
+            candidate.completedLevels
+                .map((value) => Number(value))
+                .filter((value) => Number.isInteger(value) && value >= 1 && value <= TOTAL_LEVELS)
+        )).sort((a, b) => a - b);
     }
 
     progress.jejakPandawaUnlocked = candidate.jejakPandawaUnlocked === true;
@@ -136,6 +146,15 @@ export const ProgressStorageService = {
         const previousBest = progress.levelStars[levelId] ?? 0;
         const bestStars = Math.max(previousBest, clamped);
         progress.levelStars[levelId] = bestStars;
+        if (
+            Number.isInteger(levelId)
+            && levelId >= 1
+            && levelId <= TOTAL_LEVELS
+            && !progress.completedLevels.includes(levelId)
+        ) {
+            progress.completedLevels.push(levelId);
+            progress.completedLevels.sort((a, b) => a - b);
+        }
 
         let unlockedLevel: number | null = null;
         if (bestStars >= 1 && levelId < TOTAL_LEVELS) {

@@ -1,4 +1,4 @@
-/** Tipe data gameplay Level 1–8 (data-driven, satu Gameplay scene generik). */
+/** Tipe data gameplay Level 1–10 (data-driven, satu Gameplay scene generik). */
 
 export type GameplayState =
     | 'SCRIPTED'
@@ -100,6 +100,8 @@ export interface SegmentDefinition {
     id: string;
     order: number;
     title: string;
+    /** Override background per segmen; key tanpa prefix level. Default: 'bg'. */
+    backgroundTexture?: string;
     spawnX: number;
     /** Pemain mulai dalam keadaan duduk (L1-S3). */
     spawnSeated?: boolean;

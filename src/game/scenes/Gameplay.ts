@@ -124,9 +124,10 @@ export class Gameplay extends Scene {
     private buildSegment(): void {
         this.destroyWorld();
         const seg = this.segment;
+        const backgroundKey = `${this.prefix}-${seg.backgroundTexture ?? 'bg'}`;
 
-        if (this.textures.exists(`${this.prefix}-bg`)) {
-            const bg = this.add.image(0, 0, `${this.prefix}-bg`).setOrigin(0, 0).setDepth(0);
+        if (this.textures.exists(backgroundKey)) {
+            const bg = this.add.image(0, 0, backgroundKey).setOrigin(0, 0).setDepth(0);
             bg.setDisplaySize(this.level.worldWidth, this.level.worldHeight);
             this.addWorld(bg);
         }

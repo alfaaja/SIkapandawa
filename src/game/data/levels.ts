@@ -1389,6 +1389,353 @@ export const LEVEL_8: LevelDefinition = {
         'belajar dan meraih cita-cita.'
 };
 
+export const SPEAKERS_LV9: Record<string, SpeakerStyle> = {
+    'sadewa': { displayName: 'Sadewa', textboxTexture: 'lv9-textboxt-sadewa' },
+    'ibu': { displayName: 'Ibu', textboxTexture: 'lv9-textboxt-ibu' }
+};
+
+export const SPEAKERS_LV10: Record<string, SpeakerStyle> = {
+    'sadewa': { displayName: 'Sadewa', textboxTexture: 'lv10-textboxt-sadewa' },
+    'pak-guru': { displayName: 'Pak Guru', textboxTexture: 'lv10-textboxt-pak-guru' }
+};
+
+const SADEWA_PLAYER = {
+    idleTexture: 'sadewa',
+    seatedTexture: 'sadewa',
+    walkRightTextures: [
+        'sadewa-langkah-kanan-1', 'sadewa-langkah-kanan-2',
+        'sadewa-langkah-kanan-3', 'sadewa-langkah-kanan-4'
+    ],
+    walkLeftTextures: [
+        'sadewa-langkah-kiri-1', 'sadewa-langkah-kiri-2',
+        'sadewa-langkah-kiri-3', 'sadewa-langkah-kiri-4'
+    ],
+    walkSpeed: 260,
+    animFps: 9
+};
+
+const LV9_SEGMENTS: SegmentDefinition[] = [
+    {
+        id: 'lv9-event-1',
+        order: 1,
+        title: 'Segera Mandi',
+        backgroundTexture: 'bg-scene-1',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [{
+            id: 'lv9-s1-ibu',
+            order: 1,
+            triggerX: 680,
+            markerY: 205,
+            interactionRadius: 105,
+            dialog: [{
+                speaker: 'ibu',
+                text: 'Sadewa anakku, ini sudah sore. Segeralah mandi terlebih dahulu, ya.'
+            }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Mendengarkan Ibu dan segera mandi.' },
+                    { id: 'B', text: 'Menolak lalu pergi menonton televisi.' },
+                    { id: 'C', text: 'Mengiyakan, tetapi terus menunda mandi.' }
+                ],
+                correctChoiceId: 'A',
+                feedback: {
+                    A: { speaker: 'ibu', correct: true, text: 'Bagus, Sadewa. Jangan lupa mandi dengan bersih, ya.' },
+                    B: { speaker: 'ibu', correct: false, text: 'Nasihat baik dari orang tua seharusnya didengarkan, bukan ditolak.' },
+                    C: { speaker: 'ibu', correct: false, text: 'Menunda-nunda dapat menjadi kebiasaan. Segeralah melakukan tugas yang baik.' }
+                }
+            }
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv9-event-2',
+        order: 2,
+        title: 'Mencuci Pakaian Kotor',
+        backgroundTexture: 'bg-scene-2',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [{
+            id: 'baju-kotor',
+            texture: 'baju-kotor',
+            x: 1230,
+            y: GROUND_Y,
+            depth: 8
+        }],
+        interactions: [{
+            id: 'lv9-s2-baju-kotor',
+            order: 1,
+            triggerX: 1230,
+            markerY: 420,
+            interactionRadius: 100,
+            dialog: [{
+                speaker: 'ibu',
+                text: 'Sadewa anakku, pakaian kotormu sudah menumpuk. Segera cuci, ya.'
+            }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Mendengarkan, tetapi tetap menunda mencuci.' },
+                    { id: 'B', text: 'Mengabaikan perkataan Ibu.' },
+                    { id: 'C', text: 'Mendengarkan Ibu dan segera mencuci tanpa menunda.' }
+                ],
+                correctChoiceId: 'C',
+                feedback: {
+                    A: { speaker: 'ibu', correct: false, text: 'Pakaian kotor yang dibiarkan dapat menjadi tempat kuman. Jangan menunda tugasmu.' },
+                    B: { speaker: 'ibu', correct: false, text: 'Jangan mengabaikan nasihat baik dari orang tua.' },
+                    C: { speaker: 'ibu', correct: true, text: 'Terima kasih sudah langsung mengerjakannya tanpa menunda. Anak mandiri!' }
+                }
+            },
+            onResolveHideObjects: ['baju-kotor']
+        }],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv9-event-3',
+        order: 3,
+        title: 'Membuang Sampah Makanan',
+        backgroundTexture: 'bg-scene-3',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [{
+            id: 'sampah-makanan',
+            texture: 'sampah-makanan',
+            x: 780,
+            y: GROUND_Y,
+            depth: 8
+        }],
+        interactions: [{
+            id: 'lv9-s3-sampah-makanan',
+            order: 1,
+            triggerX: 780,
+            markerY: 500,
+            interactionRadius: 95,
+            dialog: [{
+                speaker: 'ibu',
+                text: 'Sadewa anakku, sampah sisa makananmu berserakan. Segera buang ke tempat sampah, ya.'
+            }],
+            question: {
+                choices: [
+                    { id: 'A', text: 'Mendengarkan, tetapi tetap menunda membuangnya.' },
+                    { id: 'B', text: 'Mengabaikan Ibu dan membiarkan sampah.' },
+                    { id: 'C', text: 'Segera membuang sampah makanan ke tempatnya.' }
+                ],
+                correctChoiceId: 'C',
+                feedback: {
+                    A: { speaker: 'ibu', correct: false, text: 'Sampah makanan yang dibiarkan dapat mengundang serangga dan kuman. Jangan menunda.' },
+                    B: { speaker: 'ibu', correct: false, text: 'Kebersihan adalah tanggung jawabmu. Jangan mengabaikannya.' },
+                    C: { speaker: 'ibu', correct: true, text: 'Terima kasih sudah segera membuang sampahnya. Kamar menjadi bersih dan nyaman.' }
+                }
+            },
+            onResolveHideObjects: ['sampah-makanan']
+        }],
+        exitX: EXIT_X
+    }
+];
+
+export const LEVEL_9: LevelDefinition = {
+    id: 9,
+    title: 'Di Rumah',
+    subtitle: 'Tanggung Jawab Diri dan Kebersihan',
+    assetPrefix: 'lv9',
+    worldWidth: WORLD_WIDTH,
+    worldHeight: WORLD_HEIGHT,
+    groundY: GROUND_Y,
+    exitMarkerY: 190,
+    player: SADEWA_PLAYER,
+    segments: LV9_SEGMENTS,
+    conclusionTitle: 'KESIMPULAN NILAI TANGGUNG JAWAB DIRI',
+    conclusion:
+        'Pahlawan yang hebat dimulai dari hal kecil. Anak yang menjaga kebersihan ' +
+        'diri, segera menyelesaikan tugas, dan merawat barang miliknya adalah anak ' +
+        'mandiri yang siap meraih masa depan cerah.',
+    introCharacterId: 'sadewa'
+};
+
+// Preview Level 10 memperlihatkan briefing/duduk sebelum target kebersihan.
+// Furniture dan pose duduk tidak tersedia sebagai source terpisah, sehingga
+// setiap segmen memakai interaction briefing lalu interaction target.
+const LV10_BRIEFING_X = 1120;
+const LV10_BRIEFING_MARKER_Y = 340;
+
+const LV10_SEGMENTS: SegmentDefinition[] = [
+    {
+        id: 'lv10-event-1',
+        order: 1,
+        title: 'Mengepel Genangan Air',
+        backgroundTexture: 'bg-scene',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [
+            {
+                id: 'lv10-s1-briefing',
+                order: 1,
+                triggerX: LV10_BRIEFING_X,
+                markerY: LV10_BRIEFING_MARKER_Y,
+                interactionRadius: 90,
+                dialog: [{
+                    speaker: 'pak-guru',
+                    text: 'Sebelum pelajaran dimulai, anak yang piket tolong pel genangan air di depan pintu, ya.'
+                }]
+            },
+            {
+                id: 'lv10-s1-alat-pel',
+                order: 2,
+                triggerX: 420,
+                markerY: 315,
+                interactionRadius: 95,
+                dialog: [],
+                question: {
+                    choices: [
+                        { id: 'A', text: 'Mengabaikan genangan dan langsung duduk.' },
+                        { id: 'B', text: 'Mengambil alat pel dan membersihkan genangan sampai kering.' },
+                        { id: 'C', text: 'Mengeluh lalu menyuruh teman lain membersihkannya.' }
+                    ],
+                    correctChoiceId: 'B',
+                    feedback: {
+                        A: { speaker: 'pak-guru', correct: false, text: 'Genangan dapat membuat orang terpeleset. Anak piket harus bertanggung jawab membersihkannya.' },
+                        B: { speaker: 'pak-guru', correct: true, text: 'Bagus, Sadewa. Kelas menjadi aman dan bersih karena kamu menjalankan tugas piket.' },
+                        C: { speaker: 'pak-guru', correct: false, text: 'Jangan melempar tanggung jawab kepada teman ketika hari ini adalah jadwal piketmu.' }
+                    }
+                }
+            }
+        ],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv10-event-2',
+        order: 2,
+        title: 'Mengganti Kantong Sampah',
+        backgroundTexture: 'bg-scene',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [],
+        interactions: [
+            {
+                id: 'lv10-s2-briefing',
+                order: 1,
+                triggerX: LV10_BRIEFING_X,
+                markerY: LV10_BRIEFING_MARKER_Y,
+                interactionRadius: 90,
+                dialog: [{
+                    speaker: 'pak-guru',
+                    text: 'Tempat sampah di pojok kelas sudah penuh. Tolong buang kantongnya dan pasang plastik baru.'
+                }]
+            },
+            {
+                id: 'lv10-s2-tempat-sampah',
+                order: 2,
+                triggerX: 285,
+                markerY: 400,
+                interactionRadius: 95,
+                dialog: [],
+                question: {
+                    choices: [
+                        { id: 'A', text: 'Mengabaikan tempat sampah penuh dan langsung duduk.' },
+                        { id: 'B', text: 'Mengeluh lalu menyuruh teman lain membuangnya.' },
+                        { id: 'C', text: 'Membuang kantong sampah dan memasang plastik baru.' }
+                    ],
+                    correctChoiceId: 'C',
+                    feedback: {
+                        A: { speaker: 'pak-guru', correct: false, text: 'Tempat sampah penuh dapat menimbulkan bau dan menjadi sarang penyakit.' },
+                        B: { speaker: 'pak-guru', correct: false, text: 'Kerjakan tugas piketmu sendiri dan jangan melempar tanggung jawab.' },
+                        C: { speaker: 'pak-guru', correct: true, text: 'Bagus, Sadewa. Kelas menjadi bersih, wangi, dan nyaman untuk belajar.' }
+                    }
+                }
+            }
+        ],
+        exitX: EXIT_X
+    },
+    {
+        id: 'lv10-event-3',
+        order: 3,
+        title: 'Memungut Sampah Berserakan',
+        backgroundTexture: 'bg-scene',
+        spawnX: 95,
+        initialCameraX: 0,
+        minPlayerX: 54,
+        maxPlayerX: 1646,
+        actors: [],
+        objects: [{
+            id: 'sampah-jatuh',
+            texture: 'sampah-jatuh',
+            x: 285,
+            y: GROUND_Y,
+            depth: 8
+        }],
+        interactions: [
+            {
+                id: 'lv10-s3-briefing',
+                order: 1,
+                triggerX: LV10_BRIEFING_X,
+                markerY: LV10_BRIEFING_MARKER_Y,
+                interactionRadius: 90,
+                dialog: [{
+                    speaker: 'pak-guru',
+                    text: 'Tolong pungut sampah yang berserakan di depan tong dan masukkan ke tempatnya.'
+                }]
+            },
+            {
+                id: 'lv10-s3-sampah-jatuh',
+                order: 2,
+                triggerX: 285,
+                markerY: 495,
+                interactionRadius: 95,
+                dialog: [],
+                question: {
+                    choices: [
+                        { id: 'A', text: 'Mengabaikan sampah tersebut.' },
+                        { id: 'B', text: 'Mengeluh lalu menyuruh teman lain melakukannya.' },
+                        { id: 'C', text: 'Memungut sampah dan memasukkannya ke tong.' }
+                    ],
+                    correctChoiceId: 'C',
+                    feedback: {
+                        A: { speaker: 'pak-guru', correct: false, text: 'Sampah yang dibiarkan berserakan membuat kelas kotor.' },
+                        B: { speaker: 'pak-guru', correct: false, text: 'Jangan melempar tanggung jawab piket kepada teman.' },
+                        C: { speaker: 'pak-guru', correct: true, text: 'Bagus, Sadewa. Kelas sekarang lebih bersih dan rapi.' }
+                    }
+                },
+                onResolveHideObjects: ['sampah-jatuh']
+            }
+        ],
+        exitX: EXIT_X
+    }
+];
+
+export const LEVEL_10: LevelDefinition = {
+    id: 10,
+    title: 'Di Sekolah',
+    subtitle: 'Kebersihan Lingkungan dan Tugas Piket',
+    assetPrefix: 'lv10',
+    worldWidth: WORLD_WIDTH,
+    worldHeight: WORLD_HEIGHT,
+    groundY: GROUND_Y,
+    exitMarkerY: 190,
+    player: SADEWA_PLAYER,
+    segments: LV10_SEGMENTS,
+    conclusionTitle: 'KESIMPULAN NILAI KEBERSIHAN LINGKUNGAN',
+    conclusion:
+        'Tanggung jawab sosial dimulai dari sekolah. Anak yang rajin piket, ' +
+        'membuang sampah pada tempatnya, dan menjaga fasilitas umum adalah ' +
+        'pahlawan lingkungan.'
+};
+
 export const LEVELS: Record<number, LevelDefinition> = {
     1: LEVEL_1,
     2: LEVEL_2,
@@ -1397,7 +1744,9 @@ export const LEVELS: Record<number, LevelDefinition> = {
     5: LEVEL_5,
     6: LEVEL_6,
     7: LEVEL_7,
-    8: LEVEL_8
+    8: LEVEL_8,
+    9: LEVEL_9,
+    10: LEVEL_10
 };
 
 const SPEAKERS_BY_LEVEL: Record<number, Record<string, SpeakerStyle>> = {
@@ -1408,7 +1757,9 @@ const SPEAKERS_BY_LEVEL: Record<number, Record<string, SpeakerStyle>> = {
     5: SPEAKERS_LV5,
     6: SPEAKERS_LV6,
     7: SPEAKERS_LV7,
-    8: SPEAKERS_LV8
+    8: SPEAKERS_LV8,
+    9: SPEAKERS_LV9,
+    10: SPEAKERS_LV10
 };
 
 export function speakersFor(levelId: number): Record<string, SpeakerStyle> {
