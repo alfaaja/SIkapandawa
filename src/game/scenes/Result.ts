@@ -59,13 +59,13 @@ export class Result extends Scene {
         } else {
             this.add.rectangle(640, 383, 830, 220, 0x630995, 0.95);
         }
-        makeText(this, 640, 314, level?.conclusionTitle ?? 'KESIMPULAN', 14, { color: '#ffffff' })
+        makeText(this, 640, 314, level?.conclusionTitle ?? 'KESIMPULAN', 14, { color: '#000000' })
             .setOrigin(0.5);
-        makeText(this, 640, 348, level?.conclusion ?? '', 9, {
+        makeText(this, 640, 348, level?.conclusion ?? '', 10, {
             align: 'center',
             wordWrapWidth: 730,
             lineSpacing: 6,
-            color: '#ffffff'
+            color: '#000000'
         }).setOrigin(0.5, 0);
 
         makeText(this, 640, 229, `Terbaik: ${bestStars}/3`, 10, { color: '#ffd24a' })
