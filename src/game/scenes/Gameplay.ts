@@ -62,6 +62,7 @@ export class Gameplay extends Scene {
     private starsEarned = 0;
     private resolvedIds = new Set<string>();
     private wrongIds = new Set<string>();
+    private triggeredProximityIds = new Set<string>();
     private activeInteraction: InteractionDefinition | null = null;
     private scriptedWalk: { targetX: number; speed: number; resolve: () => void } | null = null;
     private walkTimer = 0;
@@ -79,6 +80,7 @@ export class Gameplay extends Scene {
         this.starsEarned = 0;
         this.resolvedIds.clear();
         this.wrongIds.clear();
+        this.triggeredProximityIds.clear();
         this.activeInteraction = null;
         this.scriptedWalk = null;
         this.seated = false;
@@ -125,6 +127,7 @@ export class Gameplay extends Scene {
 
     private buildSegment(): void {
         this.destroyWorld();
+        this.triggeredProximityIds.clear();
         const seg = this.segment;
         const backgroundKey = `${this.prefix}-${seg.backgroundTexture ?? 'bg'}`;
 
@@ -154,7 +157,7 @@ export class Gameplay extends Scene {
         this.seated = seg.spawnSeated === true;
         const playerTexture = this.seated ? this.level.player.seatedTexture : this.level.player.idleTexture;
         const playerY = this.seated ? this.seatedY() : this.level.groundY;
-        const playerScale = this.seated ? this.seatedScale() : 0.5;
+        const playerScale = this.seated ? this.seatedScale() : this.standingScale();
         const playerDepth = this.seated ? PLAYER_SEATED_DEPTH : PLAYER_FOREGROUND_DEPTH;
         this.player = this.add.image(seg.spawnX, playerY, `${this.prefix}-${playerTexture}`)
             .setOrigin(0.5, 1).setScale(playerScale).setDepth(playerDepth);
@@ -265,20 +268,23 @@ export class Gameplay extends Scene {
     }
 
     private currentTarget(): {
-        x: number;
+        triggerX: number;
+        markerX: number;
         markerY: number;
         radius: number;
     } | null {
         const inter = this.nextInteraction();
         if (inter) {
             return {
-                x: inter.triggerX,
+                triggerX: inter.triggerX,
+                markerX: inter.markerX ?? inter.triggerX,
                 markerY: inter.markerY,
                 radius: inter.interactionRadius
             };
         }
         return {
-            x: this.segment.exitX,
+            triggerX: this.segment.exitX,
+            markerX: this.segment.exitX,
             markerY: this.level.exitMarkerY,
             radius: EXIT_RADIUS
         };
@@ -294,8 +300,8 @@ export class Gameplay extends Scene {
             return;
         }
         const bob = Math.sin(this.time.now / 220) * 8;
-        this.marker.setVisible(true).setPosition(target.x, target.markerY + bob);
-        const near = Math.abs(this.player.x - target.x) <= target.radius;
+        this.marker.setVisible(true).setPosition(target.markerX, target.markerY + bob);
+        const near = Math.abs(this.player.x - target.triggerX) <= target.radius;
         this.touch.setActionEnabled(near);
     }
 
@@ -303,7 +309,7 @@ export class Gameplay extends Scene {
 
     private triggerAction(): void {
         const target = this.currentTarget();
-        if (!target || Math.abs(this.player.x - target.x) > target.radius) return;
+        if (!target || Math.abs(this.player.x - target.triggerX) > target.radius) return;
 
         const inter = this.nextInteraction();
         if (!inter) {
@@ -329,6 +335,7 @@ export class Gameplay extends Scene {
         for (const id of inter.onStartShowObjects ?? []) {
             this.objectMap.get(id)?.setVisible(true);
         }
+        if (inter.playerAlignment) this.applyPlayerAlignment(inter.playerAlignment);
         if (inter.sitAtX !== undefined) {
             this.sitDown(inter.sitAtX);
         }
@@ -380,6 +387,9 @@ export class Gameplay extends Scene {
             this.objectMap.get(id)?.setVisible(true);
         }
         if (this.seated) this.standUp();
+        if (inter.onResolvePlayerAlignment) {
+            this.applyPlayerAlignment(inter.onResolvePlayerAlignment);
+        }
         this.resolvedIds.add(inter.id);
         this.activeInteraction = null;
         this.state = 'EXPLORE';
@@ -395,18 +405,33 @@ export class Gameplay extends Scene {
         this.worldLayer.sort('depth');
     }
 
+    private applyPlayerAlignment(
+        alignment: NonNullable<InteractionDefinition['playerAlignment']>
+    ): void {
+        this.seated = false;
+        this.player
+            .setPosition(alignment.x ?? this.player.x, alignment.y)
+            .setScale(alignment.scale ?? this.standingScale())
+            .setDepth(alignment.depth ?? PLAYER_FOREGROUND_DEPTH);
+        this.worldLayer.sort('depth');
+    }
+
     private standUp(): void {
         this.seated = false;
         this.player
             .setY(this.level.groundY)
             .setTexture(`${this.prefix}-${this.level.player.idleTexture}`)
-            .setScale(0.5)
+            .setScale(this.standingScale())
             .setDepth(PLAYER_FOREGROUND_DEPTH);
         this.worldLayer.sort('depth');
     }
 
     private seatedScale(): number {
         return this.level.player.seatedScale ?? 0.5;
+    }
+
+    private standingScale(): number {
+        return this.level.player.scale ?? 0.5;
     }
 
     private seatedY(): number {
@@ -516,17 +541,31 @@ export class Gameplay extends Scene {
         // EXPLORE
         const left = this.keys.left.isDown || this.keys.a.isDown || this.touch.leftDown;
         const right = this.keys.right.isDown || this.keys.d.isDown || this.touch.rightDown;
+        const pendingInteraction = this.nextInteraction();
+        const movementMaxX = Math.min(
+            this.segment.maxPlayerX,
+            pendingInteraction?.movementMaxX ?? this.segment.maxPlayerX
+        );
+        if (this.player.x > movementMaxX) {
+            this.player.setX(movementMaxX);
+        }
         if (!this.seated && left !== right) {
             const dir = right ? 1 : -1;
             const nx = this.player.x + dir * this.level.player.walkSpeed * (delta / 1000);
-            this.player.setX(Math.round(
-                Math.max(this.segment.minPlayerX, Math.min(this.segment.maxPlayerX, nx))
-            ));
-            this.animateWalk(delta, dir);
+            const clampedX = Math.round(
+                Math.max(this.segment.minPlayerX, Math.min(movementMaxX, nx))
+            );
+            if (clampedX === this.player.x) {
+                this.setIdleFrame();
+            } else {
+                this.player.setX(clampedX);
+                this.animateWalk(delta, dir);
+            }
         } else {
             this.setIdleFrame();
         }
 
+        this.updateProximityEvents();
         this.updateMarkerAndAction();
         if (actionJust) this.triggerAction();
         this.followCamera();
@@ -561,7 +600,7 @@ export class Gameplay extends Scene {
             : this.level.player.walkLeftTextures;
         const key = `${this.prefix}-${frames[this.walkFrame]}`;
         if (this.player.texture.key !== key) {
-            this.player.setTexture(key).setScale(0.5);
+            this.player.setTexture(key).setScale(this.standingScale());
         }
     }
 
@@ -569,9 +608,24 @@ export class Gameplay extends Scene {
         if (this.seated) return;
         const key = `${this.prefix}-${this.level.player.idleTexture}`;
         if (this.player.texture.key !== key) {
-            this.player.setTexture(key).setScale(0.5);
+            this.player.setTexture(key).setScale(this.standingScale());
             this.walkFrame = 0;
             this.walkTimer = 0;
+        }
+    }
+
+    private updateProximityEvents(): void {
+        for (const event of this.segment.proximityEvents ?? []) {
+            if (this.triggeredProximityIds.has(event.id) || this.player.x < event.triggerX) {
+                continue;
+            }
+            for (const id of event.onTriggerHideObjects ?? []) {
+                this.objectMap.get(id)?.setVisible(false);
+            }
+            for (const id of event.onTriggerShowObjects ?? []) {
+                this.objectMap.get(id)?.setVisible(true);
+            }
+            this.triggeredProximityIds.add(event.id);
         }
     }
 

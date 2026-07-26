@@ -27,33 +27,58 @@ export const SPEAKERS_LV2: Record<string, SpeakerStyle> = {
     'yudhistira': { displayName: 'Yudistira', textboxTexture: 'lv2-textbox-yudistira-olahraga' }
 };
 
-// Tempat duduk siswa (4 anak) + kursi pemain. Tiap tempat = satu kursi + satu
-// meja individual di depannya (mengikuti komposisi lv1_1_prev.png). `meja-single`
-// adalah satu meja hasil potongan dari sprite-sheet meja (6 frame), bukan sheet
-// penuh — memperbaiki tumpukan meja yang berlebihan.
-const LV1_KID_SEATS = [290, 525, 760, 995];
-const LV1_PLAYER_SEAT = 1227;
-const DESK_OFFSET = 80;
-const LV1_TEACHER_DESK = 1410;
+// Susunan kelas diukur dari komposisi konsisten pada preview Level 1.
+const LV1_SEATED_Y = 536;
+const LV1_DESK_Y = 495;
+const LV1_KID_SEATS = [266, 484, 702, 920];
+const LV1_PLAYER_SEAT = 1139;
+const LV1_TEACHER_SEAT = 1463;
+const LV1_DESKS = [360, 579, 797, 1016, 1234, 1377];
+const LV1_TEACHER_DESK = LV1_DESKS[5];
+const LV1_VASE_X = 1344;
+const LV1_VASE_Y = 375;
+const LV1_PAPER_X = 1207;
+const LV1_PAPER_Y = 374;
+const LV1_PAPER_MARKER_Y = 346;
 
-/** Furniture kelas Level 1 (kursi siswa + meja individual + area guru). */
-function lv1Furniture(): ObjectPlacement[] {
-    const objects: ObjectPlacement[] = [];
-    const seats = [...LV1_KID_SEATS, LV1_PLAYER_SEAT];
-    seats.forEach((x, i) => {
-        objects.push({ id: `kursi-${i}`, texture: 'kursi-siswa', x, y: GROUND_Y, depth: 4 });
-        objects.push({ id: `meja-${i}`, texture: 'meja-single', x: x + DESK_OFFSET, y: GROUND_Y, depth: 8 });
+/**
+ * Aset NPC duduk sudah memuat kursinya sendiri. Kursi terpisah hanya dipakai
+ * untuk tempat Yudhistira yang kosong dan kursi guru sebelum Pak Guru muncul.
+ * Baseline meja mengikuti komposisi seluruh preview, bukan baseline karakter.
+ */
+function lv1Furniture(playerChairHidden = false, includeTeacherChair = false): ObjectPlacement[] {
+    const objects: ObjectPlacement[] = LV1_DESKS.map((x, i) => ({
+        id: i === LV1_DESKS.length - 1 ? 'meja-guru' : `meja-${i}`,
+        texture: 'meja-single',
+        x,
+        y: LV1_DESK_Y,
+        depth: 8
+    }));
+    objects.push({
+        id: 'kursi-player',
+        texture: 'kursi-siswa',
+        x: LV1_PLAYER_SEAT,
+        y: LV1_SEATED_Y,
+        depth: 4,
+        hidden: playerChairHidden
     });
-    objects.push({ id: 'meja-guru', texture: 'meja-single', x: LV1_TEACHER_DESK, y: GROUND_Y, depth: 8 });
-    objects.push({ id: 'kursi-guru', texture: 'kursi-guru', x: LV1_TEACHER_DESK + 95, y: GROUND_Y, depth: 4 });
+    if (includeTeacherChair) {
+        objects.push({
+            id: 'kursi-guru',
+            texture: 'kursi-guru',
+            x: LV1_TEACHER_SEAT,
+            y: LV1_SEATED_Y,
+            depth: 4
+        });
+    }
     return objects;
 }
 
 const LV1_KIDS = [
-    { id: 'budi', texture: 'budi-duduk', x: LV1_KID_SEATS[0] },
-    { id: 'edo', texture: 'edo-duduk', x: LV1_KID_SEATS[1] },
-    { id: 'siti', texture: 'siti-duduk', x: LV1_KID_SEATS[2] },
-    { id: 'ani', texture: 'ani-duduk', x: LV1_KID_SEATS[3] }
+    { id: 'edo', texture: 'edo-duduk', x: LV1_KID_SEATS[0], y: LV1_SEATED_Y },
+    { id: 'budi', texture: 'budi-duduk', x: LV1_KID_SEATS[1], y: LV1_SEATED_Y },
+    { id: 'siti', texture: 'siti-duduk', x: LV1_KID_SEATS[2], y: LV1_SEATED_Y },
+    { id: 'ani', texture: 'ani-duduk', x: LV1_KID_SEATS[3], y: LV1_SEATED_Y }
 ];
 
 const LV1_SEGMENTS: SegmentDefinition[] = [
@@ -67,11 +92,18 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
         maxPlayerX: 1646,
         actors: [
             ...LV1_KIDS.map((k) => ({ ...k, depth: 6 })),
-            { id: 'pak-guru', texture: 'pak-guru-duduk', x: LV1_TEACHER_DESK + 95, depth: 6, hidden: true }
+            {
+                id: 'pak-guru',
+                texture: 'pak-guru-duduk',
+                x: LV1_TEACHER_SEAT,
+                y: LV1_SEATED_Y,
+                depth: 6,
+                hidden: true
+            }
         ],
         objects: [
-            ...lv1Furniture(),
-            { id: 'vas', texture: 'vas', x: LV1_TEACHER_DESK, y: 452, depth: 9 },
+            ...lv1Furniture(false, true),
+            { id: 'vas', texture: 'vas', x: LV1_VASE_X, y: LV1_VASE_Y, depth: 9 },
             { id: 'vas-jatuh', texture: 'vas-jatuh', x: LV1_TEACHER_DESK - 45, y: GROUND_Y, depth: 9, hidden: true }
         ],
         scriptedSequence: [
@@ -81,6 +113,7 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
             { kind: 'wait', ms: 350 },
             { kind: 'walk', targetX: 150, speed: 340 },
             { kind: 'wait', ms: 250 },
+            { kind: 'swapObject', objectId: 'kursi-guru', texture: null },
             { kind: 'showActor', actorId: 'pak-guru' },
             {
                 kind: 'dialog',
@@ -94,10 +127,11 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
             {
                 id: 'lv1-s1-kursi',
                 order: 1,
-                triggerX: 1227,
+                triggerX: LV1_PLAYER_SEAT,
                 markerY: 370,
                 interactionRadius: 70,
-                sitAtX: 1227,
+                sitAtX: LV1_PLAYER_SEAT,
+                onStartHideObjects: ['kursi-player'],
                 dialog: [
                     { speaker: 'pak-guru', text: 'Siapa yang menjatuhkan vas bunga Bapak?' }
                 ],
@@ -115,7 +149,7 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
                     }
                 },
                 onResolveHideObjects: ['vas-jatuh'],
-                onResolveShowObjects: ['vas']
+                onResolveShowObjects: ['vas', 'kursi-player']
             }
         ],
         exitX: EXIT_X
@@ -130,11 +164,17 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
         maxPlayerX: 1646,
         actors: [
             ...LV1_KIDS.map((k) => ({ ...k, depth: 6 })),
-            { id: 'pak-guru', texture: 'pak-guru-duduk', x: LV1_TEACHER_DESK + 95, depth: 6 }
+            {
+                id: 'pak-guru',
+                texture: 'pak-guru-duduk',
+                x: LV1_TEACHER_SEAT,
+                y: LV1_SEATED_Y,
+                depth: 6
+            }
         ],
         objects: [
             ...lv1Furniture(),
-            { id: 'vas', texture: 'vas', x: LV1_TEACHER_DESK, y: 452, depth: 9 },
+            { id: 'vas', texture: 'vas', x: LV1_VASE_X, y: LV1_VASE_Y, depth: 9 },
             { id: 'koin', texture: 'koin', x: 480, y: GROUND_Y, depth: 9 }
         ],
         interactions: [
@@ -150,10 +190,11 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
             {
                 id: 'lv1-s2-kursi',
                 order: 2,
-                triggerX: 1227,
+                triggerX: LV1_PLAYER_SEAT,
                 markerY: 370,
                 interactionRadius: 70,
-                sitAtX: 1227,
+                sitAtX: LV1_PLAYER_SEAT,
+                onStartHideObjects: ['kursi-player'],
                 dialog: [
                     { speaker: 'budi', text: 'Pak Guru, saya kehilangan uang milik saya, Pak!' },
                     { speaker: 'pak-guru', text: 'Anak-anak, apakah ada yang melihat uang Budi yang hilang?' }
@@ -170,7 +211,8 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
                         B: { speaker: 'pak-guru', correct: false, text: 'Yudhistira, Bapak melihat kamu memasukkan uang temanmu ke saku. Mengambil hak orang lain itu tidak jujur, Nak. Kembalikan, ya.' },
                         C: { speaker: 'pak-guru', correct: false, text: 'Yudhistira, kalau kita melihat barang teman yang hilang, sebaiknya kita bantu amankan, bukan didiamkan saja. Mari peduli kepada teman.' }
                     }
-                }
+                },
+                onResolveShowObjects: ['kursi-player']
             }
         ],
         exitX: EXIT_X
@@ -179,30 +221,43 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
         id: 'lv1-event-3',
         order: 3,
         title: 'Menolak Menyontek',
-        spawnX: 1227,
+        spawnX: LV1_PLAYER_SEAT,
         spawnSeated: true,
         initialCameraX: 420,
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [
             ...LV1_KIDS.map((k) => ({ ...k, depth: 6 })),
-            { id: 'pak-guru', texture: 'pak-guru-duduk', x: LV1_TEACHER_DESK + 95, depth: 6 }
+            {
+                id: 'pak-guru',
+                texture: 'pak-guru-duduk',
+                x: LV1_TEACHER_SEAT,
+                y: LV1_SEATED_Y,
+                depth: 6
+            }
         ],
         objects: [
-            ...lv1Furniture(),
-            { id: 'vas', texture: 'vas', x: LV1_TEACHER_DESK, y: 452, depth: 9 },
-            { id: 'gumpalan', texture: 'gumpalan-kertas', x: 1140, y: GROUND_Y, depth: 9, hidden: true }
+            ...lv1Furniture(true),
+            { id: 'vas', texture: 'vas', x: LV1_VASE_X, y: LV1_VASE_Y, depth: 9 },
+            {
+                id: 'gumpalan',
+                texture: 'gumpalan-kertas',
+                x: LV1_PAPER_X,
+                y: LV1_PAPER_Y,
+                depth: 9,
+                hidden: true
+            }
         ],
         scriptedSequence: [
             { kind: 'wait', ms: 400 },
-            { kind: 'dropObject', objectId: 'gumpalan', fromY: 200, toY: GROUND_Y, ms: 700 }
+            { kind: 'dropObject', objectId: 'gumpalan', fromY: 200, toY: LV1_PAPER_Y, ms: 700 }
         ],
         interactions: [
             {
                 id: 'lv1-s3-gumpalan',
                 order: 1,
-                triggerX: 1140,
-                markerY: 495,
+                triggerX: LV1_PAPER_X,
+                markerY: LV1_PAPER_MARKER_Y,
                 interactionRadius: 100,
                 dialog: [
                     { speaker: 'edo', text: 'Yudhistira, aku boleh menyontek jawabanmu? Nanti aku kasih kamu permen.' }
@@ -220,7 +275,8 @@ const LV1_SEGMENTS: SegmentDefinition[] = [
                         C: { speaker: 'pak-guru', correct: false, text: 'Yudhistira, selain tidak boleh menyontek, berbuat jahil dengan memberikan jawaban salah juga bukan perbuatan yang baik.' }
                     }
                 },
-                onResolveHideObjects: ['gumpalan']
+                onResolveHideObjects: ['gumpalan'],
+                onResolveShowObjects: ['kursi-player']
             }
         ],
         exitX: EXIT_X
@@ -247,6 +303,7 @@ export const LEVEL_1: LevelDefinition = {
             'yudistira-langkah-kiri-1', 'yudistira-langkah-kiri-2',
             'yudistira-langkah-kiri-3', 'yudistira-langkah-kiri-4'
         ],
+        seatedYOffset: LV1_SEATED_Y - GROUND_Y,
         walkSpeed: 260,
         animFps: 9
     },
@@ -260,12 +317,24 @@ export const LEVEL_1: LevelDefinition = {
     introCharacterId: 'yudhistira'
 };
 
+const LV2_PLAYER_SCALE = 0.44;
+const LV2_FOREGROUND_SCALE = 0.49;
+const LV2_LINE_Y = 528;
+const LV2_PLAYER_SLOT_X = 790;
+const LV2_TEACHER_X = 429;
+const LV2_TEACHER_Y = 532;
+const LV2_WATER_TABLE_X = 1158;
+const LV2_WATER_TABLE_Y = 447;
+const LV2_WATER_MARKER_Y = 350;
+const LV2_WATER_PLAYER_X = 1205;
+const LV2_BALL_X = 824;
+
 /** Barisan olahraga Level 2: Ani, Edo, [slot pemain], Budi, Siti. */
 const LV2_LINE = [
-    { id: 'ani', texture: 'ani-olahraga-kiri', x: 610 },
-    { id: 'edo', texture: 'edo-olahraga-kiri', x: 680 },
-    { id: 'budi', texture: 'budi-olahraga-kiri', x: 890 },
-    { id: 'siti', texture: 'siti-olahraga-kiri', x: 965 }
+    { id: 'ani', texture: 'ani-olahraga-kiri', x: 647, y: LV2_LINE_Y },
+    { id: 'edo', texture: 'edo-olahraga-kiri', x: 734, y: LV2_LINE_Y },
+    { id: 'budi', texture: 'budi-olahraga-kiri', x: 885, y: LV2_LINE_Y },
+    { id: 'siti', texture: 'siti-olahraga-kiri', x: 981, y: LV2_LINE_Y }
 ];
 
 const LV2_SEGMENTS: SegmentDefinition[] = [
@@ -278,7 +347,13 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [
-            { id: 'pak-guru-olahraga', texture: 'pak-guru-olahraga', x: 437, depth: 6 },
+            {
+                id: 'pak-guru-olahraga',
+                texture: 'pak-guru-olahraga',
+                x: LV2_TEACHER_X,
+                y: LV2_TEACHER_Y,
+                depth: 6
+            },
             ...LV2_LINE.map((k) => ({ ...k, depth: 6 }))
         ],
         objects: [],
@@ -286,9 +361,16 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
             {
                 id: 'lv2-s1-barisan',
                 order: 1,
-                triggerX: 790,
+                triggerX: LV2_PLAYER_SLOT_X,
                 markerY: 240,
                 interactionRadius: 70,
+                movementMaxX: LV2_PLAYER_SLOT_X,
+                playerAlignment: {
+                    x: LV2_PLAYER_SLOT_X,
+                    y: LV2_LINE_Y,
+                    scale: LV2_PLAYER_SCALE,
+                    depth: 7
+                },
                 dialog: [
                     { speaker: 'pak-guru-olahraga', text: 'Ayo, anak-anak, kita mulai olahraga bersama!' }
                 ]
@@ -298,7 +380,10 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
                 order: 2,
                 triggerX: 930,
                 markerY: 240,
-                interactionRadius: 95,
+                // Setelah masuk barisan, Yudhistira tetap di slot x=790 seperti
+                // preview; aksi konflik dapat dipicu tanpa menabrak Budi/Siti.
+                interactionRadius: 160,
+                movementMaxX: LV2_PLAYER_SLOT_X,
                 onStartSwaps: [{ actorId: 'budi', texture: 'budi-olahraga-marah' }],
                 dialog: [
                     { speaker: 'budi', text: 'Siti, aku tidak mau kamu berdiri di belakangku. Pindah saja ke sana!' },
@@ -317,7 +402,12 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
                         C: { speaker: 'pak-guru-olahraga', correct: true, text: 'Bagus sekali, Yudhistira! Melerai teman yang bertengkar adalah sikap seorang kesatria!' }
                     }
                 },
-                onResolveSwaps: [{ actorId: 'budi', texture: 'budi-olahraga-kiri' }]
+                onResolveSwaps: [{ actorId: 'budi', texture: 'budi-olahraga-kiri' }],
+                onResolvePlayerAlignment: {
+                    y: GROUND_Y,
+                    scale: LV2_FOREGROUND_SCALE,
+                    depth: 50
+                }
             }
         ],
         exitX: EXIT_X
@@ -331,28 +421,53 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [
-            { id: 'pak-guru-olahraga', texture: 'pak-guru-olahraga', x: 437, depth: 6 },
+            {
+                id: 'pak-guru-olahraga',
+                texture: 'pak-guru-olahraga',
+                x: LV2_TEACHER_X,
+                y: LV2_TEACHER_Y,
+                depth: 6
+            },
             ...LV2_LINE.map((k) => ({ ...k, depth: 6 }))
         ],
         objects: [
-            { id: 'meja-botol', texture: 'meja-botol', x: 1430, y: GROUND_Y, depth: 8 }
+            {
+                id: 'meja-botol',
+                texture: 'meja-botol',
+                x: LV2_WATER_TABLE_X,
+                y: LV2_WATER_TABLE_Y,
+                depth: 8
+            }
         ],
         interactions: [
             {
                 id: 'lv2-s2-barisan',
                 order: 1,
-                triggerX: 790,
+                triggerX: LV2_PLAYER_SLOT_X,
                 markerY: 240,
                 interactionRadius: 70,
+                movementMaxX: LV2_PLAYER_SLOT_X,
+                playerAlignment: {
+                    x: LV2_PLAYER_SLOT_X,
+                    y: LV2_LINE_Y,
+                    scale: LV2_PLAYER_SCALE,
+                    depth: 7
+                },
                 dialog: [
                     { speaker: 'yudhistira', text: 'Wah, ada air mineral. Aku ambil dulu, kalau begitu.' }
-                ]
+                ],
+                onResolvePlayerAlignment: {
+                    y: GROUND_Y,
+                    scale: LV2_FOREGROUND_SCALE,
+                    depth: 50
+                }
             },
             {
                 id: 'lv2-s2-botol',
                 order: 2,
-                triggerX: 1430,
-                markerY: 430,
+                triggerX: LV2_WATER_PLAYER_X,
+                markerX: LV2_WATER_TABLE_X,
+                markerY: LV2_WATER_MARKER_Y,
                 interactionRadius: 85,
                 dialog: [],
                 question: {
@@ -381,17 +496,37 @@ const LV2_SEGMENTS: SegmentDefinition[] = [
         minPlayerX: 54,
         maxPlayerX: 1646,
         actors: [
-            { id: 'pak-guru-olahraga', texture: 'pak-guru-olahraga', x: 437, depth: 6 },
-            { id: 'edo', texture: 'edo-olahraga-kiri', x: 700, depth: 6, flipX: true },
-            { id: 'ani', texture: 'ani-olahraga-kanan', x: 758, depth: 6 },
-            { id: 'berebut', texture: 'berebut-bola', x: 826, depth: 7 }
+            {
+                id: 'pak-guru-olahraga',
+                texture: 'pak-guru-olahraga',
+                x: LV2_TEACHER_X,
+                y: LV2_TEACHER_Y,
+                depth: 6
+            },
+            {
+                id: 'edo',
+                texture: 'edo-olahraga-kiri',
+                x: 629,
+                y: LV2_LINE_Y,
+                depth: 6,
+                flipX: true
+            },
+            {
+                id: 'ani',
+                texture: 'ani-olahraga-kanan',
+                x: 970,
+                y: LV2_LINE_Y,
+                depth: 6,
+                flipX: true
+            },
+            { id: 'berebut', texture: 'berebut-bola', x: LV2_BALL_X, depth: 7 }
         ],
         objects: [],
         interactions: [
             {
                 id: 'lv2-s3-bola',
                 order: 1,
-                triggerX: 826,
+                triggerX: LV2_BALL_X,
                 markerY: 230,
                 interactionRadius: 95,
                 dialog: [
@@ -429,6 +564,7 @@ export const LEVEL_2: LevelDefinition = {
     player: {
         idleTexture: 'yudistira-olahraga',
         seatedTexture: 'yudistira-olahraga',
+        scale: LV2_FOREGROUND_SCALE,
         walkRightTextures: [
             'yudistira-olahraga-langkah-kanan-1', 'yudistira-olahraga-langkah-kanan-2',
             'yudistira-olahraga-langkah-kanan-3', 'yudistira-olahraga-langkah-kanan-4'
@@ -479,6 +615,20 @@ const BIMA_PLAYER = {
     animFps: 9
 };
 
+// Preview Level 3 memakai dua garis pijak: Bima tetap di foreground (GROUND_Y),
+// sedangkan kelompok siswa berada lebih tinggi. Titik aksi dipisahkan dari
+// posisi marker agar Bima berhenti di depan kelompok tanpa menimpa mereka.
+const LV3_S1_ACTOR_X = 960;
+const LV3_S1_ACTOR_Y = 520;
+const LV3_S1_PLAYER_X = 830;
+const LV3_S2_ACTOR_X = 930;
+const LV3_S2_PLAYER_X = 680;
+const LV3_S2_MARKER_X = 790;
+const LV3_S3_ACTOR_X = 1005;
+const LV3_S3_ACTOR_Y = 515;
+const LV3_S3_PLAYER_X = 900;
+const LV3_S3_MARKER_X = 955;
+
 const LV3_SEGMENTS: SegmentDefinition[] = [
     {
         id: 'lv3-event-1',
@@ -488,14 +638,22 @@ const LV3_SEGMENTS: SegmentDefinition[] = [
         initialCameraX: 0,
         minPlayerX: 54,
         maxPlayerX: 1646,
-        actors: [{ id: 'pemalakan', texture: 'edo-budi-siti', x: 960, depth: 6 }],
+        actors: [{
+            id: 'pemalakan',
+            texture: 'edo-budi-siti',
+            x: LV3_S1_ACTOR_X,
+            y: LV3_S1_ACTOR_Y,
+            depth: 6
+        }],
         objects: [],
         interactions: [{
             id: 'lv3-s1-pemalakan',
             order: 1,
-            triggerX: 960,
+            triggerX: LV3_S1_PLAYER_X,
+            markerX: LV3_S1_ACTOR_X,
             markerY: 255,
-            interactionRadius: 110,
+            interactionRadius: 85,
+            movementMaxX: LV3_S1_PLAYER_X,
             dialog: [
                 { speaker: 'budi', text: 'Eh, Siti, bagi uang jajanmu, dong. Kamu kan punya banyak uang.' },
                 { speaker: 'siti', text: 'Uang ini mau kupakai untuk membeli jajanku sendiri.' },
@@ -525,14 +683,22 @@ const LV3_SEGMENTS: SegmentDefinition[] = [
         initialCameraX: 0,
         minPlayerX: 54,
         maxPlayerX: 1646,
-        actors: [{ id: 'lempar-kucing', texture: 'lempar-kucing', x: 930, depth: 6 }],
+        actors: [{
+            id: 'lempar-kucing',
+            texture: 'lempar-kucing',
+            x: LV3_S2_ACTOR_X,
+            y: GROUND_Y,
+            depth: 6
+        }],
         objects: [],
         interactions: [{
             id: 'lv3-s2-kucing',
             order: 1,
-            triggerX: 930,
-            markerY: 260,
-            interactionRadius: 110,
+            triggerX: LV3_S2_PLAYER_X,
+            markerX: LV3_S2_MARKER_X,
+            markerY: 450,
+            interactionRadius: 85,
+            movementMaxX: LV3_S2_PLAYER_X,
             dialog: [
                 { speaker: 'bima', text: 'Hei, Edo, kamu sedang apa?' },
                 { speaker: 'edo', text: 'Seru, Bim. Aku sedang melempari kucing dengan batu.' }
@@ -561,14 +727,22 @@ const LV3_SEGMENTS: SegmentDefinition[] = [
         initialCameraX: 0,
         minPlayerX: 54,
         maxPlayerX: 1646,
-        actors: [{ id: 'bully-sepatu', texture: 'bully-sepatu', x: 1005, depth: 6 }],
+        actors: [{
+            id: 'bully-sepatu',
+            texture: 'bully-sepatu',
+            x: LV3_S3_ACTOR_X,
+            y: LV3_S3_ACTOR_Y,
+            depth: 6
+        }],
         objects: [],
         interactions: [{
             id: 'lv3-s3-sepatu',
             order: 1,
-            triggerX: 1005,
+            triggerX: LV3_S3_PLAYER_X,
+            markerX: LV3_S3_MARKER_X,
             markerY: 260,
-            interactionRadius: 115,
+            interactionRadius: 85,
+            movementMaxX: LV3_S3_PLAYER_X,
             dialog: [{ speaker: 'edo', text: 'Yah, sepatunya jelek dan sudah rusak!' }],
             question: {
                 choices: [
@@ -607,6 +781,18 @@ export const LEVEL_3: LevelDefinition = {
     introCharacterId: 'bima'
 };
 
+// Komposisi kantin berubah per event pada preview. Semua NPC berada pada
+// garis belakang, sementara Bima berhenti pada titik foreground terpisah.
+const LV4_ACTOR_Y = 508;
+const LV4_S1_ACTOR_X = 920;
+const LV4_S1_PLAYER_X = 735;
+const LV4_S2_ACTOR_X = 560;
+const LV4_S2_PLAYER_X = 280;
+const LV4_S3_ACTOR_X = 875;
+const LV4_S3_PLAYER_X = 680;
+const LV4_S3_GRAFFITI_X = 790;
+const LV4_S3_GRAFFITI_Y = 325;
+
 const LV4_SEGMENTS: SegmentDefinition[] = [
     {
         id: 'lv4-event-1',
@@ -616,14 +802,22 @@ const LV4_SEGMENTS: SegmentDefinition[] = [
         initialCameraX: 0,
         minPlayerX: 54,
         maxPlayerX: 1646,
-        actors: [{ id: 'budi-edo', texture: 'budi-edo', x: 920, depth: 6 }],
+        actors: [{
+            id: 'budi-edo',
+            texture: 'budi-edo',
+            x: LV4_S1_ACTOR_X,
+            y: LV4_ACTOR_Y,
+            depth: 6
+        }],
         objects: [],
         interactions: [{
             id: 'lv4-s1-bolos',
             order: 1,
-            triggerX: 920,
+            triggerX: LV4_S1_PLAYER_X,
+            markerX: LV4_S1_ACTOR_X,
             markerY: 255,
-            interactionRadius: 110,
+            interactionRadius: 85,
+            movementMaxX: LV4_S1_PLAYER_X,
             dialog: [
                 { speaker: 'edo', text: 'Eh, Bima, ayo kita bolos saja. Pusing terus belajar di kelas!' },
                 { speaker: 'bima', text: 'Wah, ternyata kalian mau bolos.' }
@@ -652,14 +846,22 @@ const LV4_SEGMENTS: SegmentDefinition[] = [
         initialCameraX: 0,
         minPlayerX: 54,
         maxPlayerX: 1646,
-        actors: [{ id: 'budi-edo', texture: 'budi-edo', x: 920, depth: 6 }],
+        actors: [{
+            id: 'budi-edo',
+            texture: 'budi-edo',
+            x: LV4_S2_ACTOR_X,
+            y: LV4_ACTOR_Y,
+            depth: 6
+        }],
         objects: [],
         interactions: [{
             id: 'lv4-s2-jajanan',
             order: 1,
-            triggerX: 920,
+            triggerX: LV4_S2_PLAYER_X,
+            markerX: LV4_S2_ACTOR_X,
             markerY: 255,
-            interactionRadius: 110,
+            interactionRadius: 85,
+            movementMaxX: LV4_S2_PLAYER_X,
             dialog: [{ speaker: 'budi', text: 'Eh, Bima, ayo kita ambil jajanan ini. Kebetulan tidak ada yang menjaga.' }],
             question: {
                 choices: [
@@ -685,14 +887,29 @@ const LV4_SEGMENTS: SegmentDefinition[] = [
         initialCameraX: 0,
         minPlayerX: 54,
         maxPlayerX: 1646,
-        actors: [{ id: 'budi-coret', texture: 'budi-coret', x: 850, depth: 6 }],
-        objects: [{ id: 'coretan', texture: 'coretan', x: 850, y: 405, centered: true, depth: 5 }],
+        actors: [{
+            id: 'budi-coret',
+            texture: 'budi-coret',
+            x: LV4_S3_ACTOR_X,
+            y: LV4_ACTOR_Y,
+            depth: 6
+        }],
+        objects: [{
+            id: 'coretan',
+            texture: 'coretan',
+            x: LV4_S3_GRAFFITI_X,
+            y: LV4_S3_GRAFFITI_Y,
+            centered: true,
+            depth: 5
+        }],
         interactions: [{
             id: 'lv4-s3-vandalisme',
             order: 1,
-            triggerX: 850,
-            markerY: 255,
-            interactionRadius: 110,
+            triggerX: LV4_S3_PLAYER_X,
+            markerX: LV4_S3_GRAFFITI_X,
+            markerY: 270,
+            interactionRadius: 85,
+            movementMaxX: LV4_S3_PLAYER_X,
             dialog: [
                 { speaker: 'bima', text: 'Budi, kenapa kamu mencoret tembok kantin?' },
                 { speaker: 'budi', text: 'Biar terlihat keren. Gambarku bagus, kan, Bim?' }
@@ -882,38 +1099,46 @@ export const LEVEL_5: LevelDefinition = {
     introCharacterId: 'arjuna'
 };
 
-const LV6_KID_SEATS = [320, 535, 755, 970];
-const LV6_PLAYER_SEAT = 1190;
-const LV6_TEACHER_SEAT = 1415;
+const LV6_SEATED_Y = 536;
+const LV6_DESK_Y = 495;
+const LV6_DESK_CENTER_X = 870;
+const LV6_KID_SEATS = [266, 484, 702, 920];
+const LV6_PLAYER_SEAT = 1139;
+const LV6_TEACHER_SEAT = 1463;
+const LV6_TEACHER_DESK_X = 1377;
 
 function lv6Furniture(tableTexture: string): ObjectPlacement[] {
-    const objects: ObjectPlacement[] = [
-        { id: 'meja-kelas', texture: tableTexture, x: 780, y: GROUND_Y, depth: 8 }
+    return [
+        {
+            id: 'meja-kelas',
+            texture: tableTexture,
+            x: LV6_DESK_CENTER_X,
+            y: LV6_DESK_Y,
+            depth: 8
+        },
+        {
+            id: 'kursi-siswa-4',
+            texture: 'kursi-siswa',
+            x: LV6_PLAYER_SEAT,
+            y: LV6_SEATED_Y,
+            depth: 4
+        }
     ];
-    [...LV6_KID_SEATS, LV6_PLAYER_SEAT].forEach((x, i) => {
-        objects.push({ id: `kursi-siswa-${i}`, texture: 'kursi-siswa', x, y: GROUND_Y, depth: 4 });
-    });
-    objects.push({
-        id: 'kursi-guru',
-        texture: 'kursi-guru',
-        x: LV6_TEACHER_SEAT,
-        y: GROUND_Y,
-        depth: 4
-    });
-    return objects;
 }
 
 const LV6_CLASS_ACTORS = [
-    { id: 'budi', texture: 'budi-duduk', x: LV6_KID_SEATS[0], depth: 6 },
-    { id: 'edo', texture: 'edo-duduk', x: LV6_KID_SEATS[1], depth: 6 },
-    { id: 'siti', texture: 'siti-duduk', x: LV6_KID_SEATS[2], depth: 6 },
-    { id: 'ani', texture: 'ani-duduk', x: LV6_KID_SEATS[3], depth: 6 },
-    { id: 'pak-guru', texture: 'pak-guru-duduk', x: LV6_TEACHER_SEAT, depth: 6 }
+    { id: 'budi', texture: 'budi-duduk', x: LV6_KID_SEATS[0], y: LV6_SEATED_Y, depth: 6 },
+    { id: 'edo', texture: 'edo-duduk', x: LV6_KID_SEATS[1], y: LV6_SEATED_Y, depth: 6 },
+    { id: 'siti', texture: 'siti-duduk', x: LV6_KID_SEATS[2], y: LV6_SEATED_Y, depth: 6 },
+    { id: 'ani', texture: 'ani-duduk', x: LV6_KID_SEATS[3], y: LV6_SEATED_Y, depth: 6 },
+    { id: 'pak-guru', texture: 'pak-guru-duduk', x: LV6_TEACHER_SEAT, y: LV6_SEATED_Y, depth: 6 }
 ];
 
 const ARJUNA_PLAYER_LV6 = {
     idleTexture: 'arjuna',
     seatedTexture: 'arjuna-duduk',
+    seatedScale: 0.41,
+    seatedYOffset: LV6_SEATED_Y - GROUND_Y,
     walkRightTextures: [
         'arjuna-langkah-kanan-1', 'arjuna-langkah-kanan-2',
         'arjuna-langkah-kanan-3', 'arjuna-langkah-kanan-4'
@@ -941,12 +1166,18 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
             {
                 id: 'meja-kelas-tumpah',
                 texture: 'meja-buku-tumpah',
-                x: 780,
-                y: GROUND_Y,
+                x: LV6_DESK_CENTER_X,
+                y: LV6_DESK_Y,
                 depth: 8,
                 hidden: true
             }
         ],
+        proximityEvents: [{
+            id: 'lv6-s1-gelas-tersenggol',
+            triggerX: 730,
+            onTriggerHideObjects: ['meja-kelas'],
+            onTriggerShowObjects: ['meja-kelas-tumpah']
+        }],
         interactions: [
             {
                 id: 'lv6-s1-duduk',
@@ -955,8 +1186,8 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
                 markerY: 310,
                 interactionRadius: 80,
                 sitAtX: LV6_PLAYER_SEAT,
-                onStartHideObjects: ['meja-kelas'],
-                onStartShowObjects: ['meja-kelas-tumpah'],
+                onStartHideObjects: ['kursi-siswa-4'],
+                onResolveShowObjects: ['kursi-siswa-4'],
                 dialog: [{
                     speaker: 'siti',
                     text: 'Arjuna, tadi kamu membuat bukuku basah karena gelas airku tersenggol.'
@@ -1033,7 +1264,14 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
         actors: LV6_CLASS_ACTORS.map((actor) => ({ ...actor })),
         objects: [
             ...lv6Furniture('meja'),
-            { id: 'penghapus', texture: 'penghapus', x: LV6_TEACHER_SEAT, y: 405, centered: true, depth: 9 }
+            {
+                id: 'penghapus',
+                texture: 'penghapus',
+                x: LV6_TEACHER_DESK_X,
+                y: 370,
+                centered: true,
+                depth: 9
+            }
         ],
         interactions: [
             {
@@ -1043,6 +1281,8 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
                 markerY: 310,
                 interactionRadius: 80,
                 sitAtX: LV6_PLAYER_SEAT,
+                onStartHideObjects: ['kursi-siswa-4'],
+                onResolveShowObjects: ['kursi-siswa-4'],
                 dialog: [
                     { speaker: 'pak-guru', text: 'Anak-anak, jangan lupa alat tulisnya dipersiapkan, ya.' },
                     { speaker: 'arjuna', text: 'Waduh, aku tidak membawa penghapus. Apa aku pinjam punya Pak Guru, ya?' }
@@ -1051,7 +1291,8 @@ const LV6_SEGMENTS: SegmentDefinition[] = [
             {
                 id: 'lv6-s3-penghapus',
                 order: 2,
-                triggerX: LV6_TEACHER_SEAT,
+                triggerX: LV6_TEACHER_DESK_X,
+                markerX: LV6_TEACHER_DESK_X,
                 markerY: 350,
                 interactionRadius: 90,
                 dialog: [],

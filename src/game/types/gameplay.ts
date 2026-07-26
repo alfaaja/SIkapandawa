@@ -57,6 +57,14 @@ export interface ObjectPlacement {
     hidden?: boolean;
 }
 
+/** Perubahan visual otomatis ketika pemain melewati titik world tertentu. */
+export interface ProximityEventDefinition {
+    id: string;
+    triggerX: number;
+    onTriggerHideObjects?: string[];
+    onTriggerShowObjects?: string[];
+}
+
 export type ScriptStep =
     | { kind: 'walk'; targetX: number; speed?: number }
     | { kind: 'swapObject'; objectId: string; texture: string | null }
@@ -76,11 +84,32 @@ export interface InteractionDefinition {
     order: number;
     /** Posisi X target; marker dan pusat radius aksi memakai koordinat ini. */
     triggerX: number;
+    /** Override posisi X marker bila titik visual berbeda dari titik berdiri pemain. */
+    markerX?: number;
     /** Y ujung atas target untuk penempatan marker (world). */
     markerY: number;
     interactionRadius: number;
+    /** Batas kanan sementara selama interaksi ini masih menunggu. */
+    movementMaxX?: number;
     /** Pemain duduk pada interaksi ini (kursi). */
     sitAtX?: number;
+    /**
+     * Selaraskan posisi pemain dengan formasi world tanpa mengubahnya menjadi
+     * pose duduk. Transform bertahan sampai segmen berganti.
+     */
+    playerAlignment?: {
+        x?: number;
+        y: number;
+        scale?: number;
+        depth?: number;
+    };
+    /** Transform pemain setelah interaksi selesai. */
+    onResolvePlayerAlignment?: {
+        x?: number;
+        y: number;
+        scale?: number;
+        depth?: number;
+    };
     /** Objek yang disembunyikan saat aksi (mis. koin diambil). */
     collectObjectId?: string;
     onStartSwaps?: ActorSwap[];
@@ -110,6 +139,7 @@ export interface SegmentDefinition {
     maxPlayerX: number;
     actors: ActorPlacement[];
     objects: ObjectPlacement[];
+    proximityEvents?: ProximityEventDefinition[];
     scriptedSequence?: ScriptStep[];
     interactions: InteractionDefinition[];
     exitX: number;
@@ -118,6 +148,8 @@ export interface SegmentDefinition {
 export interface PlayerDefinition {
     idleTexture: string;
     seatedTexture: string;
+    /** Skala pose berdiri/berjalan. Default 0.5. */
+    scale?: number;
     seatedScale?: number;
     seatedYOffset?: number;
     walkRightTextures: string[];
