@@ -21,7 +21,8 @@ export default defineConfig({
                 'supabase/functions/admin-users/handler.ts',
                 'supabase/functions/admin-users/operation.ts',
                 'supabase/functions/admin-users/usernameRename.ts',
-                'supabase/functions/admin-users/mutationFailure.ts'
+                'supabase/functions/admin-users/mutationFailure.ts',
+                'supabase/functions/admin-users/corsOrigins.ts'
             ],
             exclude: [
                 'src/**/*.test.ts',

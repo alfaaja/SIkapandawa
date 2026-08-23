@@ -1,6 +1,6 @@
 # Rencana Database dan Backend Admin Sikapandawa
 
-Status dokumen: implementasi lokal dan catatan operasi, diperbarui 23 Agustus 2026. Backend admin baca/CRUD versi sebelumnya telah diterapkan ke remote dengan persetujuan pemilik; migration rename username dan source Edge terbaru masih menunggu quality gate serta persetujuan deploy terpisah.
+Status dokumen: implementasi dan catatan operasi, diperbarui 23 Agustus 2026. Migration rename username telah diterapkan ke Supabase remote sebagai `20260823124334_admin_username_rename`, dan Edge Function `admin-users` versi 6 aktif dengan JWT verification wajib. Tidak ada akun pemain yang dimutasi saat deployment.
 
 ## 1. Bukti preflight
 
@@ -296,6 +296,15 @@ Urutan produksi yang diwajibkan:
 4. verifikasi grant RPC hanya `service_role`, CORS hanya origin produksi + development yang disetujui, dan Database/Security Advisors;
 5. smoke test read-only serta CORS tanpa mengganti username akun nyata;
 6. uji mutasi akun nyata hanya pada akun target yang disebut dan disetujui pemilik.
+
+Hasil deploy 23 Agustus 2026:
+
+- RPC rename bersifat `security invoker`, `search_path` kosong, dan hanya `service_role` yang mempunyai `EXECUTE`;
+- Edge Function `admin-users` versi 6 berstatus aktif dengan `verify_jwt = true`;
+- CORS fallback mengizinkan `https://sikapandawa.com`, `https://www.sikapandawa.com`, dan preview localhost 8080/8081; origin lain ditolak;
+- preflight localhost dan domain produksi mengembalikan 204, sedangkan origin asing mengembalikan 403;
+- request POST tanpa Authorization ditolak gateway dengan 401;
+- tidak dilakukan smoke mutation terhadap akun nyata.
 
 Referensi resmi:
 

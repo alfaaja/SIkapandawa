@@ -10,6 +10,7 @@ import {
     isAdminUuid,
     type AdminMutationPort
 } from './handler.ts';
+import { resolveAdminAllowedOrigins } from './corsOrigins.ts';
 import { executeAdminOperation } from './operation.ts';
 import { safeMutationFailure } from './mutationFailure.ts';
 import { executeUsernameRename } from './usernameRename.ts';
@@ -30,19 +31,6 @@ function publishableKey(): string {
     return Deno.env.get('SUPABASE_PUBLISHABLE_KEY')?.trim()
         || Deno.env.get('SUPABASE_ANON_KEY')?.trim()
         || requiredEnvironment('SUPABASE_PUBLISHABLE_KEY');
-}
-
-function allowedOrigins(): Set<string> {
-    const configured = Deno.env.get('ADMIN_ALLOWED_ORIGINS')?.trim();
-    const origins = configured
-        ? configured.split(',')
-        : [
-            'http://127.0.0.1:8080',
-            'http://127.0.0.1:8081',
-            'http://localhost:8080',
-            'http://localhost:8081'
-        ];
-    return new Set(origins.map((origin) => origin.trim()).filter(Boolean));
 }
 
 function serviceClient(): SupabaseClient {
@@ -390,7 +378,9 @@ Deno.serve(async (request: Request): Promise<Response> => {
             )
         };
         const handler = createAdminUsersHandler({
-            allowedOrigins: allowedOrigins(),
+                allowedOrigins: new Set(resolveAdminAllowedOrigins(
+                    Deno.env.get('ADMIN_ALLOWED_ORIGINS'),
+                )),
             async verifyUser(token) {
                 accessToken = token;
                 const { data, error } = await callerClient(token).auth.getUser(token);
