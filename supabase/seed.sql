@@ -1,0 +1,1 @@
+-- Intentionally empty. Test fixtures are created transactionally by local suites.

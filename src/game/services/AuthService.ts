@@ -7,6 +7,12 @@ import {
     isLocalFallbackAllowed,
     isSupabaseConfigured
 } from './SupabaseClient';
+import {
+    buildInternalAuthEmail,
+    validateUsername
+} from '../../shared/auth/username';
+
+export { buildInternalAuthEmail, normalizeUsername } from '../../shared/auth/username';
 
 export interface AccountProfile {
     id: string;
@@ -64,31 +70,6 @@ function clearRemoteProfile(): void {
 function validateDisplayName(value: string): string | null {
     const normalized = value.trim();
     return normalized.length >= 2 && normalized.length <= 24 ? normalized : null;
-}
-
-export function normalizeUsername(value: string): string {
-    return value.trim().normalize('NFKC').toLowerCase();
-}
-
-function validateUsername(value: string): string | null {
-    const normalized = normalizeUsername(value);
-    if (normalized.length < 3 || normalized.length > 20) return null;
-    return /^[a-z0-9._-]+$/.test(normalized) ? normalized : null;
-}
-
-async function sha256Hex(value: string): Promise<string> {
-    const encoded = new TextEncoder().encode(value);
-    const digest = await window.crypto.subtle.digest('SHA-256', encoded);
-    return Array.from(
-        new Uint8Array(digest),
-        (byte) => byte.toString(16).padStart(2, '0')
-    ).join('');
-}
-
-export async function buildInternalAuthEmail(username: string): Promise<string> {
-    const normalized = validateUsername(username);
-    if (!normalized) throw new Error('Invalid username');
-    return `${await sha256Hex(normalized)}@users.sikapandawa.invalid`;
 }
 
 async function fetchRemoteProfile(userId: string): Promise<AccountProfile | null> {

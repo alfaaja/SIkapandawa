@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 import { rmSync } from 'node:fs';
 import { globSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const configDirectory = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(configDirectory, '..');
 
 // Buang folder .claude-flow (log daemon ruflo) yang bisa mencemari publicDir
 // agar tidak ikut ter-copy ke dist produksi.
@@ -40,6 +45,10 @@ export default defineConfig({
     logLevel: 'warning',
     build: {
         rollupOptions: {
+            input: {
+                game: resolve(projectRoot, 'index.html'),
+                admin: resolve(projectRoot, 'admin/index.html')
+            },
             output: {
                 manualChunks: {
                     phaser: ['phaser']
