@@ -76,11 +76,11 @@ function parseListItem(value: unknown): AdminUserListItem {
         displayName: requiredString(value, 'displayName'),
         username: requiredString(value, 'username'),
         registeredAt: requiredString(value, 'registeredAt'),
-        highestUnlockedLevel: requiredNumber(value, 'highestUnlockedLevel'),
-        completedLevelCount: requiredNumber(value, 'completedLevelCount'),
-        totalStars: requiredNumber(value, 'totalStars'),
+        highestUnlockedLevel: requiredNumberInRange(value, 'highestUnlockedLevel', 1, 10),
+        completedLevelCount: requiredNumberInRange(value, 'completedLevelCount', 0, 10),
+        totalStars: requiredNumberInRange(value, 'totalStars', 0, 30),
         jejakPandawaUnlocked: requiredBoolean(value, 'jejakPandawaUnlocked'),
-        jejakPandawaBestScore: requiredNumber(value, 'jejakPandawaBestScore'),
+        jejakPandawaBestScore: requiredNumberInRange(value, 'jejakPandawaBestScore', 0, 10),
         progressUpdatedAt: requiredString(value, 'progressUpdatedAt'),
         status: status as ProgressStatus
     };
@@ -171,6 +171,27 @@ export class AdminDashboardService {
             pageSize: requiredNumber(value, 'pageSize'),
             pageOffset: requiredNumber(value, 'pageOffset')
         };
+    }
+
+    async listChartUsers(): Promise<AdminUserListItem[]> {
+        const pageSize = 100;
+        const firstPage = await this.listUsers({
+            searchText: '',
+            progressStatus: 'all',
+            pageSize,
+            pageOffset: 0
+        });
+        let users = [...firstPage.items];
+        for (let pageOffset = pageSize; pageOffset < firstPage.total; pageOffset += pageSize) {
+            const page = await this.listUsers({
+                searchText: '',
+                progressStatus: 'all',
+                pageSize,
+                pageOffset
+            });
+            users = [...users, ...page.items];
+        }
+        return users;
     }
 
     async getUserProgress(userId: string): Promise<AdminUserProgressResponse> {

@@ -59,6 +59,33 @@ test.describe('panel admin mock contract', () => {
         await expect(page.getByText(/Halaman 2 dari 3/)).toBeVisible();
     });
 
+    test('shows two whole-cohort score charts independent of table filters', async ({ page }) => {
+        await page.setViewportSize({ width: 1366, height: 768 });
+        await openMockLogin(page);
+        await login(page);
+
+        await expect(page.getByRole('heading', { name: 'Capaian Misi Pandawa' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Capaian Jejak Pandawa' })).toBeVisible();
+        const bars = page.locator('.chart-bar');
+        await expect(bars).toHaveCount(112);
+
+        await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
+        await expect(page.locator('tbody tr')).toHaveCount(1);
+        await expect(bars).toHaveCount(112);
+
+        const layout = await page.locator('.progress-charts').evaluate((element) => ({
+            insideViewport: element.getBoundingClientRect().right <= innerWidth,
+            noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
+            scrollableCharts: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
+                .every((chart) => chart.scrollWidth > chart.clientWidth)
+        }));
+        expect(layout).toEqual({
+            insideViewport: true,
+            noPageOverflow: true,
+            scrollableCharts: true
+        });
+    });
+
     test('loads the admin stylesheet and gives usernames a visible identity treatment', async ({
         page
     }) => {

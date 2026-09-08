@@ -29,18 +29,27 @@ export class AdminDashboardController {
         }
         this.view.showLoading();
         try {
-            const [summary, list] = await Promise.all([
+            const [summaryResult, listResult, chartResult] = await Promise.allSettled([
                 this.service.getSummary(),
                 this.service.listUsers({
                     searchText: this.searchText,
                     progressStatus: this.progressStatus,
                     pageSize: this.pageSize,
                     pageOffset: this.pageOffset
-                })
+                }),
+                this.service.listChartUsers()
             ]);
             if (sequence !== this.requestSequence) return;
+            if (summaryResult.status === 'rejected') throw summaryResult.reason;
+            if (listResult.status === 'rejected') throw listResult.reason;
+            const summary = summaryResult.value;
+            const list = listResult.value;
+            const chartUsers = chartResult.status === 'fulfilled' ? chartResult.value : [];
             this.total = list.total;
-            this.view.renderData(summary, list);
+            this.view.renderData(summary, list, chartUsers);
+            if (chartResult.status === 'rejected') {
+                this.view.showChartError('Grafik capaian tidak dapat dimuat.');
+            }
         } catch (error) {
             if (sequence !== this.requestSequence) return;
             if (

@@ -21,6 +21,15 @@ const emptyList: AdminUserListResponse = {
     pageOffset: 0
 };
 
+function withChartUsers<T extends Record<string, unknown>>(service: T): T & {
+    listChartUsers: ReturnType<typeof vi.fn>;
+} {
+    return {
+        ...service,
+        listChartUsers: vi.fn().mockResolvedValue(emptyList.items)
+    };
+}
+
 function deferred<T>() {
     let resolve!: (value: T) => void;
     let reject!: (reason: unknown) => void;
@@ -36,6 +45,7 @@ function makeView() {
         showLoading: vi.fn(),
         showOffline: vi.fn(),
         showError: vi.fn(),
+        showChartError: vi.fn(),
         renderData: vi.fn(),
         showProgressLoading: vi.fn(),
         showProgress: vi.fn(),
@@ -52,13 +62,13 @@ describe('AdminDashboardController', () => {
         const first = deferred<AdminUserListResponse>();
         const second = deferred<AdminUserListResponse>();
         const newerList = { ...emptyList, total: 2 };
-        const service = {
+        const service = withChartUsers({
             getSummary: vi.fn().mockResolvedValue(summary),
             listUsers: vi.fn()
                 .mockReturnValueOnce(first.promise)
                 .mockReturnValueOnce(second.promise),
             getUserProgress: vi.fn()
-        };
+        });
         const view = makeView();
         const controller = new AdminDashboardController(
             service as never,
@@ -74,16 +84,16 @@ describe('AdminDashboardController', () => {
         await olderRefresh;
 
         expect(view.renderData).toHaveBeenCalledTimes(1);
-        expect(view.renderData).toHaveBeenCalledWith(summary, newerList);
+        expect(view.renderData).toHaveBeenCalledWith(summary, newerList, emptyList.items);
     });
 
     it('debounces search and resets server pagination', async () => {
         vi.useFakeTimers();
-        const service = {
+        const service = withChartUsers({
             getSummary: vi.fn().mockResolvedValue(summary),
             listUsers: vi.fn().mockResolvedValue(emptyList),
             getUserProgress: vi.fn()
-        };
+        });
         const controller = new AdminDashboardController(
             service as never,
             makeView() as never,
@@ -106,11 +116,11 @@ describe('AdminDashboardController', () => {
 
     it('shows an offline retry state without requesting data', async () => {
         vi.stubGlobal('navigator', { onLine: false });
-        const service = {
+        const service = withChartUsers({
             getSummary: vi.fn(),
             listUsers: vi.fn(),
             getUserProgress: vi.fn()
-        };
+        });
         const view = makeView();
 
         await new AdminDashboardController(
@@ -125,11 +135,11 @@ describe('AdminDashboardController', () => {
     });
 
     it('returns to login when the database reports an expired session', async () => {
-        const service = {
+        const service = withChartUsers({
             getSummary: vi.fn().mockRejectedValue(new AdminServiceError('session_expired')),
             listUsers: vi.fn().mockResolvedValue(emptyList),
             getUserProgress: vi.fn()
-        };
+        });
         const onSessionExpired = vi.fn();
 
         await new AdminDashboardController(
@@ -141,14 +151,36 @@ describe('AdminDashboardController', () => {
         expect(onSessionExpired).toHaveBeenCalledOnce();
     });
 
+    it('keeps summary and player data usable when chart loading fails', async () => {
+        const service = withChartUsers({
+            getSummary: vi.fn().mockResolvedValue(summary),
+            listUsers: vi.fn().mockResolvedValue(emptyList),
+            getUserProgress: vi.fn()
+        });
+        service.listChartUsers.mockRejectedValue(new Error('Chart gagal'));
+        const view = makeView();
+
+        await new AdminDashboardController(
+            service as never,
+            view as never,
+            vi.fn()
+        ).refresh();
+
+        expect(view.renderData).toHaveBeenCalledWith(summary, emptyList, []);
+        expect(view.showChartError).toHaveBeenCalledWith(
+            'Grafik capaian tidak dapat dimuat.'
+        );
+        expect(view.showError).not.toHaveBeenCalled();
+    });
+
     it('renders a retryable service error and retries through the supplied callback', async () => {
-        const service = {
+        const service = withChartUsers({
             getSummary: vi.fn()
                 .mockRejectedValueOnce(new Error('Gagal sementara'))
                 .mockResolvedValueOnce(summary),
             listUsers: vi.fn().mockResolvedValue(emptyList),
             getUserProgress: vi.fn()
-        };
+        });
         const view = makeView();
         const controller = new AdminDashboardController(
             service as never,
@@ -168,11 +200,11 @@ describe('AdminDashboardController', () => {
 
     it('resets pagination for a filter and navigates only within result bounds', async () => {
         const list = { ...emptyList, total: 60 };
-        const service = {
+        const service = withChartUsers({
             getSummary: vi.fn().mockResolvedValue(summary),
             listUsers: vi.fn().mockResolvedValue(list),
             getUserProgress: vi.fn()
-        };
+        });
         const controller = new AdminDashboardController(
             service as never,
             makeView() as never,

@@ -367,6 +367,156 @@ select:hover {
     font-size: 0.82rem;
 }
 
+.progress-charts {
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: 1.1rem;
+    background: var(--paper);
+    box-shadow: var(--shadow);
+}
+
+.charts-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.charts-heading h2,
+.charts-heading p,
+.chart-panel h3,
+.chart-subtitle {
+    margin-bottom: 0;
+}
+
+.charts-heading h2 {
+    font-size: 1.75rem;
+}
+
+.charts-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.chart-panel {
+    min-width: 0;
+    padding: 1.25rem;
+    border: 1px solid #e8e0d3;
+    border-radius: 0.9rem;
+    background: #fffefb;
+}
+
+.chart-panel h3 {
+    color: var(--forest);
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.chart-subtitle {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-align: center;
+}
+
+.chart-scroll {
+    margin-top: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-color: rgb(23 76 67 / 35%) transparent;
+}
+
+.chart-bars {
+    display: flex;
+    align-items: stretch;
+    gap: 0.55rem;
+    min-width: max-content;
+    height: 20rem;
+    padding: 0 0.6rem 0.4rem;
+    margin: 0;
+    list-style: none;
+}
+
+.chart-column {
+    display: grid;
+    grid-template-rows: 13rem 1fr;
+    width: 4.25rem;
+}
+
+.chart-bar-area {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    border-bottom: 2px solid #857e72;
+    background-image: repeating-linear-gradient(
+        to top,
+        transparent 0,
+        transparent calc(20% - 1px),
+        rgb(23 76 67 / 9%) calc(20% - 1px),
+        rgb(23 76 67 / 9%) 20%
+    );
+}
+
+.chart-bar {
+    position: relative;
+    width: 2.4rem;
+    height: var(--bar-height);
+    min-height: 0.25rem;
+    border-radius: 0.3rem 0.3rem 0 0;
+    background: var(--chart-color);
+}
+
+.chart-bar-zero {
+    min-height: 0;
+}
+
+.chart-misi {
+    --chart-color: #71389d;
+}
+
+.chart-jejak {
+    --chart-color: #efad16;
+}
+
+.chart-value {
+    position: absolute;
+    bottom: calc(100% + 0.28rem);
+    left: 50%;
+    color: var(--ink);
+    font-size: 0.76rem;
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
+
+.chart-name {
+    display: block;
+    padding-top: 0.55rem;
+    color: #3f4642;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+
+.chart-empty {
+    display: grid;
+    width: min(70vw, 40rem);
+    height: 13rem;
+    place-items: center;
+    color: var(--muted);
+}
+
+.chart-error {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    color: var(--danger);
+    background: var(--danger-soft);
+    text-align: center;
+}
+
 .players-panel {
     margin-top: 1.25rem;
     overflow: hidden;
@@ -732,6 +882,28 @@ tbody tr:hover {
 
     .summary-value {
         font-size: 2.25rem;
+    }
+
+    .progress-charts {
+        padding: 1rem;
+    }
+
+    .charts-heading {
+        align-items: start;
+        flex-direction: column;
+    }
+
+    .chart-panel {
+        padding: 1rem 0.75rem;
+    }
+
+    .chart-bars {
+        height: 18rem;
+    }
+
+    .chart-column {
+        grid-template-rows: 11.5rem 1fr;
+        width: 3.8rem;
     }
 
     .toolbar {

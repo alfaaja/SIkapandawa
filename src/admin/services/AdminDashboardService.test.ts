@@ -90,11 +90,59 @@ describe('AdminDashboardService', () => {
         }));
     });
 
+    it('loads the complete unfiltered cohort for dashboard charts', async () => {
+        const data = {
+            items: [listItem()],
+            total: 1,
+            pageSize: 100,
+            pageOffset: 0
+        };
+        const rpc = vi.fn().mockResolvedValue({ data, error: null });
+
+        await expect(new AdminDashboardService(makeBackend(rpc)).listChartUsers())
+            .resolves.toEqual(data.items);
+        expect(rpc).toHaveBeenCalledWith('admin_list_users', {
+            search_text: null,
+            progress_status: 'all',
+            page_size: 100,
+            page_offset: 0
+        });
+    });
+
+    it('paginates chart data beyond the one-hundred-user RPC limit', async () => {
+        const firstPage = {
+            items: Array.from({ length: 100 }, (_, index) => listItem({
+                userId: `user-${index}`
+            })),
+            total: 101,
+            pageSize: 100,
+            pageOffset: 0
+        };
+        const lastItem = listItem({ userId: 'user-100' });
+        const rpc = vi.fn()
+            .mockResolvedValueOnce({ data: firstPage, error: null })
+            .mockResolvedValueOnce({
+                data: { items: [lastItem], total: 101, pageSize: 100, pageOffset: 100 },
+                error: null
+            });
+
+        const users = await new AdminDashboardService(makeBackend(rpc)).listChartUsers();
+
+        expect(users).toHaveLength(101);
+        expect(users[users.length - 1]).toEqual(lastItem);
+        expect(rpc).toHaveBeenLastCalledWith('admin_list_users', expect.objectContaining({
+            page_size: 100,
+            page_offset: 100
+        }));
+    });
+
     it.each([
         null,
         { items: 'not-an-array', total: 0, pageSize: 25, pageOffset: 0 },
         { items: [listItem({ status: 'owner' })], total: 1, pageSize: 25, pageOffset: 0 },
-        { items: [listItem({ username: 7 })], total: 1, pageSize: 25, pageOffset: 0 }
+        { items: [listItem({ username: 7 })], total: 1, pageSize: 25, pageOffset: 0 },
+        { items: [listItem({ totalStars: 31 })], total: 1, pageSize: 25, pageOffset: 0 },
+        { items: [listItem({ jejakPandawaBestScore: 11 })], total: 1, pageSize: 25, pageOffset: 0 }
     ])('rejects a malformed list response %#', async (data) => {
         const service = new AdminDashboardService(makeBackend(
             vi.fn().mockResolvedValue({ data, error: null })

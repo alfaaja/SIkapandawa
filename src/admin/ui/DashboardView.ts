@@ -2,6 +2,7 @@ import type {
     AdminCreateUserInput,
     AdminUpdateUserInput,
     AdminUserIdentity,
+    AdminUserListItem,
     AdminUserListResponse,
     DashboardSummary,
     ProgressStatusFilter
@@ -10,6 +11,7 @@ import { validateUsername } from '../../shared/auth/username';
 import { formatDateTime, formatStatus } from '../utils/formatters';
 import { createElement, replaceContent } from './dom';
 import { UserManagementDialog } from './UserManagementDialog';
+import { ProgressCharts } from './ProgressCharts';
 import { UserProgressDialog } from './UserProgressDialog';
 
 export interface DashboardCallbacks {
@@ -57,6 +59,7 @@ export class DashboardView {
         attributes: { type: 'button' }
     });
     private readonly progressDialog = new UserProgressDialog();
+    private readonly progressCharts: ProgressCharts;
     private readonly managementDialog: UserManagementDialog;
 
     constructor(
@@ -66,6 +69,7 @@ export class DashboardView {
         private readonly demoMode = false,
         private readonly adminUserId: string | null = null
     ) {
+        this.progressCharts = new ProgressCharts(adminUserId, adminUsername);
         this.managementDialog = new UserManagementDialog({
             onCreate: (input) => this.callbacks.onCreateUser(input),
             onUpdate: (userId, input) => this.callbacks.onEditUser(userId, input),
@@ -95,7 +99,7 @@ export class DashboardView {
             }));
         }
         tableSection.append(this.status, this.createTable(), this.createPagination());
-        content.append(this.summary, tableSection);
+        content.append(this.summary, this.progressCharts.element, tableSection);
         main.append(header, content);
         replaceContent(this.root, main);
         this.progressDialog.mount(main);
@@ -263,8 +267,17 @@ export class DashboardView {
         this.showError('Panel sedang offline. Periksa koneksi internet Anda.', retry);
     }
 
-    renderData(summary: DashboardSummary, list: AdminUserListResponse): void {
+    showChartError(message: string): void {
+        this.progressCharts.showError(message);
+    }
+
+    renderData(
+        summary: DashboardSummary,
+        list: AdminUserListResponse,
+        chartUsers: readonly AdminUserListItem[] = list.items
+    ): void {
         this.renderSummary(summary);
+        this.progressCharts.render(chartUsers);
         this.renderUsers(list);
         this.refreshedAt.textContent = formatDateTime(summary.generatedAt);
         if (list.items.length === 0) {
