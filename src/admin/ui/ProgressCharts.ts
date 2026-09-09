@@ -145,6 +145,7 @@ export class ProgressCharts {
             const value = clampScore(definition.value(student), definition.maximum);
             const item = createElement('li', { className: 'chart-column' });
             const barArea = createElement('div', { className: 'chart-bar-area' });
+            const plot = createElement('div', { className: 'chart-plot' });
             const bar = createElement('div', {
                 className: `chart-bar${value === 0 ? ' chart-bar-zero' : ''}`,
                 attributes: {
@@ -157,7 +158,8 @@ export class ProgressCharts {
                 className: 'chart-value',
                 text: `${value}/${definition.maximum}`
             }));
-            barArea.append(bar);
+            plot.append(bar);
+            barArea.append(plot);
             item.append(
                 barArea,
                 createElement('span', {
