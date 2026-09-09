@@ -89,6 +89,15 @@ test.describe('panel admin mock contract', () => {
         await expect(chartNames.first()).toHaveText('1. AR');
         await expect(page.getByRole('button', { name: 'Nama lengkap' }))
             .toHaveAttribute('aria-pressed', 'true');
+
+        const compactLayout = await page.locator('.progress-charts').evaluate((element) => ({
+            noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
+            chartWidths: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
+                .map((chart) => ({ client: chart.clientWidth, scroll: chart.scrollWidth }))
+        }));
+        expect(compactLayout.noPageOverflow).toBe(true);
+        expect(compactLayout.chartWidths.filter(({ client, scroll }) => scroll > client))
+            .toEqual([]);
     });
 
     test('loads the admin stylesheet and gives usernames a visible identity treatment', async ({

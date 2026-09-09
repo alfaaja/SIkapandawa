@@ -544,6 +544,11 @@ select:hover {
     writing-mode: horizontal-tb;
 }
 
+.progress-charts-compact .chart-bars-dense .chart-name {
+    max-height: 2.5rem;
+    writing-mode: vertical-rl;
+}
+
 .chart-empty {
     display: grid;
     width: min(70vw, 40rem);
