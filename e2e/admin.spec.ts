@@ -83,6 +83,22 @@ test.describe('panel admin mock contract', () => {
         expect(layout.noPageOverflow).toBe(true);
         expect(layout.chartWidths.filter(({ client, scroll }) => scroll > client)).toEqual([]);
 
+        const maximumScoreLabels = page.locator('.chart-jejak .chart-value', {
+            hasText: '10/10'
+        });
+        expect(await maximumScoreLabels.count()).toBeGreaterThan(0);
+        const clippedMaximumLabels = await maximumScoreLabels.evaluateAll((labels) => (
+            labels.filter((label) => {
+                const chart = label.closest<HTMLElement>('.chart-scroll');
+                if (!chart) return true;
+                const labelBounds = label.getBoundingClientRect();
+                const chartBounds = chart.getBoundingClientRect();
+                return labelBounds.top < chartBounds.top
+                    || labelBounds.bottom > chartBounds.bottom;
+            }).map((label) => label.textContent)
+        ));
+        expect(clippedMaximumLabels).toEqual([]);
+
         const chartNames = page.locator('.chart-name');
         await expect(chartNames.first()).toHaveText('1. Arjuna Pratama');
         await page.getByRole('button', { name: 'Mode ringkas' }).click();
