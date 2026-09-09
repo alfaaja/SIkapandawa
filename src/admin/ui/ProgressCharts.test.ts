@@ -97,4 +97,39 @@ describe('ProgressCharts', () => {
 
         expect(charts.element.querySelectorAll('.chart-bar-zero')).toHaveLength(2);
     });
+
+    it('toggles every chart label between full names and two-letter initials', () => {
+        const charts = new ProgressCharts(null, 'sikapandawa');
+        charts.render([
+            player({ userId: 'student-1' }),
+            player({ userId: 'student-2', displayName: 'M. Dika Saputra' })
+        ]);
+
+        const modeButton = charts.element.querySelector<HTMLButtonElement>(
+            '[data-testid="chart-name-mode"]'
+        )!;
+        expect(modeButton.textContent).toBe('Mode ringkas');
+        expect(modeButton.getAttribute('aria-pressed')).toBe('false');
+
+        modeButton.click();
+
+        expect(charts.element.classList.contains('progress-charts-compact')).toBe(true);
+        expect(Array.from(charts.element.querySelectorAll('.chart-name')).map(
+            (element) => element.textContent
+        )).toEqual(['1. FA', '2. MD', '1. FA', '2. MD']);
+        expect(modeButton.textContent).toBe('Nama lengkap');
+        expect(modeButton.getAttribute('aria-pressed')).toBe('true');
+        expect(charts.element.querySelector('.chart-bar')?.getAttribute('aria-label'))
+            .toContain('Fahmi Nuriya');
+
+        modeButton.click();
+
+        expect(charts.element.classList.contains('progress-charts-compact')).toBe(false);
+        expect(Array.from(charts.element.querySelectorAll('.chart-name')).map(
+            (element) => element.textContent
+        )).toEqual([
+            '1. Fahmi Nuriya', '2. M. Dika Saputra',
+            '1. Fahmi Nuriya', '2. M. Dika Saputra'
+        ]);
+    });
 });

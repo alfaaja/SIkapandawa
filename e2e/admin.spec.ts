@@ -76,14 +76,21 @@ test.describe('panel admin mock contract', () => {
         const layout = await page.locator('.progress-charts').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,
             noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
-            scrollableCharts: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
-                .every((chart) => chart.scrollWidth > chart.clientWidth)
+            fixedCharts: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
+                .every((chart) => chart.scrollWidth <= chart.clientWidth)
         }));
         expect(layout).toEqual({
             insideViewport: true,
             noPageOverflow: true,
-            scrollableCharts: true
+            fixedCharts: true
         });
+
+        const chartNames = page.locator('.chart-name');
+        await expect(chartNames.first()).toHaveText('1. Arjuna Pratama');
+        await page.getByRole('button', { name: 'Mode ringkas' }).click();
+        await expect(chartNames.first()).toHaveText('1. AR');
+        await expect(page.getByRole('button', { name: 'Nama lengkap' }))
+            .toHaveAttribute('aria-pressed', 'true');
     });
 
     test('loads the admin stylesheet and gives usernames a visible identity treatment', async ({
