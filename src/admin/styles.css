@@ -395,6 +395,17 @@ select:hover {
     font-size: 1.75rem;
 }
 
+.charts-heading-copy {
+    min-width: 0;
+}
+
+.chart-mode-button {
+    flex: none;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.85rem;
+    white-space: nowrap;
+}
+
 .charts-grid {
     display: grid;
     gap: 1rem;
@@ -422,26 +433,27 @@ select:hover {
 
 .chart-scroll {
     margin-top: 1rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-color: rgb(23 76 67 / 35%) transparent;
+    padding-inline: 0.5rem;
+    overflow: hidden;
 }
 
 .chart-bars {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(var(--chart-column-count), minmax(0, 1fr));
     align-items: stretch;
-    gap: 0.55rem;
-    min-width: max-content;
-    height: 20rem;
-    padding: 0 0.6rem 0.4rem;
+    gap: clamp(0.2rem, 0.35vw, 0.55rem);
+    width: 100%;
+    min-width: 0;
+    height: 22rem;
+    padding: 0 0 0.4rem;
     margin: 0;
     list-style: none;
 }
 
 .chart-column {
     display: grid;
-    grid-template-rows: 13rem 1fr;
-    width: 4.25rem;
+    grid-template-rows: 13rem minmax(0, 1fr);
+    min-width: 0;
 }
 
 .chart-bar-area {
@@ -460,7 +472,8 @@ select:hover {
 
 .chart-bar {
     position: relative;
-    width: 2.4rem;
+    width: 72%;
+    max-width: 2.4rem;
     height: var(--bar-height);
     min-height: 0.25rem;
     border-radius: 0.3rem 0.3rem 0 0;
@@ -484,20 +497,51 @@ select:hover {
     bottom: calc(100% + 0.28rem);
     left: 50%;
     color: var(--ink);
-    font-size: 0.76rem;
+    font-size: clamp(0.58rem, 0.75vw, 0.76rem);
     white-space: nowrap;
     transform: translateX(-50%);
 }
 
 .chart-name {
     display: block;
+    justify-self: center;
+    max-height: 8.5rem;
     padding-top: 0.55rem;
+    overflow: hidden;
     color: #3f4642;
-    font-size: 0.7rem;
+    font-size: clamp(0.58rem, 0.7vw, 0.7rem);
     font-weight: 700;
     line-height: 1.2;
-    overflow-wrap: anywhere;
     text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+}
+
+.chart-bars-dense {
+    gap: 0.12rem;
+}
+
+.chart-bars-dense .chart-value {
+    right: 0;
+    left: 0;
+    font-size: 0.45rem;
+    letter-spacing: -0.03em;
+    text-align: center;
+    transform: none;
+}
+
+.progress-charts-compact .chart-bars {
+    height: 16rem;
+}
+
+.progress-charts-compact .chart-column {
+    grid-template-rows: 13rem minmax(0, 1fr);
+}
+
+.progress-charts-compact .chart-name {
+    max-height: none;
+    writing-mode: horizontal-tb;
 }
 
 .chart-empty {
@@ -898,12 +942,23 @@ tbody tr:hover {
     }
 
     .chart-bars {
-        height: 18rem;
+        height: 20rem;
     }
 
     .chart-column {
-        grid-template-rows: 11.5rem 1fr;
-        width: 3.8rem;
+        grid-template-rows: 11.5rem minmax(0, 1fr);
+    }
+
+    .chart-value {
+        font-size: 0.5rem;
+    }
+
+    .progress-charts-compact .chart-bars {
+        height: 14.5rem;
+    }
+
+    .progress-charts-compact .chart-column {
+        grid-template-rows: 11.5rem minmax(0, 1fr);
     }
 
     .toolbar {

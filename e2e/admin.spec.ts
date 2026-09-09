@@ -76,14 +76,12 @@ test.describe('panel admin mock contract', () => {
         const layout = await page.locator('.progress-charts').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,
             noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
-            fixedCharts: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
-                .every((chart) => chart.scrollWidth <= chart.clientWidth)
+            chartWidths: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
+                .map((chart) => ({ client: chart.clientWidth, scroll: chart.scrollWidth }))
         }));
-        expect(layout).toEqual({
-            insideViewport: true,
-            noPageOverflow: true,
-            fixedCharts: true
-        });
+        expect(layout.insideViewport).toBe(true);
+        expect(layout.noPageOverflow).toBe(true);
+        expect(layout.chartWidths.filter(({ client, scroll }) => scroll > client)).toEqual([]);
 
         const chartNames = page.locator('.chart-name');
         await expect(chartNames.first()).toHaveText('1. Arjuna Pratama');

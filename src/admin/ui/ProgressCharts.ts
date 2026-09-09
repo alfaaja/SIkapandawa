@@ -9,6 +9,10 @@ interface ChartDefinition {
     value(user: AdminUserListItem): number;
 }
 
+interface ChartViewState {
+    compactNames: boolean;
+}
+
 const charts: readonly ChartDefinition[] = Object.freeze([
     {
         title: 'Capaian Misi Pandawa',
@@ -34,37 +38,61 @@ function clampScore(value: number, maximum: number): number {
     return Math.min(Math.max(value, 0), maximum);
 }
 
+function compactName(displayName: string): string {
+    const letters = Array.from(displayName.normalize('NFKD'))
+        .filter((character) => /[\p{L}\p{N}]/u.test(character));
+    return letters.slice(0, 2).join('').toLocaleUpperCase('id-ID') || '—';
+}
+
 export class ProgressCharts {
     readonly element = createElement('section', {
         className: 'progress-charts',
         attributes: { 'aria-labelledby': 'progress-charts-title' }
     });
+    private readonly modeButton = createElement('button', {
+        className: 'button button-secondary chart-mode-button',
+        text: 'Mode ringkas',
+        attributes: {
+            type: 'button',
+            'aria-pressed': 'false',
+            'data-testid': 'chart-name-mode'
+        }
+    });
+    private students: readonly AdminUserListItem[] = Object.freeze([]);
+    private state: ChartViewState = Object.freeze({ compactNames: false });
 
     constructor(
         private readonly adminUserId: string | null,
         private readonly adminUsername: string
     ) {
         const heading = createElement('div', { className: 'charts-heading' });
+        const headingCopy = createElement('div', { className: 'charts-heading-copy' });
         const title = createElement('h2', { text: 'Visualisasi capaian' });
         title.id = 'progress-charts-title';
-        heading.append(
+        headingCopy.append(
             title,
             createElement('p', {
                 className: 'muted',
                 text: 'Perbandingan nilai seluruh siswa. Grafik tidak terpengaruh pencarian daftar pemain.'
             })
         );
+        this.modeButton.addEventListener('click', () => this.toggleNameMode());
+        heading.append(headingCopy, this.modeButton);
         this.element.append(heading, createElement('div', { className: 'charts-grid' }));
     }
 
     render(users: readonly AdminUserListItem[]): void {
-        const students = users
+        this.students = Object.freeze(users
             .filter((user) => !this.isAdmin(user))
             .slice()
-            .sort(compareRegistration);
+            .sort(compareRegistration));
+        this.renderCharts();
+    }
+
+    private renderCharts(): void {
         const grid = this.element.querySelector<HTMLElement>('.charts-grid');
         if (!grid) return;
-        replaceContent(grid, ...charts.map((chart) => this.createChart(chart, students)));
+        replaceContent(grid, ...charts.map((chart) => this.createChart(chart, this.students)));
     }
 
     showError(message: string): void {
@@ -83,6 +111,14 @@ export class ProgressCharts {
             : validateUsername(user.username) === validateUsername(this.adminUsername);
     }
 
+    private toggleNameMode(): void {
+        this.state = Object.freeze({ compactNames: !this.state.compactNames });
+        this.element.classList.toggle('progress-charts-compact', this.state.compactNames);
+        this.modeButton.textContent = this.state.compactNames ? 'Nama lengkap' : 'Mode ringkas';
+        this.modeButton.setAttribute('aria-pressed', String(this.state.compactNames));
+        this.renderCharts();
+    }
+
     private createChart(
         definition: ChartDefinition,
         students: readonly AdminUserListItem[]
@@ -97,11 +133,14 @@ export class ProgressCharts {
                 text: `Format skor a/${definition.maximum}: a = poin yang didapat.`
             })
         );
-        const scroll = createElement('div', {
+        const viewport = createElement('div', {
             className: 'chart-scroll',
-            attributes: { tabindex: '0', 'aria-label': `${definition.title}, gulir mendatar` }
+            attributes: { 'aria-label': definition.title }
         });
-        const list = createElement('ol', { className: 'chart-bars' });
+        const list = createElement('ol', {
+            className: `chart-bars${students.length > 30 ? ' chart-bars-dense' : ''}`
+        });
+        list.style.setProperty('--chart-column-count', String(Math.max(students.length, 1)));
         for (const [index, student] of students.entries()) {
             const value = clampScore(definition.value(student), definition.maximum);
             const item = createElement('li', { className: 'chart-column' });
@@ -123,7 +162,10 @@ export class ProgressCharts {
                 barArea,
                 createElement('span', {
                     className: 'chart-name',
-                    text: `${index + 1}. ${student.displayName}`
+                    text: `${index + 1}. ${this.state.compactNames
+                        ? compactName(student.displayName)
+                        : student.displayName}`,
+                    attributes: { title: student.displayName }
                 })
             );
             list.append(item);
@@ -134,8 +176,8 @@ export class ProgressCharts {
                 text: 'Belum ada data siswa untuk ditampilkan.'
             }));
         }
-        scroll.append(list);
-        panel.append(scroll);
+        viewport.append(list);
+        panel.append(viewport);
         return panel;
     }
 }
