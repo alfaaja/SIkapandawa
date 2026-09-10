@@ -91,6 +91,10 @@ test.describe('panel admin mock contract', () => {
                 actionsVisible: true,
                 noPageOverflow: true
             });
+
+            await page.getByRole('button', { name: 'Keluar' }).click();
+            await expect(page.getByRole('heading', { name: 'Masuk sebagai admin' }))
+                .toBeVisible();
         }
     });
 

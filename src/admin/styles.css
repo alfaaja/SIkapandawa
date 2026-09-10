@@ -271,6 +271,9 @@ select:hover {
 }
 
 .dashboard-header {
+    position: sticky;
+    z-index: 10;
+    top: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -279,6 +282,7 @@ select:hover {
     border-bottom: 1px solid rgb(255 255 255 / 12%);
     color: #fffdf7;
     background: var(--forest);
+    box-shadow: 0 0.5rem 1.5rem rgb(8 32 28 / 18%);
 }
 
 .dashboard-header h1 {
