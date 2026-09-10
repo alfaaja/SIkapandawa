@@ -59,6 +59,41 @@ test.describe('panel admin mock contract', () => {
         await expect(page.getByText(/Halaman 2 dari 3/)).toBeVisible();
     });
 
+    test('keeps the dashboard header pinned while scrolling', async ({ page }) => {
+        for (const viewport of [
+            { width: 1366, height: 768 },
+            { width: 390, height: 844 }
+        ]) {
+            await page.setViewportSize(viewport);
+            await openMockLogin(page);
+            await login(page);
+
+            const header = page.locator('.dashboard-header');
+            await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+            await expect.poll(() => page.evaluate(() => window.scrollY))
+                .toBeGreaterThan(0);
+
+            const layout = await header.evaluate((element) => {
+                const bounds = element.getBoundingClientRect();
+                const actionBounds = element.querySelector<HTMLElement>('.header-actions')!
+                    .getBoundingClientRect();
+                return {
+                    headerPinned: Math.abs(bounds.top) <= 1,
+                    headerVisible: bounds.bottom <= innerHeight + 1,
+                    actionsVisible: actionBounds.top >= -1 && actionBounds.bottom <= innerHeight + 1,
+                    noPageOverflow: document.documentElement.scrollWidth <= innerWidth
+                };
+            });
+
+            expect(layout).toEqual({
+                headerPinned: true,
+                headerVisible: true,
+                actionsVisible: true,
+                noPageOverflow: true
+            });
+        }
+    });
+
     test('shows two whole-cohort score charts independent of table filters', async ({ page }) => {
         await page.setViewportSize({ width: 1366, height: 768 });
         await openMockLogin(page);
