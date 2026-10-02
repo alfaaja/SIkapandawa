@@ -36,13 +36,13 @@ select is_definer('private', 'is_admin', array[]::text[], 'admin helper is secur
 select has_function(
   'public',
   'admin_dashboard_summary',
-  array[]::text[],
+  array['text'],
   'summary RPC exists'
 );
 select has_function(
   'public',
   'admin_list_users',
-  array['text', 'text', 'integer', 'integer'],
+  array['text', 'text', 'integer', 'integer', 'text'],
   'list RPC exists'
 );
 select has_function(
@@ -78,11 +78,11 @@ select ok(
   'authenticated may resolve the policy helper'
 );
 select ok(
-  not has_function_privilege('anon', 'public.admin_dashboard_summary()', 'execute'),
+  not has_function_privilege('anon', 'public.admin_dashboard_summary(text)', 'execute'),
   'anon cannot execute summary RPC'
 );
 select ok(
-  has_function_privilege('authenticated', 'public.admin_dashboard_summary()', 'execute'),
+  has_function_privilege('authenticated', 'public.admin_dashboard_summary(text)', 'execute'),
   'authenticated may execute summary subject to explicit admin gate'
 );
 select ok(

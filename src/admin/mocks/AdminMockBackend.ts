@@ -8,6 +8,7 @@ import type {
     ProgressStatus
 } from '../types';
 import { validateUsername } from '../../shared/auth/username';
+import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
 import {
     getJejakReportTier,
     getMissionReportRank
@@ -39,6 +40,7 @@ function createUsers(): AdminUserListItem[] {
             : completedLevelCount === 10 ? 'completed' : 'in_progress';
         const day = String((index % 27) + 1).padStart(2, '0');
         return {
+            schoolName: index < 28 ? DEFAULT_SCHOOL_NAME : 'SDN SEKOLAH KEDUA',
             userId: userId(index + 1),
             displayName: profile.displayName,
             username: cycle === 0
@@ -144,6 +146,7 @@ export function createAdminMockBackend(): AdminBackend {
                     };
                 }
                 const created: AdminUserListItem = {
+                    schoolName: normalizeSchoolName(body.schoolName) ?? DEFAULT_SCHOOL_NAME,
                     userId: crypto.randomUUID(),
                     displayName,
                     username,
@@ -240,12 +243,14 @@ export function createAdminMockBackend(): AdminBackend {
                 };
             }
             if (name === 'admin_dashboard_summary') {
+                const cohort = users.filter(user => !args.school_name || user.schoolName === args.school_name);
                 return success({
-                    totalUsers: users.length,
-                    notStartedUsers: users.filter((user) => user.status === 'not_started').length,
-                    inProgressUsers: users.filter((user) => user.status === 'in_progress').length,
-                    completedUsers: users.filter((user) => user.status === 'completed').length,
-                    totalStarsEarned: users.reduce((total, user) => total + user.totalStars, 0),
+                    schools: [...new Set(users.map(user => user.schoolName))].sort(),
+                    totalUsers: cohort.length,
+                    notStartedUsers: cohort.filter((user) => user.status === 'not_started').length,
+                    inProgressUsers: cohort.filter((user) => user.status === 'in_progress').length,
+                    completedUsers: cohort.filter((user) => user.status === 'completed').length,
+                    totalStarsEarned: cohort.reduce((total, user) => total + user.totalStars, 0),
                     generatedAt: new Date().toISOString()
                 });
             }
@@ -263,7 +268,7 @@ export function createAdminMockBackend(): AdminBackend {
                         || user.username.toLowerCase().includes(search)
                         || user.displayName.toLowerCase().includes(search);
                     const matchesStatus = status === 'all' || user.status === status;
-                    return matchesSearch && matchesStatus;
+                    return matchesSearch && matchesStatus && (!args.school_name || user.schoolName === args.school_name);
                 });
                 return success({
                     items: filtered.slice(pageOffset, pageOffset + pageSize),

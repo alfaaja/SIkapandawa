@@ -5,6 +5,7 @@ import type { AdminUserListResponse, DashboardSummary } from '../types';
 import { DashboardView, type DashboardCallbacks } from './DashboardView';
 
 const summary: DashboardSummary = {
+    schools: ['SDN Kalibanteng Kulon 01'],
     totalUsers: 1,
     notStartedUsers: 0,
     inProgressUsers: 1,
@@ -17,6 +18,7 @@ function makeCallbacks(): DashboardCallbacks {
     return {
         onDetail: vi.fn(),
         onFilter: vi.fn(),
+        onSchool: vi.fn(),
         onLogout: vi.fn(),
         onNextPage: vi.fn(),
         onPreviousPage: vi.fn(),
@@ -39,6 +41,7 @@ function listWithUsername(username: string): AdminUserListResponse {
         items: [{
             userId: '123e4567-e89b-42d3-a456-426614174000',
             displayName: '<script>bad()</script>',
+            schoolName: 'SDN Kalibanteng Kulon 01',
             username,
             registeredAt: '2026-08-01T00:00:00.000Z',
             highestUnlockedLevel: 3,

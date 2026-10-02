@@ -1,4 +1,5 @@
 import { normalizeUsername, validateUsername } from '../../shared/auth/username';
+import { normalizeSchoolName } from '../../shared/auth/school';
 import type {
     AdminCreateUserInput,
     AdminMutationResult,
@@ -62,7 +63,10 @@ export class AdminUserManagementService {
     constructor(private readonly backend: AdminBackend) {}
 
     async createUser(input: AdminCreateUserInput): Promise<AdminMutationResult> {
+        const schoolName = normalizeSchoolName(input.schoolName);
+        if (input.schoolName !== undefined && !schoolName) throw new AdminServiceError('validation');
         return this.invoke('create', {
+            ...(schoolName ? { schoolName } : {}),
             displayName: normalizeDisplayName(input.displayName),
             username: requireUsername(input.username),
             password: requirePassword(input.password)

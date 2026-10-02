@@ -4,6 +4,7 @@ import { normalizeListUsersParams } from './pagination';
 describe('normalizeListUsersParams', () => {
     it('supplies safe defaults', () => {
         expect(normalizeListUsersParams({})).toEqual({
+            schoolName: null,
             searchText: '',
             progressStatus: 'all',
             pageSize: 25,

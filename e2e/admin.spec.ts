@@ -102,15 +102,16 @@ test.describe('panel admin mock contract', () => {
         await page.setViewportSize({ width: 1366, height: 768 });
         await openMockLogin(page);
         await login(page);
+        await page.getByLabel('Sekolah', { exact: true }).selectOption('SDN Kalibanteng Kulon 01');
 
         await expect(page.getByRole('heading', { name: 'Capaian Misi Pandawa' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Capaian Jejak Pandawa' })).toBeVisible();
         const bars = page.locator('.chart-bar');
-        await expect(bars).toHaveCount(112);
+        await expect(bars).toHaveCount(56);
 
-        await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
+        await page.getByLabel('Cari pemain').fill('arjuna.pratama.25');
         await expect(page.locator('tbody tr')).toHaveCount(1);
-        await expect(bars).toHaveCount(112);
+        await expect(bars).toHaveCount(56);
 
         const layout = await page.locator('.progress-charts').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,
@@ -373,6 +374,7 @@ test.describe('panel admin mock contract', () => {
 
         await page.getByRole('button', { name: 'Tambah pemain' }).click();
         await page.getByLabel('Nama tampilan').fill('Pemain Uji');
+        await page.getByLabel('Nama sekolah').fill('SDN Kalibanteng Kulon 01');
         await page.getByLabel('Username').fill(username);
         await page.getByLabel('Password awal').fill(credential);
         await page.getByRole('button', { name: 'Simpan pemain' }).click();

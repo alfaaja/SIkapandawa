@@ -50,6 +50,7 @@ export class UserManagementDialog {
                 const input: AdminCreateUserInput = {
                     displayName: this.value(submitted, '#create-display-name'),
                     username: this.value(submitted, '#create-username'),
+                    schoolName: this.value(submitted, '#create-school-name'),
                     password: this.value(submitted, '#create-password')
                 };
                 await this.runMutation(() => this.callbacks.onCreate(input), submitted, alert);
@@ -59,6 +60,7 @@ export class UserManagementDialog {
         form.querySelector('.form-alert')!.before(
             this.field('create-display-name', 'Nama tampilan', 'text', { minlength: '2', maxlength: '24' }),
             this.field('create-username', 'Username', 'text', { minlength: '3', maxlength: '20' }),
+            this.field('create-school-name', 'Nama sekolah', 'text', { minlength: '2', maxlength: '100' }),
             this.field('create-password', 'Password awal', 'password', { minlength: '12', maxlength: '128' })
         );
         this.open(form, '#create-display-name');

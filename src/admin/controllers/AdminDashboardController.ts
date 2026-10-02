@@ -7,6 +7,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export class AdminDashboardController {
     private searchText = '';
+    private schoolName: string | null = null;
     private progressStatus: ProgressStatusFilter = 'all';
     private pageOffset = 0;
     private readonly pageSize = 25;
@@ -30,14 +31,15 @@ export class AdminDashboardController {
         this.view.showLoading();
         try {
             const [summaryResult, listResult, chartResult] = await Promise.allSettled([
-                this.service.getSummary(),
+                this.service.getSummary(this.schoolName),
                 this.service.listUsers({
+                    schoolName: this.schoolName,
                     searchText: this.searchText,
                     progressStatus: this.progressStatus,
                     pageSize: this.pageSize,
                     pageOffset: this.pageOffset
                 }),
-                this.service.listChartUsers()
+                this.service.listChartUsers(this.schoolName)
             ]);
             if (sequence !== this.requestSequence) return;
             if (summaryResult.status === 'rejected') throw summaryResult.reason;
@@ -46,7 +48,7 @@ export class AdminDashboardController {
             const list = listResult.value;
             const chartUsers = chartResult.status === 'fulfilled' ? chartResult.value : [];
             this.total = list.total;
-            this.view.renderData(summary, list, chartUsers);
+            this.view.renderData(summary, list, chartUsers, this.schoolName);
             if (chartResult.status === 'rejected') {
                 this.view.showChartError('Grafik capaian tidak dapat dimuat.');
             }
@@ -78,6 +80,13 @@ export class AdminDashboardController {
     setFilter(progressStatus: ProgressStatusFilter): void {
         this.progressStatus = progressStatus;
         this.pageOffset = 0;
+        void this.refresh();
+    }
+
+    setSchool(schoolName: string | null): void {
+        this.schoolName = schoolName;
+        this.pageOffset = 0;
+        ++this.detailSequence;
         void this.refresh();
     }
 

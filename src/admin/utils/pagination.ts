@@ -3,6 +3,7 @@ import type {
     AdminListUsersParams,
     ProgressStatusFilter
 } from '../types';
+import { normalizeSchoolName } from '../../shared/auth/school';
 
 const ALLOWED_STATUSES = new Set<ProgressStatusFilter>([
     'all',
@@ -33,6 +34,7 @@ export function normalizeListUsersParams(
     ) ? rawStatus as ProgressStatusFilter : 'all';
 
     return {
+        schoolName: normalizeSchoolName(input.schoolName),
         searchText: rawSearch.trim().slice(0, 80),
         progressStatus,
         pageSize: normalizeInteger(input.pageSize, 25, 1, 100),

@@ -19,6 +19,7 @@ function listItem(overrides: Record<string, unknown> = {}) {
     return {
         userId: USER_ID,
         displayName: 'Budi',
+        schoolName: 'SDN Kalibanteng Kulon 01',
         username: 'budi',
         registeredAt: '2026-08-01T00:00:00.000Z',
         highestUnlockedLevel: 3,
@@ -39,6 +40,7 @@ describe('AdminDashboardService', () => {
 
     it('loads and validates the dashboard summary RPC', async () => {
         const data = {
+            schools: ['SDN Kalibanteng Kulon 01'],
             totalUsers: 4,
             notStartedUsers: 1,
             inProgressUsers: 2,
@@ -50,7 +52,7 @@ describe('AdminDashboardService', () => {
 
         await expect(new AdminDashboardService(makeBackend(rpc)).getSummary())
             .resolves.toEqual(data);
-        expect(rpc).toHaveBeenCalledWith('admin_dashboard_summary', undefined);
+        expect(rpc).toHaveBeenCalledWith('admin_dashboard_summary', { school_name: null });
     });
 
     it('normalizes list input and sends the exact read-only RPC arguments', async () => {
@@ -73,7 +75,8 @@ describe('AdminDashboardService', () => {
             search_text: 'b'.repeat(80),
             progress_status: 'in_progress',
             page_size: 100,
-            page_offset: 0
+            page_offset: 0,
+            school_name: null
         });
     });
 
@@ -92,7 +95,7 @@ describe('AdminDashboardService', () => {
 
     it('loads the complete unfiltered cohort for dashboard charts', async () => {
         const data = {
-            items: [listItem()],
+            items: [listItem({ isAdmin: true })],
             total: 1,
             pageSize: 100,
             pageOffset: 0
@@ -105,7 +108,8 @@ describe('AdminDashboardService', () => {
             search_text: null,
             progress_status: 'all',
             page_size: 100,
-            page_offset: 0
+            page_offset: 0,
+            school_name: null
         });
     });
 
@@ -126,13 +130,15 @@ describe('AdminDashboardService', () => {
                 error: null
             });
 
-        const users = await new AdminDashboardService(makeBackend(rpc)).listChartUsers();
+        const users = await new AdminDashboardService(makeBackend(rpc))
+            .listChartUsers('SDN Kalibanteng Kulon 01');
 
         expect(users).toHaveLength(101);
         expect(users[users.length - 1]).toEqual(lastItem);
         expect(rpc).toHaveBeenLastCalledWith('admin_list_users', expect.objectContaining({
             page_size: 100,
-            page_offset: 100
+            page_offset: 100,
+            school_name: 'SDN Kalibanteng Kulon 01'
         }));
     });
 

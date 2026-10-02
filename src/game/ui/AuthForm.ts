@@ -10,6 +10,7 @@ export interface AuthFieldSpec {
     width: number;
     height: number;
     maxLength: number;
+    label?: string;
 }
 
 /**
@@ -46,6 +47,7 @@ export class AuthForm {
             const input = document.createElement('input');
             input.type = field.type;
             input.name = field.id;
+            if (field.label) input.setAttribute('aria-label', field.label);
             input.maxLength = field.maxLength;
             input.autocomplete = 'off';
             input.spellcheck = false;

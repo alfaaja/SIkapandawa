@@ -8,6 +8,7 @@ function player(overrides: Partial<AdminUserListItem> = {}): AdminUserListItem {
     return {
         userId: '123e4567-e89b-42d3-a456-426614174000',
         displayName: 'Fahmi Nuriya',
+        schoolName: 'SDN Kalibanteng Kulon 01',
         username: 'fahmi',
         registeredAt: '2026-08-01T00:00:00.000Z',
         highestUnlockedLevel: 10,
@@ -36,7 +37,7 @@ describe('ProgressCharts', () => {
             }),
             player({ userId: 'admin-id', displayName: 'Admin', username: 'sikapandawa' }),
             player({ userId: 'student-1' })
-        ]);
+        ], 'SDN Kalibanteng Kulon 01');
 
         expect(charts.element.textContent).toContain('Capaian Misi Pandawa');
         expect(charts.element.textContent).toContain('Capaian Jejak Pandawa');
@@ -63,7 +64,7 @@ describe('ProgressCharts', () => {
                 username: 'student',
                 displayName: '<img src=x onerror=alert(1)>'
             })
-        ]);
+        ], 'SDN Kalibanteng Kulon 01');
 
         expect(charts.element.textContent).toContain('<img src=x onerror=alert(1)>');
         expect(charts.element.querySelector('img')).toBeNull();
@@ -81,7 +82,7 @@ describe('ProgressCharts', () => {
                 totalStars: 40,
                 jejakPandawaBestScore: -2
             })
-        ]);
+        ], 'SDN Kalibanteng Kulon 01');
 
         const bars = Array.from(charts.element.querySelectorAll<HTMLElement>('.chart-bar'));
         expect(bars.map((bar) => bar.style.getPropertyValue('--bar-height')))
@@ -93,7 +94,7 @@ describe('ProgressCharts', () => {
     it('marks zero values so they do not show a misleading minimum-height bar', () => {
         const charts = new ProgressCharts(null, 'sikapandawa');
 
-        charts.render([player({ totalStars: 0, jejakPandawaBestScore: 0 })]);
+        charts.render([player({ totalStars: 0, jejakPandawaBestScore: 0 })], 'SDN Kalibanteng Kulon 01');
 
         expect(charts.element.querySelectorAll('.chart-bar-zero')).toHaveLength(2);
     });
@@ -103,7 +104,7 @@ describe('ProgressCharts', () => {
         charts.render([
             player({ userId: 'student-1' }),
             player({ userId: 'student-2', displayName: 'M. Dika Saputra' })
-        ]);
+        ], 'SDN Kalibanteng Kulon 01');
 
         const modeButton = charts.element.querySelector<HTMLButtonElement>(
             '[data-testid="chart-name-mode"]'

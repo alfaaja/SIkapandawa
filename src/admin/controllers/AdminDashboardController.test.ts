@@ -6,6 +6,7 @@ import type { AdminUserListResponse, DashboardSummary } from '../types';
 import { AdminDashboardController } from './AdminDashboardController';
 
 const summary: DashboardSummary = {
+    schools: ['SDN Kalibanteng Kulon 01'],
     totalUsers: 1,
     notStartedUsers: 1,
     inProgressUsers: 0,
@@ -84,7 +85,7 @@ describe('AdminDashboardController', () => {
         await olderRefresh;
 
         expect(view.renderData).toHaveBeenCalledTimes(1);
-        expect(view.renderData).toHaveBeenCalledWith(summary, newerList, emptyList.items);
+        expect(view.renderData).toHaveBeenCalledWith(summary, newerList, emptyList.items, null);
     });
 
     it('debounces search and resets server pagination', async () => {
@@ -166,7 +167,7 @@ describe('AdminDashboardController', () => {
             vi.fn()
         ).refresh();
 
-        expect(view.renderData).toHaveBeenCalledWith(summary, emptyList, []);
+        expect(view.renderData).toHaveBeenCalledWith(summary, emptyList, [], null);
         expect(view.showChartError).toHaveBeenCalledWith(
             'Grafik capaian tidak dapat dimuat.'
         );

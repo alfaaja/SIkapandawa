@@ -1,6 +1,7 @@
 import { AuthStorageService } from './AuthStorageService';
 import { LegacyMigrationService } from './LegacyMigrationService';
 import { ProgressStorageService } from './ProgressStorageService';
+import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
 import {
     getSupabaseClient,
     getSupabaseConfigurationError,
@@ -18,6 +19,7 @@ export interface AccountProfile {
     id: string;
     displayName: string;
     username: string;
+    schoolName: string;
     createdAt: string;
 }
 
@@ -44,7 +46,9 @@ function safeReadProfile(): AccountProfile | null {
         const raw = window.localStorage.getItem(REMOTE_PROFILE_KEY);
         if (!raw) return null;
         const parsed: unknown = JSON.parse(raw);
-        return isAccountProfile(parsed) ? parsed : null;
+        return isAccountProfile(parsed) ? {
+            ...parsed, schoolName: normalizeSchoolName(parsed.schoolName) ?? DEFAULT_SCHOOL_NAME
+        } : null;
     } catch {
         return null;
     }
@@ -77,7 +81,7 @@ async function fetchRemoteProfile(userId: string): Promise<AccountProfile | null
     if (!client) return null;
     const { data, error } = await client
         .from('profiles')
-        .select('id, display_name, username, created_at')
+        .select('id, display_name, username, school_name, created_at')
         .eq('id', userId)
         .single();
     if (error || !isRecord(data)) return null;
@@ -85,6 +89,7 @@ async function fetchRemoteProfile(userId: string): Promise<AccountProfile | null
         id: String(data.id ?? ''),
         displayName: String(data.display_name ?? ''),
         username: String(data.username ?? ''),
+        schoolName: normalizeSchoolName(data.school_name) ?? DEFAULT_SCHOOL_NAME,
         createdAt: String(data.created_at ?? '')
     };
     return isAccountProfile(profile) ? profile : null;
@@ -105,7 +110,8 @@ async function registerRemote(
     displayName: string,
     username: string,
     normalizedUsername: string,
-    password: string
+    password: string,
+    schoolName: string
 ): Promise<AuthResult> {
     const client = getSupabaseClient();
     if (!client) return { ok: false, error: getSupabaseConfigurationError() };
@@ -117,7 +123,8 @@ async function registerRemote(
             data: {
                 display_name: displayName,
                 username,
-                normalized_username: normalizedUsername
+                normalized_username: normalizedUsername,
+                school_name: schoolName
             }
         }
     });
@@ -149,6 +156,7 @@ export const AuthService = {
             id: local.id,
             displayName: local.displayName,
             username: local.username,
+            schoolName: local.schoolName,
             createdAt: local.createdAt
         };
     },
@@ -173,10 +181,13 @@ export const AuthService = {
     async register(
         displayName: string,
         username: string,
-        password: string
+        password: string,
+        schoolName: string
     ): Promise<AuthResult> {
         const validDisplayName = validateDisplayName(displayName);
         const normalizedUsername = validateUsername(username);
+        const school = normalizeSchoolName(schoolName);
+        if (!school) return { ok: false, error: 'Nama sekolah harus 2 sampai 100 karakter.' };
         if (!validDisplayName) {
             return { ok: false, error: 'Nama lengkap harus 2 sampai 24 karakter.' };
         }
@@ -195,7 +206,8 @@ export const AuthService = {
                 validDisplayName,
                 username.trim().normalize('NFKC'),
                 normalizedUsername,
-                password
+                password,
+                school
             );
         }
         if (!isLocalFallbackAllowed()) {
@@ -205,7 +217,8 @@ export const AuthService = {
         const result = await AuthStorageService.register(
             validDisplayName,
             username.trim(),
-            password
+            password,
+            school
         );
         if (!result.ok) return result;
         ProgressStorageService.createInitialProgress(result.account.id);
@@ -251,7 +264,8 @@ export const AuthService = {
             legacy.displayName,
             legacy.username,
             normalizedUsername,
-            password
+            password,
+            legacy.schoolName
         );
         if (!migratedSignup.ok) {
             return { ok: false, error: 'Akun tidak ditemukan atau password salah.' };

@@ -1,4 +1,5 @@
 import { validateUsername } from '../../../src/shared/auth/username.ts';
+import { normalizeSchoolName } from '../../../src/shared/auth/school.ts';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MIN_PASSWORD_LENGTH = 12;
@@ -15,6 +16,7 @@ export interface VerifiedAdminUser {
 
 export interface AdminMutationPort {
     createUser(input: {
+        schoolName?: string;
         displayName: string;
         username: string;
         password: string;
@@ -127,7 +129,8 @@ async function performMutation(
     origin: string
 ): Promise<Response> {
     if (body.action === 'create') {
-        if (!hasExactKeys(body, ['action', 'displayName', 'username', 'password'])) {
+        if (!hasExactKeys(body, ['action', 'displayName', 'username', 'password',
+            ...('schoolName' in body ? ['schoolName'] : [])])) {
             return json(400, { error: 'Invalid request' }, origin);
         }
         const displayName = requireDisplayName(body.displayName);
@@ -135,10 +138,11 @@ async function performMutation(
             ? validateUsername(body.username)
             : null;
         const password = requirePassword(body.password);
-        if (!displayName || !username || !password) {
+        const schoolName = normalizeSchoolName(body.schoolName);
+        if (!displayName || !username || !password || ('schoolName' in body && !schoolName)) {
             return json(400, { error: 'Invalid request' }, origin);
         }
-        const result = await adminUsers.createUser({ displayName, username, password });
+        const result = await adminUsers.createUser({ displayName, username, password, ...(schoolName ? { schoolName } : {}) });
         return json(201, result, origin);
     }
 

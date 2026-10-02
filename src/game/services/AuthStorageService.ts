@@ -3,10 +3,13 @@
  * Prototype frontend saja, bukan autentikasi production.
  */
 
+import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
+
 export interface LocalAccount {
     id: string;
     displayName: string;
     username: string;
+    schoolName: string;
     passwordSalt: string;
     passwordHash: string;
     createdAt: string;
@@ -101,7 +104,10 @@ export const AuthStorageService = {
         try {
             const parsed: unknown = JSON.parse(raw);
             if (!Array.isArray(parsed)) return [];
-            return parsed.filter(isAccount);
+            return parsed.filter(isAccount).map(account => ({
+                ...account,
+                schoolName: normalizeSchoolName(account.schoolName) ?? DEFAULT_SCHOOL_NAME
+            }));
         } catch {
             return [];
         }
@@ -112,9 +118,11 @@ export const AuthStorageService = {
         return this.listAccounts().find((a) => a.username.toLowerCase() === wanted) ?? null;
     },
 
-    async register(displayName: string, username: string, password: string): Promise<RegisterResult> {
+    async register(displayName: string, username: string, password: string, schoolName: string): Promise<RegisterResult> {
         const name = displayName.trim();
         const uname = username.trim();
+        const school = normalizeSchoolName(schoolName);
+        if (!school) return { ok: false, error: 'Nama sekolah harus 2 sampai 100 karakter.' };
 
         if (name.length < 2 || name.length > 24) {
             return { ok: false, error: 'Nama lengkap harus 2 sampai 24 karakter.' };
@@ -135,6 +143,7 @@ export const AuthStorageService = {
             id: createId(),
             displayName: name,
             username: uname,
+            schoolName: school,
             passwordSalt: salt,
             passwordHash: hash,
             createdAt: new Date().toISOString()

@@ -2,6 +2,7 @@ export type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
 export type ProgressStatusFilter = 'all' | ProgressStatus;
 
 export interface DashboardSummary {
+    schools: string[];
     totalUsers: number;
     notStartedUsers: number;
     inProgressUsers: number;
@@ -11,6 +12,8 @@ export interface DashboardSummary {
 }
 
 export interface AdminUserListItem {
+    isAdmin?: boolean;
+    schoolName: string;
     userId: string;
     displayName: string;
     username: string;
@@ -57,6 +60,7 @@ export interface AdminUserReportSummary {
 }
 
 export interface AdminCreateUserInput {
+    schoolName?: string;
     displayName: string;
     username: string;
     password: string;
@@ -78,6 +82,7 @@ export type AdminUserIdentity = Pick<
 >;
 
 export interface AdminListUsersParams {
+    schoolName: string | null;
     searchText: string;
     progressStatus: ProgressStatusFilter;
     pageSize: number;
@@ -85,6 +90,7 @@ export interface AdminListUsersParams {
 }
 
 export interface AdminListUsersInput {
+    schoolName?: unknown;
     searchText?: unknown;
     progressStatus?: unknown;
     pageSize?: unknown;

@@ -231,6 +231,22 @@ describe('admin-users Edge Function handler', () => {
         expect(response.headers.get('access-control-allow-origin')).toBe(ALLOWED_ORIGIN);
     });
 
+    it('passes a normalized school to admin registration and rejects invalid supplied schools', async () => {
+        const body = { action: 'create', displayName: 'Sinta Dewi', username: 'sinta.01', password: crypto.randomUUID() };
+        const dependencies = makeDependencies();
+        const response = await createAdminUsersHandler(dependencies)(request({ ...body, schoolName: '  sdn   sekolah baru  ' }));
+        expect(response.status).toBe(201);
+        expect(dependencies.adminUsers.createUser).toHaveBeenCalledWith({
+            displayName: body.displayName, username: body.username, password: body.password, schoolName: 'SDN SEKOLAH BARU'
+        });
+        for (const schoolName of ['', 'x', 'x'.repeat(101), null, 'SDN\nSatu']) {
+            const invalidDependencies = makeDependencies();
+            const invalid = await createAdminUsersHandler(invalidDependencies)(request({ ...body, schoolName }));
+            expect(invalid.status).toBe(400);
+            expectNoPrivilegedCalls(invalidDependencies);
+        }
+    });
+
     it.each([
         [{ action: 'create', displayName: 'S', username: 'sinta', password: crypto.randomUUID() }],
         [{ action: 'create', displayName: 'Sinta', username: '<admin>', password: crypto.randomUUID() }],

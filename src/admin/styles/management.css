@@ -90,30 +90,31 @@
 
     th:first-child,
     td:first-child {
-        width: 11%;
+        width: 10%;
         padding-left: 1rem;
     }
 
-    th:nth-child(2) { width: 11%; }
-    th:nth-child(3) { width: 10%; }
-    th:nth-child(4) { width: 4.5%; }
-    th:nth-child(5) { width: 5.5%; }
-    th:nth-child(6) { width: 5.5%; }
-    th:nth-child(7) { width: 9%; }
-    th:nth-child(8) { width: 10%; }
-    th:nth-child(9) { width: 9%; }
+    th:nth-child(2) { width: 9%; }
+    th:nth-child(3) { width: 11%; }
+    th:nth-child(4) { width: 8%; }
+    th:nth-child(5) { width: 4%; }
+    th:nth-child(6) { width: 4%; }
+    th:nth-child(7) { width: 5%; }
+    th:nth-child(8) { width: 8%; }
+    th:nth-child(9) { width: 8%; }
+    th:nth-child(10) { width: 8%; }
 
     th:last-child,
     td:last-child {
-        width: 24.5%;
+        width: 25%;
         padding-right: 1rem;
     }
 
-    td:nth-child(4),
     td:nth-child(5),
     td:nth-child(6),
     td:nth-child(7),
-    td:nth-child(9) {
+    td:nth-child(8),
+    td:nth-child(10) {
         white-space: nowrap;
     }
 }

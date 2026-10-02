@@ -8,7 +8,7 @@ import { ProgressCharts } from './ui/ProgressCharts';
 import type { AdminUserListItem } from './types';
 
 const SCHOOL = 'SDN Kalibanteng Kulon 01';
-function student(schoolName: string, totalStars: number, jejakPandawaBestScore: number, userId = crypto.randomUUID()): AdminUserListItem {
+function student(schoolName: string, totalStars: number, jejakPandawaBestScore: number, userId: string = crypto.randomUUID()): AdminUserListItem {
     return { userId, schoolName, displayName: userId, username: userId,
         registeredAt: '2026-08-01T00:00:00Z', highestUnlockedLevel: 1,
         completedLevelCount: 0, totalStars, jejakPandawaBestScore,
@@ -51,6 +51,15 @@ describe('school dashboard', () => {
         expect(charts.element.querySelectorAll('.school-chart-bar')).toHaveLength(0);
         charts.render([], null);
         expect(charts.element.textContent).toContain('Belum ada data siswa');
+    });
+
+    it('excludes every server-marked admin from school averages regardless of viewer', () => {
+        const users = [student(SCHOOL, 30, 10), student(SCHOOL, 0, 0),
+            { ...student(SCHOOL, 30, 10, 'other-admin'), isAdmin: true }];
+        const charts = new ProgressCharts('viewer-admin', 'admin');
+        charts.render(users);
+        expect(charts.element.textContent).toContain('15/30');
+        expect(charts.element.textContent).toContain('2 siswa');
     });
 
     it('renders school names as text and keeps fractions for averages', () => {

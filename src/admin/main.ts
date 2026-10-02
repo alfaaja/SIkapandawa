@@ -103,6 +103,7 @@ async function start(): Promise<void> {
                 if (!result.ok) throw result.error;
             },
             onFilter: (status) => controller.setFilter(status),
+            onSchool: (schoolName) => controller.setSchool(schoolName),
             onLogout: () => {
                 void authService.logout().finally(() => showLogin());
             },

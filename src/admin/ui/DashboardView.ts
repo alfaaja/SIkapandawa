@@ -15,6 +15,7 @@ import { ProgressCharts } from './ProgressCharts';
 import { UserProgressDialog } from './UserProgressDialog';
 
 export interface DashboardCallbacks {
+    onSchool(schoolName: string | null): void;
     onDetail(userId: string): void;
     onFilter(status: ProgressStatusFilter): void;
     onLogout(): void;
@@ -37,6 +38,9 @@ const summaryCards: Array<[keyof DashboardSummary, string, string]> = [
 ];
 
 export class DashboardView {
+    private readonly schoolFilter = createElement('select', {
+        attributes: { id: 'school-filter', 'aria-label': 'Sekolah' }
+    });
     private readonly status = createElement('div', {
         className: 'status-banner',
         attributes: { role: 'status', 'aria-live': 'polite' }
@@ -126,6 +130,14 @@ export class DashboardView {
         }
         titleGroup.append(refreshCopy);
         const actions = createElement('div', { className: 'header-actions' });
+        const schoolGroup = createElement('div', { className: 'field-group school-filter-group' });
+        const schoolLabel = createElement('label', { text: 'Sekolah' });
+        schoolLabel.htmlFor = 'school-filter';
+        this.schoolFilter.append(createElement('option', { text: 'All', attributes: { value: '' } }));
+        this.schoolFilter.addEventListener('change', () => {
+            this.callbacks.onSchool(this.schoolFilter.value || null);
+        });
+        schoolGroup.append(schoolLabel, this.schoolFilter);
         const changePassword = createElement('button', {
             className: 'button button-secondary',
             text: 'Ganti password saya',
@@ -146,7 +158,7 @@ export class DashboardView {
         });
         refresh.addEventListener('click', this.callbacks.onRefresh);
         logout.addEventListener('click', this.callbacks.onLogout);
-        actions.append(changePassword, refresh, logout);
+        actions.append(schoolGroup, changePassword, refresh, logout);
         header.append(titleGroup, actions);
         return header;
     }
@@ -222,7 +234,7 @@ export class DashboardView {
         const thead = createElement('thead');
         const row = createElement('tr');
         for (const label of [
-            'Username', 'Nama tampilan', 'Terdaftar', 'Level', 'Selesai', 'Bintang',
+            'Username', 'Nama tampilan', 'Sekolah', 'Terdaftar', 'Level', 'Selesai', 'Bintang',
             'Jejak Pandawa', 'Update progres', 'Status', 'Aksi'
         ]) {
             row.append(createElement('th', { text: label, attributes: { scope: 'col' } }));
@@ -274,10 +286,18 @@ export class DashboardView {
     renderData(
         summary: DashboardSummary,
         list: AdminUserListResponse,
-        chartUsers: readonly AdminUserListItem[] = list.items
+        chartUsers: readonly AdminUserListItem[] = list.items,
+        schoolName: string | null = null
     ): void {
         this.renderSummary(summary);
-        this.progressCharts.render(chartUsers);
+        const schools = [...new Set(summary.schools ?? chartUsers.map(user => user.schoolName))]
+            .filter(Boolean).sort((left, right) => left.localeCompare(right, 'id'));
+        replaceContent(this.schoolFilter,
+            createElement('option', { text: 'All', attributes: { value: '' } }),
+            ...schools.map(school => createElement('option', { text: school, attributes: { value: school } }))
+        );
+        this.schoolFilter.value = schoolName ?? '';
+        this.progressCharts.render(chartUsers, schoolName);
         this.renderUsers(list);
         this.refreshedAt.textContent = formatDateTime(summary.generatedAt);
         if (list.items.length === 0) {
@@ -313,6 +333,7 @@ export class DashboardView {
             row.append(
                 username,
                 this.cell('Nama tampilan', user.displayName),
+                this.cell('Sekolah', user.schoolName),
                 this.cell('Terdaftar', formatDateTime(user.registeredAt)),
                 this.cell('Level', String(user.highestUnlockedLevel)),
                 this.cell('Selesai', `${user.completedLevelCount}/10`),

@@ -11,6 +11,7 @@ import type {
 import { normalizeListUsersParams } from '../utils/pagination';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminServiceError, classifyBackendError } from './errors';
+import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STATUSES = new Set<ProgressStatus>(['not_started', 'in_progress', 'completed']);
@@ -56,6 +57,9 @@ function requiredBoolean(record: Record<string, unknown>, key: string): boolean 
 function parseSummary(value: unknown): DashboardSummary {
     if (!isRecord(value)) throw new AdminServiceError('invalid_response');
     return {
+        schools: Array.isArray(value.schools)
+            ? value.schools.filter((school): school is string => typeof school === 'string')
+            : [DEFAULT_SCHOOL_NAME],
         totalUsers: requiredNumber(value, 'totalUsers'),
         notStartedUsers: requiredNumber(value, 'notStartedUsers'),
         inProgressUsers: requiredNumber(value, 'inProgressUsers'),
@@ -72,6 +76,8 @@ function parseListItem(value: unknown): AdminUserListItem {
         throw new AdminServiceError('invalid_response');
     }
     return {
+        ...(typeof value.isAdmin === 'boolean' ? { isAdmin: value.isAdmin } : {}),
+        schoolName: normalizeSchoolName(value.schoolName) ?? DEFAULT_SCHOOL_NAME,
         userId: requiredString(value, 'userId'),
         displayName: requiredString(value, 'displayName'),
         username: requiredString(value, 'username'),
@@ -150,8 +156,10 @@ async function unwrapRpc(
 export class AdminDashboardService {
     constructor(private readonly backend: AdminBackend) {}
 
-    async getSummary(): Promise<DashboardSummary> {
-        return parseSummary(await unwrapRpc(this.backend, 'admin_dashboard_summary'));
+    async getSummary(schoolName: string | null = null): Promise<DashboardSummary> {
+        return parseSummary(await unwrapRpc(this.backend, 'admin_dashboard_summary', {
+            school_name: normalizeSchoolName(schoolName)
+        }));
     }
 
     async listUsers(input: AdminListUsersInput): Promise<AdminUserListResponse> {
@@ -160,7 +168,8 @@ export class AdminDashboardService {
             search_text: params.searchText || null,
             progress_status: params.progressStatus,
             page_size: params.pageSize,
-            page_offset: params.pageOffset
+            page_offset: params.pageOffset,
+            school_name: params.schoolName
         });
         if (!isRecord(value) || !Array.isArray(value.items)) {
             throw new AdminServiceError('invalid_response');
@@ -173,9 +182,10 @@ export class AdminDashboardService {
         };
     }
 
-    async listChartUsers(): Promise<AdminUserListItem[]> {
+    async listChartUsers(schoolName: string | null = null): Promise<AdminUserListItem[]> {
         const pageSize = 100;
         const firstPage = await this.listUsers({
+            schoolName,
             searchText: '',
             progressStatus: 'all',
             pageSize,
@@ -184,6 +194,7 @@ export class AdminDashboardService {
         let users = [...firstPage.items];
         for (let pageOffset = pageSize; pageOffset < firstPage.total; pageOffset += pageSize) {
             const page = await this.listUsers({
+                schoolName,
                 searchText: '',
                 progressStatus: 'all',
                 pageSize,

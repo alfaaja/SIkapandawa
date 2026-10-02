@@ -177,7 +177,8 @@ function createMutationPort(
                         user_metadata: {
                             display_name: input.displayName,
                             username: input.username,
-                            normalized_username: input.username
+                            normalized_username: input.username,
+                            ...(input.schoolName ? { school_name: input.schoolName } : {})
                         },
                         app_metadata: { admin_operation_id: operationId }
                     });

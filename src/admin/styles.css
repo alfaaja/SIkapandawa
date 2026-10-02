@@ -503,6 +503,23 @@ select:hover {
     --chart-color: #efad16;
 }
 
+.school-filter-group { min-width: 15rem; max-width: 24rem; }
+.school-filter-group label { color: #f8ead0; }
+.school-filter-group select { width: 100%; background: #fffefb; color: var(--forest); }
+.header-actions { flex-wrap: wrap; }
+.school-chart-legend { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.75rem; font-size: 0.85rem; }
+.school-chart-legend span::before { display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.4rem; border-radius: 0.2rem; background: var(--chart-color); content: ''; }
+.school-chart-scroll { overflow-x: auto; padding: 2rem 0.5rem 0.5rem; }
+.school-chart-groups { display: flex; justify-content: flex-start; gap: 2rem; padding: 0; margin: 0; list-style: none; }
+.school-chart-group { flex: 1 0 13rem; max-width: 24rem; min-width: 0; text-align: center; }
+.school-chart-pair { display: flex; justify-content: center; gap: 1.6rem; height: 13rem; border-bottom: 2px solid #857e72; background: repeating-linear-gradient(to top, transparent 0, transparent calc(20% - 1px), rgb(23 76 67 / 9%) calc(20% - 1px), rgb(23 76 67 / 9%) 20%); }
+.school-chart-plot { display: flex; align-items: end; justify-content: center; width: 3.6rem; }
+.school-chart-bar { width: 100%; max-width: 3rem; }
+.school-chart-bar .chart-value { font-size: 0.8rem; }
+.school-chart-name { display: block; margin-top: 0.9rem; font-size: 0.82rem; overflow-wrap: anywhere; }
+.school-chart-count { color: var(--muted); font-size: 0.75rem; }
+@media (max-width: 760px) { .school-filter-group { flex-basis: 100%; max-width: none; } }
+
 .chart-value {
     position: absolute;
     bottom: calc(100% + 0.28rem);

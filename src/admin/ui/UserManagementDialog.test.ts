@@ -49,6 +49,7 @@ describe('UserManagementDialog', () => {
 
         root.querySelector<HTMLInputElement>('#create-display-name')!.value = 'Sinta Dewi';
         root.querySelector<HTMLInputElement>('#create-username')!.value = 'sinta';
+        root.querySelector<HTMLInputElement>('#create-school-name')!.value = 'SDN Kalibanteng Kulon 01';
         const credential = crypto.randomUUID();
         root.querySelector<HTMLInputElement>('#create-password')!.value = credential;
         root.querySelector<HTMLFormElement>('form')!.dispatchEvent(
@@ -59,6 +60,7 @@ describe('UserManagementDialog', () => {
         expect(onCreate).toHaveBeenCalledWith({
             displayName: 'Sinta Dewi',
             username: 'sinta',
+            schoolName: 'SDN Kalibanteng Kulon 01',
             password: credential
         });
         expect(nativeDialog.hasAttribute('open')).toBe(false);
