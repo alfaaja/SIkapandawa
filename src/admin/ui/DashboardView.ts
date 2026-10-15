@@ -12,6 +12,8 @@ import { formatDateTime, formatStatus } from '../utils/formatters';
 import { createElement, replaceContent } from './dom';
 import { UserManagementDialog } from './UserManagementDialog';
 import { ProgressCharts } from './ProgressCharts';
+import { AspectCharts } from './AspectCharts';
+import type { SchoolAspectAverage } from '../../shared/game/characterAspects';
 import { UserProgressDialog } from './UserProgressDialog';
 
 export interface DashboardCallbacks {
@@ -64,6 +66,7 @@ export class DashboardView {
     });
     private readonly progressDialog = new UserProgressDialog();
     private readonly progressCharts: ProgressCharts;
+    private readonly aspectCharts = new AspectCharts();
     private readonly managementDialog: UserManagementDialog;
 
     constructor(
@@ -103,7 +106,7 @@ export class DashboardView {
             }));
         }
         tableSection.append(this.status, this.createTable(), this.createPagination());
-        content.append(this.summary, this.progressCharts.element, tableSection);
+        content.append(this.summary, this.progressCharts.element, this.aspectCharts.element, tableSection);
         main.append(header, content);
         replaceContent(this.root, main);
         this.progressDialog.mount(main);
@@ -281,6 +284,11 @@ export class DashboardView {
 
     showChartError(message: string): void {
         this.progressCharts.showError(message);
+    }
+
+    renderAspectData(schools: SchoolAspectAverage[] | null): void {
+        if (schools === null) this.aspectCharts.showError();
+        else this.aspectCharts.render(schools);
     }
 
     renderData(

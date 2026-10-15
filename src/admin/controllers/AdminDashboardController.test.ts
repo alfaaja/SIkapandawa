@@ -27,6 +27,7 @@ function withChartUsers<T extends Record<string, unknown>>(service: T): T & {
 } {
     return {
         ...service,
+        getAspectAverages: vi.fn().mockResolvedValue([]),
         listChartUsers: vi.fn().mockResolvedValue(emptyList.items)
     };
 }
@@ -48,6 +49,7 @@ function makeView() {
         showError: vi.fn(),
         showChartError: vi.fn(),
         renderData: vi.fn(),
+        renderAspectData: vi.fn(),
         showProgressLoading: vi.fn(),
         showProgress: vi.fn(),
         showProgressError: vi.fn()

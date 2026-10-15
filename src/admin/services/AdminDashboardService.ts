@@ -8,6 +8,7 @@ import type {
     DashboardSummary,
     ProgressStatus
 } from '../types';
+import { CHARACTER_ASPECTS, type SchoolAspectAverage } from '../../shared/game/characterAspects';
 import { normalizeListUsersParams } from '../utils/pagination';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminServiceError, classifyBackendError } from './errors';
@@ -19,7 +20,6 @@ const STATUSES = new Set<ProgressStatus>(['not_started', 'in_progress', 'complet
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
 }
-
 function requiredString(record: Record<string, unknown>, key: string): string {
     const value = record[key];
     if (typeof value !== 'string') throw new AdminServiceError('invalid_response');
@@ -234,5 +234,23 @@ export class AdminDashboardService {
             summary: parseReportSummary(value.summary),
             levels
         };
+    }
+    async getAspectAverages(schoolName: string | null = null): Promise<SchoolAspectAverage[]> {
+        const value = await unwrapRpc(this.backend, 'admin_school_aspect_averages', { school_name: schoolName });
+        if (!Array.isArray(value)) throw new AdminServiceError('invalid_response');
+        return value.map(school => {
+            if (!isRecord(school) || !Array.isArray(school.aspects)) throw new AdminServiceError('invalid_response');
+            const studentCount = requiredNumberInRange(school, 'studentCount', 1, Number.MAX_SAFE_INTEGER);
+            const jejakKnownCount = requiredNumberInRange(school, 'jejakKnownCount', 0, studentCount);
+            const aspectValues = school.aspects;
+            const aspects = CHARACTER_ASPECTS.map(definition => {
+                const score = aspectValues.find((item: unknown) => isRecord(item) && item.id === definition.id);
+                if (!isRecord(score)) throw new AdminServiceError('invalid_response');
+                const jejakAverage = score.jejakAverage === null ? null : requiredNumberInRange(score, 'jejakAverage', 0, 2, false);
+                if ((jejakKnownCount === 0) !== (jejakAverage === null)) throw new AdminServiceError('invalid_response');
+                return { id: definition.id, missionAverage: requiredNumberInRange(score, 'missionAverage', 0, 6, false), jejakAverage };
+            });
+            return { schoolName: requiredString(school, 'schoolName'), studentCount, jejakKnownCount, aspects };
+        });
     }
 }

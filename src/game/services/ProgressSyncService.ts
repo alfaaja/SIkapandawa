@@ -1,7 +1,14 @@
 import { LocalProgress, ProgressStorageService, TOTAL_LEVELS } from './ProgressStorageService';
 import { getSupabaseClient } from './SupabaseClient';
+import type { JejakAnswer } from '../../shared/game/characterAspects';
 
 type SyncAction =
+    | {
+        id: string;
+        kind: 'record_jejak_aspect_result';
+        answers: JejakAnswer[];
+        createdAt: string;
+    }
     | {
         id: string;
         kind: 'record_level_result';
@@ -60,6 +67,11 @@ function isSyncAction(value: unknown): value is SyncAction {
     if (value.kind === 'unlock_jejak_pandawa') return true;
     if (value.kind === 'record_jejak_result') {
         return Number.isInteger(value.runScore);
+    }
+    if (value.kind === 'record_jejak_aspect_result') {
+        return Array.isArray(value.answers) && value.answers.length === 10
+            && value.answers.every(answer => isRecord(answer) && typeof answer.cardId === 'string'
+                && (answer.basket === 'good' || answer.basket === 'bad'));
     }
     return false;
 }
@@ -191,28 +203,39 @@ function parseRemoteProgress(value: unknown): LocalProgress | null {
     };
 }
 
-async function sendAction(action: SyncAction): Promise<boolean> {
+async function sendAction(action: SyncAction, accountId: string): Promise<boolean> {
     const client = getSupabaseClient();
     if (!client) return false;
+    const { data } = await client.auth.getSession();
+    const session = data.session;
+    if (session?.user.id !== accountId) return false;
+    // Bind the request to this account even if the shared client signs into
+    // another account between session verification and the HTTP request.
+    const sendRpc = (name: string, args?: Record<string, unknown>) => client.rpc(name, args)
+        .setHeader('Authorization', `Bearer ${session.access_token}`);
 
     if (action.kind === 'record_level_result') {
-        const { error } = await client.rpc('record_level_result', {
+        const { error } = await sendRpc('record_level_result', {
             level_id: action.levelId,
             run_stars: action.runStars
         });
         return error === null;
     }
     if (action.kind === 'mark_intro_seen') {
-        const { error } = await client.rpc('mark_intro_seen', {
+        const { error } = await sendRpc('mark_intro_seen', {
             character_id: action.characterId
         });
         return error === null;
     }
     if (action.kind === 'unlock_jejak_pandawa') {
-        const { error } = await client.rpc('unlock_jejak_pandawa');
+        const { error } = await sendRpc('unlock_jejak_pandawa');
         return error === null;
     }
-    const { error } = await client.rpc('record_jejak_result', {
+    if (action.kind === 'record_jejak_aspect_result') {
+        const { error } = await sendRpc('record_jejak_aspect_result', { run_answers: action.answers });
+        return error === null;
+    }
+    const { error } = await sendRpc('record_jejak_result', {
         run_score: action.runScore
     });
     return error === null;
@@ -221,8 +244,6 @@ async function sendAction(action: SyncAction): Promise<boolean> {
 async function flushInternal(accountId: string): Promise<boolean> {
     const client = getSupabaseClient();
     if (!client || !navigator.onLine) return false;
-    const { data } = await client.auth.getSession();
-    if (data.session?.user.id !== accountId) return false;
 
     while (true) {
         const action = readQueue(accountId).sort(
@@ -232,7 +253,7 @@ async function flushInternal(accountId: string): Promise<boolean> {
 
         let sent = false;
         try {
-            sent = await sendAction(action);
+            sent = await sendAction(action, accountId);
         } catch {
             sent = false;
         }
@@ -286,6 +307,12 @@ function makeBaseAction(): Pick<SyncAction, 'id' | 'createdAt'> {
 }
 
 export const ProgressSyncService = {
+    enqueueJejakAnswers(accountId: string, answers: readonly JejakAnswer[]): void {
+        // Keep each complete run: compacting by total would lose scores for individual aspects.
+        const action: SyncAction = { ...makeBaseAction(), kind: 'record_jejak_aspect_result', answers: answers.map(answer => ({ ...answer })) };
+        writeQueue(accountId, compactQueue(readQueue(accountId), action));
+        void this.flush(accountId);
+    },
     initialize(): void {
         if (initialized) return;
         initialized = true;
@@ -362,7 +389,10 @@ export const ProgressSyncService = {
         enqueueSnapshot(accountId, local);
         await this.flush(accountId);
 
-        const { data, error } = await client.rpc('read_complete_progress');
+        const { data: authData } = await client.auth.getSession();
+        if (authData.session?.user.id !== accountId) return local;
+        const { data, error } = await client.rpc('read_complete_progress')
+            .setHeader('Authorization', `Bearer ${authData.session.access_token}`);
         if (error || !data) return local;
         const remote = parseRemoteProgress(data);
         if (!remote) return local;

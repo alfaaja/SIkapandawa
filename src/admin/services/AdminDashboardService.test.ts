@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminDashboardService } from './AdminDashboardService';
+import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
 
 const USER_ID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -34,6 +35,19 @@ function listItem(overrides: Record<string, unknown> = {}) {
 }
 
 describe('AdminDashboardService', () => {
+    it('validates school aspect scales and coverage without turning missing Jejak data into zero', async () => {
+        const school = { schoolName: 'SDN Satu', studentCount: 2, jejakKnownCount: 0,
+            aspects: CHARACTER_ASPECTS.map(aspect => ({ id: aspect.id, missionAverage: 3, jejakAverage: null })) };
+        const rpc = vi.fn().mockResolvedValue({ data: [school], error: null });
+        const service = new AdminDashboardService(makeBackend(rpc));
+        await expect(service.getAspectAverages('SDN Satu')).resolves.toEqual([school]);
+        expect(rpc).toHaveBeenCalledWith('admin_school_aspect_averages', { school_name: 'SDN Satu' });
+        for (const invalid of [{ ...school, jejakKnownCount: 3 }, { ...school, jejakKnownCount: 1 },
+            { ...school, aspects: [] }, { ...school, aspects: school.aspects.map(aspect => ({ ...aspect, missionAverage: 7 })) }]) {
+            rpc.mockResolvedValue({ data: [invalid], error: null });
+            await expect(service.getAspectAverages()).rejects.toThrow();
+        }
+    });
     beforeEach(() => {
         vi.stubGlobal('navigator', { onLine: true });
     });

@@ -13,6 +13,7 @@ import { addBackground, addImageIfExists, applyLogicalCamera } from '../ui/backd
 import { makeText } from '../ui/fonts';
 import { PauseOverlay } from '../ui/PauseOverlay';
 import { SpriteButton } from '../ui/SpriteButton';
+import type { JejakAnswer } from '../../shared/game/characterAspects';
 
 type JejakState =
     | 'CARD_ACTIVE'
@@ -51,6 +52,7 @@ export class JejakPandawa extends Scene {
     private runCards: JejakCard[] = [];
     private cardIndex = 0;
     private score = 0;
+    private answers: JejakAnswer[] = [];
     private state: JejakState = 'CARD_ACTIVE';
     private stateBeforePause: JejakState = 'CARD_ACTIVE';
     private selectedBasket: JejakBasket['id'] = 'good';
@@ -108,6 +110,7 @@ export class JejakPandawa extends Scene {
     }
 
     private resetRunState(): void {
+        this.answers = [];
         this.cardIndex = 0;
         this.score = 0;
         this.state = 'CARD_ACTIVE';
@@ -315,6 +318,7 @@ export class JejakPandawa extends Scene {
         this.cardImage?.setVisible(false);
         this.cardText?.setVisible(false);
         const correct = basket.accepts === card.isGood;
+        this.answers.push({ cardId: card.id, basket: basket.id });
         if (correct) this.score += 1;
         this.feedbackText
             .setColor(correct ? '#315e08' : '#8c0020')
@@ -412,7 +416,7 @@ export class JejakPandawa extends Scene {
         this.state = 'COMPLETE';
         this.inputLocked = true;
         this.destroyCard();
-        ProgressService.recordJejakResult(this.accountId, this.score);
+        ProgressService.recordJejakResult(this.accountId, this.score, this.answers);
         this.cameras.main.fadeOut(220, 20, 6, 40);
         this.cameras.main.once('camerafadeoutcomplete', () => {
             this.scene.start('JejakResult', { score: this.score });

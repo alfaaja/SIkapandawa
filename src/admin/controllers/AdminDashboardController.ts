@@ -30,7 +30,7 @@ export class AdminDashboardController {
         }
         this.view.showLoading();
         try {
-            const [summaryResult, listResult, chartResult] = await Promise.allSettled([
+            const [summaryResult, listResult, chartResult, aspectResult] = await Promise.allSettled([
                 this.service.getSummary(this.schoolName),
                 this.service.listUsers({
                     schoolName: this.schoolName,
@@ -39,7 +39,8 @@ export class AdminDashboardController {
                     pageSize: this.pageSize,
                     pageOffset: this.pageOffset
                 }),
-                this.service.listChartUsers(this.schoolName)
+                this.service.listChartUsers(this.schoolName),
+                this.service.getAspectAverages(this.schoolName)
             ]);
             if (sequence !== this.requestSequence) return;
             if (summaryResult.status === 'rejected') throw summaryResult.reason;
@@ -49,6 +50,7 @@ export class AdminDashboardController {
             const chartUsers = chartResult.status === 'fulfilled' ? chartResult.value : [];
             this.total = list.total;
             this.view.renderData(summary, list, chartUsers, this.schoolName);
+            this.view.renderAspectData(aspectResult.status === 'fulfilled' ? aspectResult.value : null);
             if (chartResult.status === 'rejected') {
                 this.view.showChartError('Grafik capaian tidak dapat dimuat.');
             }

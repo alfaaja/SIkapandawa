@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import { validateUsername } from '../../shared/auth/username';
 import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
+import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
 import {
     getJejakReportTier,
     getMissionReportRank
@@ -253,6 +254,18 @@ export function createAdminMockBackend(): AdminBackend {
                     totalStarsEarned: cohort.reduce((total, user) => total + user.totalStars, 0),
                     generatedAt: new Date().toISOString()
                 });
+            }
+            if (name === 'admin_school_aspect_averages') {
+                const cohort = users.filter(user => !user.isAdmin && (!args.school_name || user.schoolName === args.school_name));
+                return success([...new Set(cohort.map(user => user.schoolName))].sort().map(schoolName => {
+                    const students = cohort.filter(user => user.schoolName === schoolName);
+                    const known = students.filter(user => [0, 10].includes(user.jejakPandawaBestScore));
+                    return { schoolName, studentCount: students.length, jejakKnownCount: known.length,
+                        aspects: CHARACTER_ASPECTS.map(aspect => ({ id: aspect.id,
+                            missionAverage: students.reduce((sum, user) => sum + createLevels(user).filter(level => (aspect.levels as readonly number[]).includes(level.level)).reduce((score, level) => score + level.stars, 0), 0) / students.length,
+                            jejakAverage: known.length ? known.reduce((sum, user) => sum + user.jejakPandawaBestScore / 5, 0) / known.length : null
+                        })) };
+                }));
             }
             if (name === 'admin_list_users') {
                 const search = typeof args.search_text === 'string'

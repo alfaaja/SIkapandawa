@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:school-db": "node scripts/test-school-migration.mjs"
+    "test:school-db": "node scripts/test-school-migration.mjs",
+    "test:aspect-db": "node scripts/test-aspect-migration.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

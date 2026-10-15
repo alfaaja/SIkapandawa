@@ -106,14 +106,14 @@ test.describe('panel admin mock contract', () => {
 
         await expect(page.getByRole('heading', { name: 'Capaian Misi Pandawa' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Capaian Jejak Pandawa' })).toBeVisible();
-        const bars = page.locator('.chart-bar');
+        const bars = page.locator('.progress-charts:not(.aspect-charts) .chart-bar');
         await expect(bars).toHaveCount(112);
 
         await page.getByLabel('Cari pemain').fill('arjuna.pratama.25');
         await expect(page.locator('tbody tr')).toHaveCount(1);
         await expect(bars).toHaveCount(112);
 
-        const layout = await page.locator('.progress-charts').evaluate((element) => ({
+        const layout = await page.locator('.progress-charts:not(.aspect-charts)').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,
             noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
             chartWidths: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
@@ -146,7 +146,7 @@ test.describe('panel admin mock contract', () => {
         await expect(page.getByRole('button', { name: 'Nama lengkap' }))
             .toHaveAttribute('aria-pressed', 'true');
 
-        const compactLayout = await page.locator('.progress-charts').evaluate((element) => ({
+        const compactLayout = await page.locator('.progress-charts:not(.aspect-charts)').evaluate((element) => ({
             noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
             chartWidths: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
                 .map((chart) => ({ client: chart.clientWidth, scroll: chart.scrollWidth }))

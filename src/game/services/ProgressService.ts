@@ -7,6 +7,7 @@ import {
     TOTAL_LEVELS
 } from './ProgressStorageService';
 import { ProgressSyncService } from './ProgressSyncService';
+import type { JejakAnswer } from '../../shared/game/characterAspects';
 
 export { PLAYABLE_LEVELS, TOTAL_LEVELS };
 export type { JejakResultOutcome, LevelResultOutcome, LocalProgress };
@@ -61,9 +62,10 @@ export const ProgressService = {
         return outcome;
     },
 
-    recordJejakResult(accountId: string, runScore: number): JejakResultOutcome {
+    recordJejakResult(accountId: string, runScore: number, answers?: readonly JejakAnswer[]): JejakResultOutcome {
         const outcome = ProgressStorageService.recordJejakResult(accountId, runScore);
-        ProgressSyncService.enqueueJejakResult(accountId, outcome.score);
+        if (answers) ProgressSyncService.enqueueJejakAnswers(accountId, answers);
+        else ProgressSyncService.enqueueJejakResult(accountId, outcome.score);
         return outcome;
     },
 

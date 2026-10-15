@@ -98,8 +98,9 @@ describe('school dashboard', () => {
 
     it('resets pagination and scopes every request when selecting a school', async () => {
         const service = { getSummary: vi.fn().mockResolvedValue({}),
-            listUsers: vi.fn().mockResolvedValue({ items: [], total: 100 }), listChartUsers: vi.fn().mockResolvedValue([]) };
-        const view = { showLoading: vi.fn(), renderData: vi.fn(), showError: vi.fn() };
+            listUsers: vi.fn().mockResolvedValue({ items: [], total: 100 }), listChartUsers: vi.fn().mockResolvedValue([]),
+            getAspectAverages: vi.fn().mockResolvedValue([]) };
+        const view = { showLoading: vi.fn(), renderData: vi.fn(), renderAspectData: vi.fn(), showError: vi.fn() };
         const controller = new AdminDashboardController(service as never, view as never, vi.fn());
         await controller.refresh();
         controller.nextPage();
@@ -108,6 +109,7 @@ describe('school dashboard', () => {
         await vi.waitFor(() => expect(view.renderData).toHaveBeenLastCalledWith({}, expect.anything(), [], SCHOOL));
         expect(service.getSummary).toHaveBeenLastCalledWith(SCHOOL);
         expect(service.listChartUsers).toHaveBeenLastCalledWith(SCHOOL);
+        expect(service.getAspectAverages).toHaveBeenLastCalledWith(SCHOOL);
         expect(service.listUsers).toHaveBeenLastCalledWith(expect.objectContaining({ schoolName: SCHOOL, pageOffset: 0 }));
     });
 });

@@ -518,6 +518,28 @@ select:hover {
 .school-chart-bar .chart-value { font-size: 0.8rem; }
 .school-chart-name { display: block; margin-top: 0.9rem; font-size: 0.82rem; overflow-wrap: anywhere; }
 .school-chart-count { color: var(--muted); font-size: 0.75rem; }
+.aspect-charts-grid { display: grid; gap: 1rem; margin-top: 1.5rem; }
+.aspect-charts { min-width: 0; }
+.aspect-chart-panel { min-width: 0; }
+.aspect-axis-title { color: var(--muted); font-size: 0.8rem; margin: 1.5rem 0 0 2.75rem; }
+.aspect-chart-frame { display: grid; grid-template-columns: 2.75rem minmax(0, 1fr); margin-top: 1.75rem; }
+.aspect-y-axis { display: flex; flex-direction: column; justify-content: space-between; height: 16rem; padding: 0 0.65rem 0 0; margin: 0; list-style: none; text-align: right; color: var(--muted); font-size: 0.75rem; border-right: 2px solid #857e72; }
+.aspect-y-axis li { line-height: 1; transform: translateY(-50%); }
+.aspect-y-axis li:last-child { transform: translateY(50%); }
+.aspect-chart-scroll { overflow-x: auto; min-width: 0; padding-top: 1.75rem; margin-top: -1.75rem; }
+.aspect-chart-groups { position: relative; display: grid; grid-template-columns: repeat(5, minmax(7.5rem, 1fr)); min-width: 40rem; gap: 1rem; padding: 0 0.6rem; margin: 0; list-style: none; background: repeating-linear-gradient(to top, transparent 0, transparent calc(20% - 1px), rgb(23 76 67 / 10%) calc(20% - 1px), rgb(23 76 67 / 10%) 20%); background-size: 100% 16rem; background-repeat: no-repeat; }
+.aspect-chart-groups::before { content: ''; position: absolute; top: 16rem; left: 0; right: 0; border-bottom: 2px solid #857e72; pointer-events: none; }
+.aspect-chart-group { min-width: 0; text-align: center; }
+.aspect-chart-pair { display: flex; align-items: end; justify-content: center; gap: 0.55rem; height: 16rem; }
+.aspect-chart-plot { display: flex; align-items: end; width: 3.15rem; height: 100%; }
+.aspect-bar { width: 100%; border-radius: 0.45rem 0.45rem 0 0; }
+.chart-misi .aspect-bar { background: linear-gradient(to top, #69309a, #9149cf); }
+.chart-jejak .aspect-bar { background: linear-gradient(to top, #f3b719, #ffd334); }
+.aspect-bar .chart-value { font-size: 0.75rem; padding: 0.25rem 0.35rem; border-radius: 0.5rem; background: #f5edf9; color: #29233a; }
+.chart-jejak .aspect-bar .chart-value { background: #fff0c3; }
+.aspect-chart-label { display: block; min-height: 2.5rem; padding-top: 0.65rem; font-size: 0.8rem; }
+.aspect-chart-legend { width: fit-content; margin: 1rem auto 0; padding: 0.65rem 1.25rem; border-radius: 2rem; background: #fff5df; }
+.aspect-coverage { display: block; margin-top: 0.4rem; }
 @media (max-width: 760px) { .school-filter-group { flex-basis: 100%; max-width: none; } }
 
 .chart-value {
