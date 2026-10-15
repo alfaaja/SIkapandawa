@@ -40,7 +40,7 @@ function createUsers(): AdminUserListItem[] {
             : completedLevelCount === 10 ? 'completed' : 'in_progress';
         const day = String((index % 27) + 1).padStart(2, '0');
         return {
-            schoolName: index < 28 ? DEFAULT_SCHOOL_NAME : 'SDN SEKOLAH KEDUA',
+            schoolName: DEFAULT_SCHOOL_NAME,
             userId: userId(index + 1),
             displayName: profile.displayName,
             username: cycle === 0

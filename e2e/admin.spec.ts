@@ -107,11 +107,11 @@ test.describe('panel admin mock contract', () => {
         await expect(page.getByRole('heading', { name: 'Capaian Misi Pandawa' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Capaian Jejak Pandawa' })).toBeVisible();
         const bars = page.locator('.chart-bar');
-        await expect(bars).toHaveCount(56);
+        await expect(bars).toHaveCount(112);
 
         await page.getByLabel('Cari pemain').fill('arjuna.pratama.25');
         await expect(page.locator('tbody tr')).toHaveCount(1);
-        await expect(bars).toHaveCount(56);
+        await expect(bars).toHaveCount(112);
 
         const layout = await page.locator('.progress-charts').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,

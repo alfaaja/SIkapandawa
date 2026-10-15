@@ -17,7 +17,13 @@ function student(schoolName: string, totalStars: number, jejakPandawaBestScore: 
 
 describe('school dashboard', () => {
     it('filters summary and paginated search by school without losing other school choices', async () => {
-        const service = new AdminDashboardService(createAdminMockBackend());
+        const backend = createAdminMockBackend();
+        const service = new AdminDashboardService(backend);
+        expect((await service.getSummary()).schools).toEqual([SCHOOL]);
+        await backend.invokeAdminFunction('create', {
+            displayName: 'Siswa Uji', username: 'sekolah.baru',
+            password: crypto.randomUUID(), schoolName: 'SDN Sekolah Kedua'
+        });
         const all = await service.getSummary();
         const summary = await service.getSummary(SCHOOL);
         const list = await service.listUsers({ schoolName: SCHOOL, pageSize: 100 });

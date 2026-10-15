@@ -11,7 +11,7 @@ import { MAX_SCHOOL_NAME_LENGTH } from '../../shared/auth/school';
 
 const PANEL_CENTER_X = 648;
 const TEXTBOX_X = 445;   // kiri sprite textbox-daftar (406x295)
-const TEXTBOX_Y = 221;   // atas sprite, memberi ruang untuk nama sekolah
+const TEXTBOX_Y = 208;   // atas sprite, memberi ruang untuk nama sekolah dan tombol
 const FIELD_X = TEXTBOX_X + 204;
 const FIELD_W = 366;
 const FIELD_H = 32;
@@ -36,7 +36,7 @@ export class Register extends Scene {
         applyLogicalCamera(this);
         this.cameras.main.fadeIn(250, 255, 244, 214);
         addBackground(this, 'bg-panel-empty');
-        addImageIfExists(this, PANEL_CENTER_X, 116, 'logo-panel')?.setDisplaySize(146, 180);
+        addImageIfExists(this, PANEL_CENTER_X, 103, 'logo-panel')?.setDisplaySize(146, 180);
 
         const textbox = addImageIfExists(this, TEXTBOX_X + 203, TEXTBOX_Y + 147, 'textbox-daftar');
         if (!textbox) {
@@ -45,19 +45,19 @@ export class Register extends Scene {
         }
 
         this.modal = new MessageModal(this);
-        makeText(this, TEXTBOX_X + 1, 526, 'Nama Sekolah:', 13, { color: '#ffffff' })
+        makeText(this, TEXTBOX_X + 1, 513, 'Nama Sekolah:', 13, { color: '#ffffff' })
             .setStroke('#171717', 3);
         this.add.graphics()
             .fillStyle(0xf0c1ff, 1)
             .lineStyle(3, 0x7b229c, 1)
-            .fillRoundedRect(TEXTBOX_X + 3, 551, 400, 42, 10)
-            .strokeRoundedRect(TEXTBOX_X + 3, 551, 400, 42, 10);
+            .fillRoundedRect(TEXTBOX_X + 3, 538, 400, 42, 10)
+            .strokeRoundedRect(TEXTBOX_X + 3, 538, 400, 42, 10);
         this.form = new AuthForm(this, [
             { id: 'displayName', type: 'text', x: FIELD_X, y: TEXTBOX_Y + 46, width: FIELD_W, height: FIELD_H, maxLength: 24 },
             { id: 'username', type: 'text', x: FIELD_X, y: TEXTBOX_Y + 121, width: FIELD_W, height: FIELD_H, maxLength: 20 },
             { id: 'password', type: 'password', x: FIELD_X, y: TEXTBOX_Y + 196, width: FIELD_W, height: FIELD_H, maxLength: 64 },
             { id: 'passwordConfirm', type: 'password', x: FIELD_X, y: TEXTBOX_Y + 271, width: FIELD_W, height: FIELD_H, maxLength: 64 },
-            { id: 'schoolName', label: 'Nama sekolah', type: 'text', x: FIELD_X, y: 572, width: FIELD_W, height: FIELD_H, maxLength: MAX_SCHOOL_NAME_LENGTH }
+            { id: 'schoolName', label: 'Nama sekolah', type: 'text', x: FIELD_X, y: 559, width: FIELD_W, height: FIELD_H, maxLength: MAX_SCHOOL_NAME_LENGTH }
         ], () => this.submit());
 
         this.submitButton = new SpriteButton(this, PANEL_CENTER_X, 621, 'button-daftar', () => this.submit());

@@ -1,32 +1,34 @@
 import { expect, test } from '@playwright/test';
 
-test('All compares schools; selection scopes accounts, summary and student charts', async ({ page }) => {
+test('only registered schools appear; selection scopes accounts, summary and student charts', async ({ page }) => {
     await page.goto('/admin/?mockAdmin=1');
     await page.getByLabel('Nama pengguna').fill('admin.demo');
     await page.getByLabel('Password', { exact: true }).fill('local-test-only');
     await page.getByRole('button', { name: 'Masuk ke panel' }).click();
     const school = page.getByLabel('Sekolah', { exact: true });
     await expect(school).toHaveValue('');
-    await expect(page.locator('.school-chart-bar')).toHaveCount(4);
+    await expect(page.locator('.school-chart-bar')).toHaveCount(2);
+    await expect(page.locator('#school-filter option')).toHaveCount(2);
     await expect(page.locator('.summary-card').first()).toContainText('56');
     await school.selectOption('SDN Kalibanteng Kulon 01');
-    await expect(page.locator('.summary-card').first()).toContainText('28');
+    await expect(page.locator('.summary-card').first()).toContainText('56');
     await expect(page.locator('tbody tr')).toHaveCount(25);
-    await expect(page.locator('.chart-bar')).toHaveCount(56);
+    await expect(page.locator('.chart-bar')).toHaveCount(112);
     for (const row of await page.locator('td[data-label="Sekolah"]').allTextContents()) {
         expect(row).toBe('SDN Kalibanteng Kulon 01');
     }
     await page.getByRole('button', { name: 'Berikutnya' }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(3);
-    await school.selectOption('SDN SEKOLAH KEDUA');
-    await expect(page.getByText(/Halaman 1 dari 2/)).toBeVisible();
+    await expect(page.locator('tbody tr')).toHaveCount(25);
+    await school.selectOption('');
+    await school.selectOption('SDN Kalibanteng Kulon 01');
+    await expect(page.getByText(/Halaman 1 dari 3/)).toBeVisible();
     await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
     await expect(page.locator('tbody tr')).toHaveCount(1);
-    await expect(page.locator('.chart-bar')).toHaveCount(56);
+    await expect(page.locator('.chart-bar')).toHaveCount(112);
     await school.selectOption('');
-    await expect(page.locator('.school-chart-bar')).toHaveCount(4);
+    await expect(page.locator('.school-chart-bar')).toHaveCount(2);
     await expect(page.locator('.summary-card').first()).toContainText('56');
-    await expect(page.locator('#school-filter option')).toHaveCount(3);
+    await expect(page.locator('#school-filter option')).toHaveCount(2);
 });
 
 test('school overview fits desktop and phone and keeps school selector visible', async ({ page }) => {
@@ -39,7 +41,28 @@ test('school overview fits desktop and phone and keeps school selector visible',
             await page.getByRole('button', { name: 'Masuk ke panel' }).click();
         }
         await expect(page.getByLabel('Sekolah', { exact: true })).toBeVisible();
-        await expect(page.locator('.school-chart-bar')).toHaveCount(4);
+        await expect(page.locator('.school-chart-bar')).toHaveCount(2);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
+});
+
+test('a new school appears only after a player is created for it', async ({ page }) => {
+    await page.goto('/admin/?mockAdmin=1');
+    await page.getByLabel('Nama pengguna').fill('admin.demo');
+    await page.getByLabel('Password', { exact: true }).fill('local-test-only');
+    await page.getByRole('button', { name: 'Masuk ke panel' }).click();
+    await expect(page.locator('#school-filter option')).toHaveCount(2);
+    await page.getByRole('button', { name: 'Tambah pemain' }).click();
+    await page.getByLabel('Nama tampilan').fill('Siswa Sekolah Baru');
+    await page.getByLabel('Nama sekolah').fill('SDN Sekolah Baru');
+    await page.getByLabel('Username').fill('sekolah.baru');
+    await page.getByLabel('Password awal').fill(crypto.randomUUID());
+    await page.getByRole('button', { name: 'Simpan pemain' }).click();
+    await expect(page.locator('#school-filter option')).toHaveCount(3);
+    await expect(page.locator('.school-chart-bar')).toHaveCount(4);
+    await page.getByLabel('Sekolah', { exact: true }).selectOption('SDN SEKOLAH BARU');
+    await expect(page.locator('.summary-card').first()).toContainText('1');
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.locator('.chart-bar')).toHaveCount(2);
+    await expect(page.locator('tbody')).toContainText('@sekolah.baru');
 });
