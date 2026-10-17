@@ -1,3 +1,6 @@
+import { CHARACTER_ASPECTS, type CharacterAspect, type JejakAnswer } from '../../shared/game/characterAspects';
+
+export const JEJAK_CURRICULUM_VERSION = 2;
 export const JEJAK_CHARACTER_IDS = [
     'yudhistira',
     'bima',
@@ -11,6 +14,7 @@ export type JejakCharacterId = typeof JEJAK_CHARACTER_IDS[number];
 export interface JejakCard {
     id: string;
     characterId: JejakCharacterId;
+    aspect: CharacterAspect;
     value: string;
     text: string;
     isGood: boolean;
@@ -30,14 +34,14 @@ export interface JejakResultTier {
 }
 
 /**
- * Salinan runtime dari docs/data/JEJAK_PANDAWA_CARDS.json.
- * JSON tersebut tetap sumber kebenaran konten P09; constant ini dipakai karena
- * pipeline TypeScript aplikasi tidak mengaktifkan resolveJsonModule.
+ * Active v2 curriculum. Revised wording receives a new ID; retired IDs remain
+ * in the legacy database answer key for older clients and offline queues.
  */
 export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'yudhistira-01',
         characterId: 'yudhistira',
+        aspect: 'kejujuran',
         value: 'kejujuran',
         text: 'Menyerahkan uang Rp10.000 yang ditemukan di lantai kelas kepada guru.',
         isGood: true
@@ -45,20 +49,23 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'yudhistira-02',
         characterId: 'yudhistira',
+        aspect: 'kejujuran',
         value: 'kejujuran',
-        text: 'Memberikan sontekan saat ulangan agar disukai teman.',
+        text: 'Memberikan contekan saat ulangan agar disukai teman.',
         isGood: false
     },
     {
-        id: 'yudhistira-03',
+        id: 'yudhistira-04',
         characterId: 'yudhistira',
-        value: 'kesabaran',
-        text: 'Memaafkan dan menolong teman yang sengaja menyipratkan lumpur ke seragam kita.',
+        aspect: 'kejujuran',
+        value: 'kejujuran',
+        text: 'Mengakui kepada guru bahwa kita yang tidak sengaja merusakkan penggaris kelas.',
         isGood: true
     },
     {
         id: 'bima-01',
         characterId: 'bima',
+        aspect: 'keberanian',
         value: 'keberanian',
         text: 'Pura-pura tidak melihat saat adik kelas dipalak oleh kakak kelas.',
         isGood: false
@@ -66,6 +73,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'bima-02',
         characterId: 'bima',
+        aspect: 'keberanian',
         value: 'ketegasan',
         text: 'Menolak dengan berani saat diajak teman membolos pelajaran.',
         isGood: true
@@ -73,6 +81,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'bima-03',
         characterId: 'bima',
+        aspect: 'keberanian',
         value: 'ketegasan',
         text: 'Ikut mencoret tembok sekolah agar dianggap gaul.',
         isGood: false
@@ -80,6 +89,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'arjuna-01',
         characterId: 'arjuna',
+        aspect: 'kesopanan',
         value: 'kesopanan',
         text: 'Menggebrak meja kantin dan berteriak karena tidak sabar mengantre.',
         isGood: false
@@ -87,6 +97,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'arjuna-02',
         characterId: 'arjuna',
+        aspect: 'kesopanan',
         value: 'etika',
         text: 'Berpamitan dan mencium tangan orang tua sebelum berangkat sekolah.',
         isGood: true
@@ -94,6 +105,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'arjuna-03',
         characterId: 'arjuna',
+        aspect: 'kesopanan',
         value: 'kesopanan',
         text: 'Mengucapkan permisi saat lewat di depan orang yang lebih tua.',
         isGood: true
@@ -101,6 +113,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'nakula-01',
         characterId: 'nakula',
+        aspect: 'kebijaksanaan',
         value: 'kebiasaan-sehat',
         text: 'Menolak saat ditawari mencoba merokok dan mengingatkan bahayanya.',
         isGood: true
@@ -108,6 +121,7 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'nakula-02',
         characterId: 'nakula',
+        aspect: 'kebijaksanaan',
         value: 'sesuai-umur',
         text: 'Menggunakan uang jajan untuk top-up judi slot online.',
         isGood: false
@@ -115,29 +129,33 @@ export const JEJAK_CARDS: readonly JejakCard[] = [
     {
         id: 'nakula-03',
         characterId: 'nakula',
+        aspect: 'kebijaksanaan',
         value: 'sesuai-umur',
         text: 'Ikut balap sepeda liar pada malam hari karena takut diejek teman.',
         isGood: false
     },
     {
-        id: 'sadewa-01',
+        id: 'sadewa-04',
         characterId: 'sadewa',
-        value: 'tanggung-jawab',
-        text: 'Menyembunyikan debu dan sampah di bawah meja agar piket cepat selesai.',
+        aspect: 'keadilan',
+        value: 'keadilan',
+        text: 'Menyuruh teman mengerjakan seluruh tugas piket, sementara kita tidak ikut membantu.',
         isGood: false
     },
     {
-        id: 'sadewa-02',
+        id: 'sadewa-05',
         characterId: 'sadewa',
-        value: 'kebersihan',
-        text: 'Memindahkan botol plastik yang menyumbat selokan ke tempat sampah.',
+        aspect: 'keadilan',
+        value: 'keadilan',
+        text: 'Membagi tugas kelompok dengan adil agar setiap anggota mendapat bagian yang sesuai.',
         isGood: true
     },
     {
-        id: 'sadewa-03',
+        id: 'sadewa-06',
         characterId: 'sadewa',
-        value: 'kesehatan',
-        text: 'Mencuci tangan dengan sabun dan air mengalir sebelum makan.',
+        aspect: 'keadilan',
+        value: 'keadilan',
+        text: 'Bergiliran memakai alat permainan supaya semua teman mendapat kesempatan.',
         isGood: true
     }
 ];
@@ -187,14 +205,17 @@ export function validateJejakRun(cards: readonly JejakCard[]): string[] {
         const count = cards.filter((card) => card.characterId === characterId).length;
         if (count !== 2) errors.push(`${characterId} harus memiliki 2 kartu, ditemukan ${count}.`);
     }
+    for (const aspect of CHARACTER_ASPECTS) {
+        if (cards.filter(card => card.aspect === aspect.id).length !== 2) errors.push(aspect.label + ' harus memiliki 2 soal.');
+    }
     return errors;
 }
 
 export function createJejakRun(rng: () => number = Math.random): JejakCard[] {
-    const selected = JEJAK_CHARACTER_IDS.flatMap((characterId) => {
-        const group = JEJAK_CARDS.filter((card) => card.characterId === characterId);
+    const selected = CHARACTER_ASPECTS.flatMap((aspect) => {
+        const group = JEJAK_CARDS.filter((card) => card.aspect === aspect.id);
         if (group.length < 2) {
-            throw new Error(`Bank kartu ${characterId} kurang dari dua.`);
+            throw new Error(`Bank kartu ${aspect.label} kurang dari dua.`);
         }
         return fisherYates(group, rng).slice(0, 2);
     });
@@ -202,6 +223,20 @@ export function createJejakRun(rng: () => number = Math.random): JejakCard[] {
     const errors = validateJejakRun(run);
     if (errors.length > 0) throw new Error(errors.join(' '));
     return run;
+}
+
+export function scoreJejakAnswers(answers: readonly JejakAnswer[]): Record<CharacterAspect, number> {
+    if (answers.length !== 10 || new Set(answers.map(answer => answer.cardId)).size !== 10) throw new Error('Jawaban Jejak tidak lengkap.');
+    const scores = Object.fromEntries(CHARACTER_ASPECTS.map(aspect => [aspect.id, 0])) as Record<CharacterAspect, number>;
+    const counts = { ...scores };
+    for (const answer of answers) {
+        const card = JEJAK_CARDS.find(card => card.id === answer.cardId);
+        if (!card || !['good','bad'].includes(answer.basket)) throw new Error('Jawaban Jejak tidak valid.');
+        counts[card.aspect]++;
+        if ((answer.basket === 'good') === card.isGood) scores[card.aspect]++;
+    }
+    if (Object.values(counts).some(count => count !== 2)) throw new Error('Setiap aspek harus memiliki dua jawaban.');
+    return scores;
 }
 
 export function getJejakResultTier(score: number): JejakResultTier {

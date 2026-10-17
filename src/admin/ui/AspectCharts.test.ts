@@ -6,7 +6,7 @@ import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
 describe('school aspect averages', () => {
     it('combines five aspect pairs on one shared percentage axis per school', () => {
         const charts = new AspectCharts();
-        charts.render([{ schoolName: 'SDN Satu', studentCount: 4, jejakKnownCount: 3,
+        charts.render([{ schoolName: 'SDN Satu', studentCount: 4, jejakKnownCount: 3, jejakVersion: 2,
             aspects: CHARACTER_ASPECTS.map(aspect => ({ id: aspect.id, missionAverage: 3, jejakAverage: 1 })) }]);
         expect(charts.element.querySelectorAll('.aspect-chart-panel')).toHaveLength(1);
         expect(charts.element.querySelectorAll('.aspect-chart-group')).toHaveLength(5);
@@ -22,7 +22,7 @@ describe('school aspect averages', () => {
     });
     it('shows missing data explicitly and treats names as text', () => {
         const charts = new AspectCharts();
-        charts.render([{ schoolName: '<img src=x>', studentCount: 2, jejakKnownCount: 0,
+        charts.render([{ schoolName: '<img src=x>', studentCount: 2, jejakKnownCount: 0, jejakVersion: 2,
             aspects: CHARACTER_ASPECTS.map(aspect => ({ id: aspect.id, missionAverage: 0, jejakAverage: null })) }]);
         expect(charts.element.querySelector('img')).toBeNull();
         expect(charts.element.textContent).toContain('Belum ada rincian');

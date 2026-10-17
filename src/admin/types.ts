@@ -1,3 +1,5 @@
+import type { CharacterAspect } from '../shared/game/characterAspects';
+
 export type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
 export type ProgressStatusFilter = 'all' | ProgressStatus;
 
@@ -45,6 +47,7 @@ export interface AdminUserProgressResponse {
     user: Pick<AdminUserListItem, 'userId' | 'displayName' | 'username'>;
     summary: AdminUserReportSummary;
     levels: AdminLevelProgress[];
+    jejakAspects?: Record<CharacterAspect, number> | null;
 }
 
 export interface AdminUserReportSummary {

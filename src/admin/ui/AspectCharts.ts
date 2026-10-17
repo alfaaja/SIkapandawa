@@ -13,7 +13,7 @@ export class AspectCharts {
         for (const school of schools) {
             const panel = createElement('article', { className: 'chart-panel aspect-chart-panel' });
             panel.append(createElement('h3', { text: school.schoolName }),
-                createElement('p', { className: 'chart-subtitle', text: school.studentCount + ' siswa · rincian Jejak ' + school.jejakKnownCount + ' dari ' + school.studentCount }));
+                createElement('p', { className: 'chart-subtitle', text: school.studentCount + ' siswa · rincian Jejak versi 2: ' + school.jejakKnownCount + ' dari ' + school.studentCount }));
             const axis = createElement('ol', { className: 'aspect-y-axis', attributes: { 'aria-hidden': 'true' } });
             for (const value of [100, 80, 60, 40, 20, 0]) axis.append(createElement('li', { text: String(value) }));
             const viewport = createElement('div', {
@@ -54,13 +54,13 @@ export class AspectCharts {
             panel.append(createElement('p', { className: 'aspect-axis-title', text: 'Capaian (%)' }), chart, legend);
             if (school.jejakKnownCount < school.studentCount) {
                 panel.append(createElement('p', { className: 'school-chart-count aspect-coverage',
-                    text: school.jejakKnownCount === 0 ? 'Belum ada rincian Jejak.' : 'Rata-rata Jejak hanya memakai data yang tersedia. Skor lama tanpa rincian memerlukan permainan ulang.' }));
+                    text: school.jejakKnownCount === 0 ? 'Belum ada rincian Jejak versi 2. Mainkan Jejak dengan soal terbaru untuk mengisi grafik. Skor total lama tetap tersimpan.' : 'Rata-rata Jejak memakai nilai terbaik tiap aspek dari siswa yang telah memainkan versi 2. Siswa lainnya perlu memainkan soal terbaru; skor lama tetap tersimpan.' }));
             }
             grid.append(panel);
         }
         if (schools.length === 0) grid.append(createElement('p', { className: 'chart-empty', text: 'Belum ada data siswa.' }));
         replaceContent(this.element, createElement('h2', { text: 'Rata-rata lima aspek' }),
-            createElement('p', { className: 'muted', text: 'Lima aspek dalam satu grafik per sekolah. Skala 0–100%: Misi maksimal 6 poin per aspek, Jejak maksimal 2 poin. Arahkan penunjuk ke batang untuk melihat poin asli. Misi mencakup seluruh siswa, termasuk yang belum bermain (0).' }), grid);
+            createElement('p', { className: 'muted', text: 'Lima aspek dalam satu grafik per sekolah. Skala 0–100%: Misi maksimal 6 poin per aspek, Jejak maksimal 2 jawaban benar per aspek. Jejak versi 2 dihitung dari nilai terbaik masing-masing aspek. Arahkan penunjuk ke batang untuk melihat poin asli. Misi mencakup seluruh siswa, termasuk yang belum bermain (0).' }), grid);
     }
 
     showError(): void {

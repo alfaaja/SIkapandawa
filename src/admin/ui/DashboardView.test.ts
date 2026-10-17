@@ -16,6 +16,7 @@ const summary: DashboardSummary = {
 
 function makeCallbacks(): DashboardCallbacks {
     return {
+        onMonitoring: vi.fn(),
         onDetail: vi.fn(),
         onFilter: vi.fn(),
         onSchool: vi.fn(),
@@ -190,7 +191,7 @@ describe('DashboardView', () => {
 
         const actionCell = root.querySelector('td[data-label="Aksi"]');
         expect(actionCell?.classList.contains('row-actions')).toBe(false);
-        expect(actionCell?.querySelector('.row-actions')?.children).toHaveLength(4);
+        expect(actionCell?.querySelector('.row-actions')?.children).toHaveLength(5);
     });
 
     it('explains inside the player panel when identities are demo data', () => {

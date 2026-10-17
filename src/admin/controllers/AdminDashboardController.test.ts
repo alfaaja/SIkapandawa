@@ -28,6 +28,7 @@ function withChartUsers<T extends Record<string, unknown>>(service: T): T & {
     return {
         ...service,
         getAspectAverages: vi.fn().mockResolvedValue([]),
+        getMonitoringSummary: vi.fn().mockResolvedValue([]),
         listChartUsers: vi.fn().mockResolvedValue(emptyList.items)
     };
 }
@@ -50,6 +51,11 @@ function makeView() {
         showChartError: vi.fn(),
         renderData: vi.fn(),
         renderAspectData: vi.fn(),
+        renderMonitoringSummary: vi.fn(),
+        closeMonitoring: vi.fn(),
+        showMonitoringLoading: vi.fn(),
+        showMonitoring: vi.fn(),
+        showMonitoringError: vi.fn(),
         showProgressLoading: vi.fn(),
         showProgress: vi.fn(),
         showProgressError: vi.fn()
@@ -57,6 +63,29 @@ function makeView() {
 }
 
 describe('AdminDashboardController', () => {
+    it('ignores monitoring results from an earlier student and invalidates them on school changes', async () => {
+        const old = deferred<unknown>();
+        const recent = deferred<unknown>();
+        const history = { items: [], total: 0, pageSize: 25, pageOffset: 0 };
+        const service = { getMonitoringHistory: vi.fn().mockReturnValueOnce(old.promise).mockReturnValueOnce(recent.promise), getMonitoringSummary: vi.fn().mockResolvedValue([]) };
+        const view = makeView();
+        const controller = new AdminDashboardController(service as never, view as never, vi.fn());
+        const a = { userId: 'a', displayName: 'A', username: 'aaa' };
+        const b = { userId: 'b', displayName: 'B', username: 'bbb' };
+        const first = controller.showMonitoring(a);
+        const second = controller.showMonitoring(b);
+        recent.resolve(history); await second;
+        old.resolve(history); await first;
+        expect(view.showMonitoring).toHaveBeenCalledTimes(1);
+        expect(view.showMonitoring).toHaveBeenCalledWith(b, history, [], expect.any(Function));
+    });
+    it('renders a monitoring error when the history request fails', async () => {
+        const service = { getMonitoringHistory: vi.fn().mockRejectedValue(new Error('offline')), getMonitoringSummary: vi.fn().mockResolvedValue([]) };
+        const view = makeView();
+        const controller = new AdminDashboardController(service as never, view as never, vi.fn());
+        await controller.showMonitoring({ userId: 'a', displayName: 'A', username: 'aaa' });
+        expect(view.showMonitoringError).toHaveBeenCalledOnce();
+    });
     beforeEach(() => {
         vi.stubGlobal('navigator', { onLine: true });
     });

@@ -47,7 +47,8 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 game: resolve(projectRoot, 'index.html'),
-                admin: resolve(projectRoot, 'admin/index.html')
+                admin: resolve(projectRoot, 'admin/index.html'),
+                monitoring: resolve(projectRoot, 'form/index.html')
             },
             output: {
                 manualChunks: {

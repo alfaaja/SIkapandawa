@@ -10,6 +10,7 @@ function makeBackend() {
         getSession: vi.fn(),
         signOut: vi.fn(),
         updateOwnPassword: vi.fn(),
+        getJejakAspects: vi.fn(),
         rpc: vi.fn(),
         invokeAdminFunction: vi.fn().mockResolvedValue({
             data: { userId: USER_ID },

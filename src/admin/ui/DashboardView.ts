@@ -13,10 +13,14 @@ import { createElement, replaceContent } from './dom';
 import { UserManagementDialog } from './UserManagementDialog';
 import { ProgressCharts } from './ProgressCharts';
 import { AspectCharts } from './AspectCharts';
+import { MonitoringCharts } from './MonitoringCharts';
+import { MonitoringDialog } from './MonitoringDialog';
+import type { MonitoringHistory, MonitoringSchool } from '../../shared/monitoring';
 import type { SchoolAspectAverage } from '../../shared/game/characterAspects';
 import { UserProgressDialog } from './UserProgressDialog';
 
 export interface DashboardCallbacks {
+    onMonitoring(user: AdminUserIdentity): void;
     onSchool(schoolName: string | null): void;
     onDetail(userId: string): void;
     onFilter(status: ProgressStatusFilter): void;
@@ -67,6 +71,8 @@ export class DashboardView {
     private readonly progressDialog = new UserProgressDialog();
     private readonly progressCharts: ProgressCharts;
     private readonly aspectCharts = new AspectCharts();
+    private readonly monitoringCharts = new MonitoringCharts();
+    private readonly monitoringDialog = new MonitoringDialog();
     private readonly managementDialog: UserManagementDialog;
 
     constructor(
@@ -106,10 +112,11 @@ export class DashboardView {
             }));
         }
         tableSection.append(this.status, this.createTable(), this.createPagination());
-        content.append(this.summary, this.progressCharts.element, this.aspectCharts.element, tableSection);
+        content.append(this.summary, this.progressCharts.element, this.aspectCharts.element, this.monitoringCharts.element, tableSection);
         main.append(header, content);
         replaceContent(this.root, main);
         this.progressDialog.mount(main);
+        this.monitoringDialog.mount(main);
         this.managementDialog.mount(main);
     }
 
@@ -381,6 +388,7 @@ export class DashboardView {
             this.actionButton('Rapor', `Detail rapor @${user.username}`, () => {
                 this.callbacks.onDetail(user.userId);
             }, 'button-secondary'),
+            this.actionButton('Monitoring', `Monitoring @${user.username}`, () => this.callbacks.onMonitoring(this.identity(user)), 'button-secondary'),
             this.actionButton('Edit', `Edit @${user.username}`, () => {
                 this.managementDialog.showEdit(this.identity(user));
             }),
@@ -428,6 +436,16 @@ export class DashboardView {
     showProgressLoading(): void {
         this.progressDialog.showLoading();
     }
+
+    renderMonitoringSummary(schools: MonitoringSchool[] | null): void {
+        if (schools === null) this.monitoringCharts.showError(); else this.monitoringCharts.render(schools);
+    }
+    showMonitoringLoading(): void { this.monitoringDialog.showLoading(); }
+    showMonitoringError(): void { this.monitoringDialog.showError(); }
+    showMonitoring(user: AdminUserIdentity, history: MonitoringHistory, schools: MonitoringSchool[], loadMore: (offset: number) => Promise<MonitoringHistory>): void {
+        this.monitoringDialog.show(user, history, schools, loadMore);
+    }
+    closeMonitoring(): void { this.monitoringDialog.close(); }
 
     showProgressError(message: string): void {
         this.progressDialog.showError(message);

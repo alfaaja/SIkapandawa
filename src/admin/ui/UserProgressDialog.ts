@@ -1,4 +1,5 @@
 import { LEVEL_REPORT_LABELS } from '../../shared/game/reporting';
+import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
 import type { AdminUserProgressResponse } from '../types';
 import { formatDateTime } from '../utils/formatters';
 import { createElement, replaceContent } from './dom';
@@ -78,6 +79,7 @@ export class UserProgressDialog {
             header,
             this.createSummary(progress),
             this.createLevels(progress),
+            this.createJejakAspects(progress),
             this.createGameFeatures(progress)
         );
         this.open();
@@ -153,6 +155,41 @@ export class UserProgressDialog {
             grid.append(item);
         }
         section.append(title, grid);
+        return section;
+    }
+
+    private createJejakAspects(progress: AdminUserProgressResponse): HTMLElement {
+        const section = createElement('section', {
+            className: 'report-section jejak-aspect-section',
+            attributes: { 'aria-labelledby': 'report-jejak-aspects-title' }
+        });
+        const title = createElement('h3', { text: 'Aspek Jejak Pandawa' });
+        title.id = 'report-jejak-aspects-title';
+        section.append(title);
+        if (!progress.jejakAspects) {
+            section.append(createElement('p', {
+                className: 'report-note',
+                text: 'Belum ada rincian jawaban Jejak versi 2 yang tersinkron. Skor total saja belum menunjukkan nilai setiap aspek.'
+            }));
+            return section;
+        }
+        section.append(createElement('p', {
+            className: 'report-note',
+            text: 'Nilai terbaik tiap aspek dari jawaban permainan yang tersinkron. Setiap aspek maksimal 2 poin; nilai terbaiknya dapat berasal dari permainan yang berbeda.'
+        }));
+        const grid = createElement('div', { className: 'jejak-aspect-grid' });
+        for (const aspect of CHARACTER_ASPECTS) {
+            const score = progress.jejakAspects[aspect.id];
+            const card = createElement('article', { className: 'jejak-aspect-card' });
+            const label = createElement('h4', { text: aspect.label });
+            const meter = createElement('meter', {
+                text: `${score}/2`,
+                attributes: { min: '0', max: '2', value: String(score), 'aria-label': `${aspect.label}: ${score} dari 2 poin` }
+            });
+            card.append(label, createElement('strong', { text: `${score}/2` }), meter);
+            grid.append(card);
+        }
+        section.append(grid);
         return section;
     }
 

@@ -11,6 +11,7 @@ function makeBackend(rpc: AdminBackend['rpc']): AdminBackend {
         getSession: vi.fn(),
         signOut: vi.fn(),
         updateOwnPassword: vi.fn(),
+        getJejakAspects: vi.fn().mockResolvedValue({ data: Object.fromEntries(CHARACTER_ASPECTS.map(aspect => [aspect.id, null])), error: null }),
         rpc,
         invokeAdminFunction: vi.fn()
     };
@@ -35,14 +36,51 @@ function listItem(overrides: Record<string, unknown> = {}) {
 }
 
 describe('AdminDashboardService', () => {
+    it('validates per-student v2 aspect maxima and never infers them from the legacy best total', async () => {
+        const data = {
+            user: { userId: USER_ID, displayName: 'Budi', username: 'budi' },
+            levels: Array.from({ length: 10 }, (_, index) => ({ level: index + 1, stars: 3, completed: true, updatedAt: '2026-10-17T00:00:00Z' })),
+            summary: { completedLevelCount: 10, totalStars: 30, averageStars: 3, grade: 'Baik', jejakPandawaUnlocked: true, jejakPandawaBestScore: 10 }
+        };
+        const backend = makeBackend(vi.fn().mockResolvedValue({ data, error: null }));
+        const service = new AdminDashboardService(backend);
+        expect((await service.getUserProgress(USER_ID)).jejakAspects).toBeNull();
+        const scores = { kejujuran: 2, keberanian: 0, kesopanan: 1, kebijaksanaan: 2, keadilan: 1 };
+        const read = vi.mocked(backend.getJejakAspects);
+        read.mockResolvedValue({ data: scores, error: null });
+        expect((await service.getUserProgress(USER_ID)).jejakAspects).toEqual(scores);
+        expect(read).toHaveBeenLastCalledWith(USER_ID);
+        for (const invalid of [null, {}, { ...scores, keadilan: null }, { ...scores, keadilan: 3 }, { ...scores, keadilan: 0.5 }, { ...scores, keadilan: '1' }]) {
+            read.mockResolvedValue({ data: invalid, error: null });
+            await expect(service.getUserProgress(USER_ID)).rejects.toMatchObject({ code: 'invalid_response' });
+        }
+        read.mockResolvedValue({ data: null, error: { code: '42501', message: 'private detail' } });
+        await expect(service.getUserProgress(USER_ID)).rejects.toMatchObject({ code: 'access_denied' });
+        read.mockRejectedValue(new TypeError('network detail'));
+        await expect(service.getUserProgress(USER_ID)).rejects.toMatchObject({ code: 'generic' });
+        data.user.userId = 'different-user';
+        read.mockClear();
+        await expect(service.getUserProgress(USER_ID)).rejects.toMatchObject({ code: 'invalid_response' });
+        expect(read).not.toHaveBeenCalled();
+    });
+    it('scopes monitoring RPCs and rejects invalid student identities before reading history', async () => {
+        const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+        const service = new AdminDashboardService(makeBackend(rpc));
+        expect(await service.getMonitoringSummary('SDN Satu', USER_ID)).toEqual([]);
+        expect(rpc).toHaveBeenCalledWith('admin_monitoring_summary', { school_name: 'SDN Satu', target_user_id: USER_ID });
+        rpc.mockResolvedValue({ data: { items: [], total: 0, pageSize: 25, pageOffset: 25 }, error: null });
+        expect((await service.getMonitoringHistory(USER_ID, 25)).pageOffset).toBe(25);
+        await expect(service.getMonitoringHistory('not-an-id')).rejects.toThrow();
+        await expect(service.getMonitoringSummary(null, 'not-an-id')).rejects.toThrow();
+    });
     it('validates school aspect scales and coverage without turning missing Jejak data into zero', async () => {
-        const school = { schoolName: 'SDN Satu', studentCount: 2, jejakKnownCount: 0,
+        const school = { schoolName: 'SDN Satu', studentCount: 2, jejakKnownCount: 0, jejakVersion: 2,
             aspects: CHARACTER_ASPECTS.map(aspect => ({ id: aspect.id, missionAverage: 3, jejakAverage: null })) };
         const rpc = vi.fn().mockResolvedValue({ data: [school], error: null });
         const service = new AdminDashboardService(makeBackend(rpc));
         await expect(service.getAspectAverages('SDN Satu')).resolves.toEqual([school]);
-        expect(rpc).toHaveBeenCalledWith('admin_school_aspect_averages', { school_name: 'SDN Satu' });
-        for (const invalid of [{ ...school, jejakKnownCount: 3 }, { ...school, jejakKnownCount: 1 },
+        expect(rpc).toHaveBeenCalledWith('admin_school_aspect_averages_v2', { school_name: 'SDN Satu' });
+        for (const invalid of [{ ...school, jejakVersion: 1 }, { ...school, jejakKnownCount: 3 }, { ...school, jejakKnownCount: 1 },
             { ...school, aspects: [] }, { ...school, aspects: school.aspects.map(aspect => ({ ...aspect, missionAverage: 7 })) }]) {
             rpc.mockResolvedValue({ data: [invalid], error: null });
             await expect(service.getAspectAverages()).rejects.toThrow();

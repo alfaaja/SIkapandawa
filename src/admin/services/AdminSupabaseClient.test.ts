@@ -53,6 +53,45 @@ describe('createAdminSupabaseClient', () => {
 });
 
 describe('createAdminBackend', () => {
+    it('reads each aspect maximum across all v2 runs for only the selected student', async () => {
+        const ids = ['kejujuran', 'keberanian', 'kesopanan', 'kebijaksanaan', 'keadilan'];
+        const queries = ids.map((_, index) => {
+            const query = {
+                select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+                order: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(),
+                maybeSingle: vi.fn().mockResolvedValue({ data: { score: [2, 0, 1, 2, 1][index] }, error: null })
+            };
+            return query;
+        });
+        const from = vi.fn();
+        queries.forEach(query => from.mockReturnValueOnce(query));
+        const backend = createAdminBackend({ from } as never);
+        await expect(backend.getJejakAspects('student-id')).resolves.toEqual({
+            data: { kejujuran: 2, keberanian: 0, kesopanan: 1, kebijaksanaan: 2, keadilan: 1 }, error: null
+        });
+        queries.forEach((query, index) => {
+            expect(from).toHaveBeenCalledWith('jejak_aspect_runs');
+            expect(query.select).toHaveBeenCalledWith(`score:aspect_scores->${ids[index]}`);
+            expect(query.eq).toHaveBeenCalledWith('user_id', 'student-id');
+            expect(query.eq).toHaveBeenCalledWith('curriculum_version', 2);
+            expect(query.order).toHaveBeenCalledWith(`aspect_scores->${ids[index]}`, { ascending: false });
+            expect(query.limit).toHaveBeenCalledWith(1);
+        });
+    });
+
+    it('returns missing aspect values without using the legacy total and propagates read failures', async () => {
+        const query = {
+            select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+        };
+        const backend = createAdminBackend({ from: vi.fn().mockReturnValue(query) } as never);
+        await expect(backend.getJejakAspects('student-id')).resolves.toEqual({
+            data: { kejujuran: null, keberanian: null, kesopanan: null, kebijaksanaan: null, keadilan: null }, error: null
+        });
+        query.maybeSingle.mockResolvedValue({ data: null, error: { message: 'denied', code: '42501' } } as never);
+        await expect(backend.getJejakAspects('student-id')).resolves.toMatchObject({ error: { code: '42501' } });
+    });
     it('delegates auth and RPC operations without exposing other client methods', async () => {
         const signInWithPassword = vi.fn().mockResolvedValue({
             data: { user: { id: 'admin-id' } },

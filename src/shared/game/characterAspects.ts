@@ -21,5 +21,6 @@ export interface SchoolAspectAverage {
     schoolName: string;
     studentCount: number;
     jejakKnownCount: number;
+    jejakVersion: 2;
     aspects: Array<{ id: CharacterAspect; missionAverage: number; jejakAverage: number | null }>;
 }

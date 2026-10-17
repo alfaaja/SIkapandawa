@@ -1,0 +1,64 @@
+import { expect, test } from '@playwright/test';
+const aspects = ['Kejujuran','Keberanian','Kesopanan','Kebijaksanaan','Keadilan'];
+test('parents record 12 flexible points, repeated entries survive, and admin sees integrated student history and means', async ({ page }) => {
+    await page.goto('/form/?mockMonitoring=1');
+    await page.getByLabel('Username siswa').fill('arjuna.pratama');
+    await page.getByLabel('Password siswa').fill('local-test-only');
+    await page.getByRole('button', { name: 'Masuk ke monitoring' }).click();
+    await page.getByLabel('Nama orang tua / wali').fill('Wali Arjuna');
+    await page.getByLabel('Kelas siswa (opsional)').fill('V A');
+    for (let point = 1; point <= 12; point++) {
+        await page.getByLabel('Titik observasi', { exact: true }).selectOption(String(point));
+        await page.getByLabel('Situasi yang diamati').fill('Observasi nyata ke ' + point);
+        for (const aspect of aspects) await page.getByLabel(aspect, { exact: true }).selectOption(aspect === 'Keberanian' ? 'na' : '1');
+        await page.getByRole('button', { name: 'Simpan catatan', exact: true }).click();
+        await expect(page.locator('.parent-status[role="status"]')).toContainText('Catatan titik ' + point + ' berhasil disimpan');
+    }
+    await expect(page.getByText('12 dari 12 titik sudah memiliki catatan.')).toBeVisible();
+    await page.getByLabel('Titik observasi', { exact: true }).selectOption('1');
+    await page.getByLabel('Situasi yang diamati').fill('Pengisian kedua titik satu');
+    for (const aspect of aspects) await page.getByLabel(aspect, { exact: true }).selectOption(aspect === 'Keberanian' ? 'na' : '4');
+    await page.getByRole('button', { name: 'Simpan catatan', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Riwayat monitoring (13 catatan)' })).toBeVisible();
+    await page.locator('.observation-form').screenshot({ path: test.info().outputPath('parent-monitoring-desktop.png') });
+    await page.goto('/admin/?mockAdmin=1');
+    await page.getByLabel('Nama pengguna').fill('admin.demo');
+    await page.getByLabel('Password', { exact: true }).fill('local-test-only');
+    await page.getByRole('button', { name: 'Masuk ke panel' }).click();
+    const chart = page.locator('.dashboard-content > .monitoring-charts');
+    await expect(chart).toContainText('1 dari 56 siswa');
+    await chart.getByText('Lihat nilai dan jumlah siswa per titik').click();
+    await expect(chart.locator('tbody tr')).toHaveCount(12);
+    await expect(chart.locator('tbody tr').first()).toContainText('2,5 (n=1)');
+    await expect(chart.locator('tbody tr').first()).toContainText('N/A');
+    await page.setViewportSize({ width: 1366, height: 1400 });
+    await chart.locator('svg').first().evaluate(element => element.scrollIntoView({ block: 'center' }));
+    await chart.locator('svg').first().screenshot({ path: test.info().outputPath('admin-monitoring-chart.png') });
+    await page.getByRole('button', { name: 'Monitoring @arjuna.pratama', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Monitoring siswa', exact: true });
+    await expect(dialog.getByText('Riwayat monitoring (13 catatan)')).toBeVisible();
+    await expect(dialog.locator('.monitoring-entry')).toHaveCount(13);
+    await expect(dialog.locator('.monitoring-entry summary').filter({ hasText: 'Titik 1 ·' })).toHaveCount(2);
+    await page.getByRole('button', { name: 'Tutup monitoring', exact: true }).click();
+    await page.goto('/form/?mockMonitoring=1');
+    await expect(page.getByRole('heading', { name: 'Monitoring 12 titik', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Keluar', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Masuk ke monitoring' })).toBeVisible();
+    await page.goto('/admin/?mockAdmin=1');
+    await expect(page.getByRole('heading', { name: 'Panel Admin', exact: true })).toBeVisible();
+});
+
+test('parent form fits a phone and rejects invalid credentials', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/form/?mockMonitoring=1');
+    await page.getByLabel('Username siswa').fill('wrong');
+    await page.getByLabel('Password siswa').fill('wrong');
+    await page.getByRole('button', { name: 'Masuk ke monitoring' }).click();
+    await expect(page.getByRole('alert')).toContainText('Username atau password salah.');
+    await page.getByLabel('Username siswa').fill('arjuna.pratama');
+    await page.getByLabel('Password siswa').fill('local-test-only');
+    await page.getByRole('button', { name: 'Masuk ke monitoring' }).click();
+    await expect(page.getByText('0 dari 12 titik sudah memiliki catatan.')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath('parent-monitoring-phone.png'), fullPage: true });
+});

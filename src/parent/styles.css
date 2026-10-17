@@ -1,0 +1,24 @@
+#parent-app { width: min(100% - 2rem, 52rem); margin: 2rem auto 4rem; }
+.parent-heading { padding: 2rem; color: #fffaf0; background: #194e43; border-radius: 1.5rem; margin-bottom: 1.5rem; }
+.parent-heading h1 { margin: .5rem 0; font-size: clamp(1.8rem, 5vw, 2.8rem); }
+.parent-heading p { line-height: 1.65; }
+.parent-heading .eyebrow { color: var(--gold-soft); }
+.parent-heading .button { background: #fdf8ec; color: #194e43; }
+.parent-card, .monitoring-history { background: #fffdf7; border: 1px solid #e6ddca; border-radius: 1.5rem; padding: 2rem; margin-top: 1.5rem; }
+.parent-login { max-width: 32rem; margin-inline: auto; }
+.parent-field { display: grid; gap: .55rem; font-weight: 600; margin: 1.1rem 0; }
+.parent-field input, .parent-field textarea, .parent-field select { width: 100%; min-width: 0; padding: .85rem; border: 1px solid #b6bcaf; border-radius: .65rem; background: #fff; color: #193e35; font: inherit; font-weight: 400; }
+.parent-field textarea { min-height: 6rem; resize: vertical; }
+.parent-field select { text-overflow: ellipsis; }
+.parent-ratings { margin: 1.5rem 0; padding: 1rem; border: 1px solid #cbb9dd; border-radius: .75rem; }
+.parent-ratings legend { color: #74349c; font-weight: 700; padding-inline: .5rem; }
+.parent-note { border-left: 4px solid #efb81a; padding: .8rem 1rem; background: #fff3cc; line-height: 1.7; }
+.parent-progress { font-weight: 700; color: #74349c; }
+.parent-status { line-height: 1.7; font-weight: 600; color: #6d2891; }
+.parent-card p { line-height: 1.7; }
+.monitoring-entry { padding: 1rem; border: 1px solid #dedbce; border-radius: .75rem; margin: .75rem 0; background: #fff; overflow-wrap: anywhere; }
+.monitoring-entry summary { cursor: pointer; font-weight: 700; line-height: 1.6; }
+.monitoring-entry p { white-space: pre-wrap; line-height: 1.6; }
+.monitoring-score-list { display: flex; gap: .6rem; flex-wrap: wrap; list-style: none; padding: 0; }
+.monitoring-score-list li { border-radius: .5rem; background: #f3ebf8; padding: .5rem .75rem; }
+@media(max-width: 520px) { #parent-app { width: min(100% - 1rem, 52rem); margin-top: .5rem; } .parent-card, .parent-heading, .monitoring-history { padding: 1.1rem; border-radius: 1rem; } .parent-ratings { padding: .65rem; } }

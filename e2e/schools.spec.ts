@@ -12,18 +12,18 @@ test('only registered schools appear; selection scopes accounts, summary and stu
     await expect(page.locator('.summary-card').first()).toContainText('56');
     await school.selectOption('SDN Kalibanteng Kulon 01');
     await expect(page.locator('.summary-card').first()).toContainText('56');
-    await expect(page.locator('tbody tr')).toHaveCount(25);
+    await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
     await expect(page.locator('.progress-charts:not(.aspect-charts) .chart-bar')).toHaveCount(112);
     for (const row of await page.locator('td[data-label="Sekolah"]').allTextContents()) {
         expect(row).toBe('SDN Kalibanteng Kulon 01');
     }
     await page.getByRole('button', { name: 'Berikutnya' }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(25);
+    await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
     await school.selectOption('');
     await school.selectOption('SDN Kalibanteng Kulon 01');
     await expect(page.getByText(/Halaman 1 dari 3/)).toBeVisible();
     await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
-    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
     await expect(page.locator('.progress-charts:not(.aspect-charts) .chart-bar')).toHaveCount(112);
     await school.selectOption('');
     await expect(page.locator('.school-chart-bar')).toHaveCount(2);
@@ -62,7 +62,7 @@ test('a new school appears only after a player is created for it', async ({ page
     await expect(page.locator('.school-chart-bar')).toHaveCount(4);
     await page.getByLabel('Sekolah', { exact: true }).selectOption('SDN SEKOLAH BARU');
     await expect(page.locator('.summary-card').first()).toContainText('1');
-    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
     await expect(page.locator('.progress-charts:not(.aspect-charts) .chart-bar')).toHaveCount(2);
-    await expect(page.locator('tbody')).toContainText('@sekolah.baru');
+    await expect(page.locator('.players-panel tbody')).toContainText('@sekolah.baru');
 });

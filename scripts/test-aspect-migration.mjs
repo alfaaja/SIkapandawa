@@ -62,6 +62,19 @@ try {
     await verify('with changed as (update public.player_progress set jejak_aspect_scores=null where user_id=$1 returning user_id) select count(*)::int result from changed',0,[ids[1]]);
     await login(0);
     await verify("select (public.admin_school_aspect_averages('SDN Kalibanteng Kulon 01')->0->>'jejakKnownCount')::int result",3);
+    // A real mixed answer pattern must remain different per aspect, rather than total/5.
+    await login(3);
+    for (let level=1;level<=10;level++) await db.query('select public.record_level_result($1::smallint,$2::smallint)',[level,1]);
+    await db.query('select public.unlock_jejak_pandawa()');
+    const baskets = ['good','bad','good','bad','bad','bad','good','bad','bad','bad'];
+    await db.query('select public.record_jejak_aspect_result($1)',[answers.map((answer,index)=>({...answer,basket:baskets[index]}))]);
+    await verify('select jejak_aspect_scores result from public.player_progress where user_id=auth.uid()',
+        {kejujuran:2,keberanian:0,kesopanan:1,kebijaksanaan:2,keadilan:1});
+    await verify('select jejak_pandawa_best_score::int result from public.player_progress where user_id=auth.uid()',6);
+    await login(0);
+    const varied = (await db.query("select public.admin_school_aspect_averages('SDN Kalibanteng Kulon 01') result")).rows[0].result[0];
+    const expected = [5/3,1,4/3,5/3,4/3];
+    assert.ok(varied.aspects.every((aspect,index)=>Math.abs(aspect.jejakAverage-expected[index])<0.000001)); checks++;
     await login(null,'anon');
     await assert.rejects(db.query('select public.admin_school_aspect_averages()')); checks++;
     await assert.rejects(db.query('select public.record_jejak_aspect_result($1)',[answers])); checks++;

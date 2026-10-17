@@ -53,7 +53,7 @@ test.describe('panel admin mock contract', () => {
 
         await expect(page.getByRole('heading', { name: 'Panel Admin' })).toBeVisible();
         await expect(page.getByText('56', { exact: true })).toBeVisible();
-        await expect(page.locator('tbody tr')).toHaveCount(25);
+        await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
         await expect(page.getByText(/Halaman 1 dari 3/)).toBeVisible();
         await page.getByRole('button', { name: 'Berikutnya' }).click();
         await expect(page.getByText(/Halaman 2 dari 3/)).toBeVisible();
@@ -106,14 +106,14 @@ test.describe('panel admin mock contract', () => {
 
         await expect(page.getByRole('heading', { name: 'Capaian Misi Pandawa' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Capaian Jejak Pandawa' })).toBeVisible();
-        const bars = page.locator('.progress-charts:not(.aspect-charts) .chart-bar');
+        const bars = page.locator('.progress-charts:not(.aspect-charts):not(.monitoring-charts) .chart-bar');
         await expect(bars).toHaveCount(112);
 
         await page.getByLabel('Cari pemain').fill('arjuna.pratama.25');
-        await expect(page.locator('tbody tr')).toHaveCount(1);
+        await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
         await expect(bars).toHaveCount(112);
 
-        const layout = await page.locator('.progress-charts:not(.aspect-charts)').evaluate((element) => ({
+        const layout = await page.locator('.progress-charts:not(.aspect-charts):not(.monitoring-charts)').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,
             noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
             chartWidths: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
@@ -146,7 +146,7 @@ test.describe('panel admin mock contract', () => {
         await expect(page.getByRole('button', { name: 'Nama lengkap' }))
             .toHaveAttribute('aria-pressed', 'true');
 
-        const compactLayout = await page.locator('.progress-charts:not(.aspect-charts)').evaluate((element) => ({
+        const compactLayout = await page.locator('.progress-charts:not(.aspect-charts):not(.monitoring-charts)').evaluate((element) => ({
             noPageOverflow: document.documentElement.scrollWidth <= innerWidth,
             chartWidths: [...element.querySelectorAll<HTMLElement>('.chart-scroll')]
                 .map((chart) => ({ client: chart.clientWidth, scroll: chart.scrollWidth }))
@@ -187,7 +187,7 @@ test.describe('panel admin mock contract', () => {
         await page.reload();
 
         await expect(page.getByRole('heading', { name: 'Panel Admin' })).toBeVisible();
-        await expect(page.locator('tbody tr')).toHaveCount(25);
+        await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
     });
 
     test('lets the signed-in admin change only their own password', async ({ page }) => {
@@ -228,13 +228,13 @@ test.describe('panel admin mock contract', () => {
         await login(page);
 
         await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
-        await expect(page.locator('tbody tr')).toHaveCount(1);
-        await expect(page.locator('tbody')).toContainText('@drupadi.kirana.56');
+        await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
+        await expect(page.locator('.players-panel tbody')).toContainText('@drupadi.kirana.56');
 
         await page.getByLabel('Cari pemain').fill('');
         await page.getByLabel('Status progres').selectOption('completed');
-        await expect(page.locator('tbody tr')).toHaveCount(5);
-        await expect(page.locator('tbody')).toContainText('Selesai');
+        await expect(page.locator('.players-panel tbody tr')).toHaveCount(5);
+        await expect(page.locator('.players-panel tbody')).toContainText('Selesai');
     });
 
     test('keeps every desktop account action inside the table at 1366px', async ({ page }) => {
@@ -280,7 +280,7 @@ test.describe('panel admin mock contract', () => {
             actionFits: true,
             deleteFits: true
         });
-        expect(layout.actionButtons).toHaveLength(4);
+        expect(layout.actionButtons).toHaveLength(5);
         expect(layout.actionButtons.every(({ width, height, whiteSpace }) => (
             width >= 72 && height <= 52 && whiteSpace === 'nowrap'
         ))).toBe(true);
@@ -295,11 +295,11 @@ test.describe('panel admin mock contract', () => {
             await openMockLogin(page);
             await login(page);
 
-            const row = page.locator('tbody tr').first();
+            const row = page.locator('.players-panel tbody tr').first();
             const actionCell = row.locator('td[data-label="Aksi"]');
             await expect(row).toBeVisible();
-            await expect(page.locator('thead')).toBeHidden();
-            await expect(actionCell.getByRole('button')).toHaveCount(4);
+            await expect(page.locator('.players-panel thead')).toBeHidden();
+            await expect(actionCell.getByRole('button')).toHaveCount(5);
             const layout = await row.evaluate((element) => {
                 const rect = element.getBoundingClientRect();
                 const buttons = [...element.querySelectorAll<HTMLElement>(
@@ -379,7 +379,7 @@ test.describe('panel admin mock contract', () => {
         await page.getByLabel('Password awal').fill(credential);
         await page.getByRole('button', { name: 'Simpan pemain' }).click();
         await page.getByLabel('Cari pemain').fill(username);
-        await expect(page.locator('tbody')).toContainText(`@${username}`);
+        await expect(page.locator('.players-panel tbody')).toContainText(`@${username}`);
 
         await page.getByRole('button', { name: `Edit @${username}` }).click();
         await expect(page.getByLabel('Username')).toHaveValue(username);
@@ -389,8 +389,8 @@ test.describe('panel admin mock contract', () => {
         await page.getByRole('button', { name: 'Simpan perubahan' }).click();
         await expect(page.getByText('Profil pemain berhasil diperbarui')).toBeVisible();
         await page.getByLabel('Cari pemain').fill(renamedUsername);
-        await expect(page.locator('tbody')).toContainText('Pemain Diperbarui');
-        await expect(page.locator('tbody')).toContainText(`@${renamedUsername}`);
+        await expect(page.locator('.players-panel tbody')).toContainText('Pemain Diperbarui');
+        await expect(page.locator('.players-panel tbody')).toContainText(`@${renamedUsername}`);
 
         await page.getByRole('button', { name: `Reset password @${renamedUsername}` }).click();
         const replacement = crypto.randomUUID();
@@ -416,7 +416,7 @@ test.describe('panel admin mock contract', () => {
         await login(page);
 
         await page.getByRole('button', { name: 'Segarkan' }).click();
-        await expect(page.locator('tbody tr')).toHaveCount(25);
+        await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
 
         await page.getByLabel('Cari pemain').fill('tidak-ada-pemain-ini');
         await expect(page.getByText(/Tidak ada pemain/)).toBeVisible();

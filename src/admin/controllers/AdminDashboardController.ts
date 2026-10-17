@@ -1,4 +1,4 @@
-import type { ProgressStatusFilter } from '../types';
+import type { ProgressStatusFilter, AdminUserIdentity } from '../types';
 import type { AdminDashboardService } from '../services/AdminDashboardService';
 import { AdminServiceError } from '../services/errors';
 import type { DashboardView } from '../ui/DashboardView';
@@ -14,6 +14,7 @@ export class AdminDashboardController {
     private total = 0;
     private requestSequence = 0;
     private detailSequence = 0;
+    private monitoringSequence = 0;
     private searchTimer: number | undefined;
 
     constructor(
@@ -30,7 +31,7 @@ export class AdminDashboardController {
         }
         this.view.showLoading();
         try {
-            const [summaryResult, listResult, chartResult, aspectResult] = await Promise.allSettled([
+            const [summaryResult, listResult, chartResult, aspectResult, monitoringResult] = await Promise.allSettled([
                 this.service.getSummary(this.schoolName),
                 this.service.listUsers({
                     schoolName: this.schoolName,
@@ -40,7 +41,8 @@ export class AdminDashboardController {
                     pageOffset: this.pageOffset
                 }),
                 this.service.listChartUsers(this.schoolName),
-                this.service.getAspectAverages(this.schoolName)
+                this.service.getAspectAverages(this.schoolName),
+                this.service.getMonitoringSummary(this.schoolName)
             ]);
             if (sequence !== this.requestSequence) return;
             if (summaryResult.status === 'rejected') throw summaryResult.reason;
@@ -51,6 +53,7 @@ export class AdminDashboardController {
             this.total = list.total;
             this.view.renderData(summary, list, chartUsers, this.schoolName);
             this.view.renderAspectData(aspectResult.status === 'fulfilled' ? aspectResult.value : null);
+            this.view.renderMonitoringSummary(monitoringResult.status === 'fulfilled' ? monitoringResult.value : null);
             if (chartResult.status === 'rejected') {
                 this.view.showChartError('Grafik capaian tidak dapat dimuat.');
             }
@@ -86,6 +89,8 @@ export class AdminDashboardController {
     }
 
     setSchool(schoolName: string | null): void {
+        ++this.monitoringSequence;
+        this.view.closeMonitoring();
         this.schoolName = schoolName;
         this.pageOffset = 0;
         ++this.detailSequence;
@@ -116,5 +121,14 @@ export class AdminDashboardController {
                 : 'Detail progres tidak dapat dimuat.';
             this.view.showProgressError(message);
         }
+    }
+
+    async showMonitoring(user: AdminUserIdentity): Promise<void> {
+        const sequence = ++this.monitoringSequence;
+        this.view.showMonitoringLoading();
+        try {
+            const [history, summary] = await Promise.all([this.service.getMonitoringHistory(user.userId), this.service.getMonitoringSummary(null, user.userId)]);
+            if (sequence === this.monitoringSequence) this.view.showMonitoring(user, history, summary, offset => this.service.getMonitoringHistory(user.userId, offset));
+        } catch { if (sequence === this.monitoringSequence) this.view.showMonitoringError(); }
     }
 }

@@ -4,6 +4,28 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { UserProgressDialog } from './UserProgressDialog';
 
 describe('UserProgressDialog', () => {
+    it('shows five independent Jejak meters and preserves missing data instead of inventing scores', () => {
+        const parent = document.createElement('main');
+        const view = new UserProgressDialog();
+        view.mount(parent);
+        const progress = {
+            user: { userId: 'id', displayName: 'Budi', username: 'budi' },
+            summary: { completedLevelCount: 10, totalStars: 30, averageStars: 3,
+                grade: 'Baik', jejakPandawaUnlocked: true, jejakPandawaBestScore: 10 },
+            levels: [],
+            jejakAspects: { kejujuran: 2, keberanian: 0, kesopanan: 1, kebijaksanaan: 2, keadilan: 1 }
+        };
+        view.show(progress);
+        const meters = [...parent.querySelectorAll('meter')];
+        expect(meters.map(meter => meter.value)).toEqual([2, 0, 1, 2, 1]);
+        expect(meters.every(meter => meter.max === 2 && meter.min === 0)).toBe(true);
+        expect(meters[1]?.getAttribute('aria-label')).toBe('Keberanian: 0 dari 2 poin');
+        expect(parent.textContent).toContain('Aspek Jejak Pandawa');
+        view.show({ ...progress, jejakAspects: null });
+        expect(parent.querySelectorAll('meter')).toHaveLength(0);
+        expect(parent.textContent).toContain('Belum ada rincian jawaban Jejak');
+        expect(parent.textContent).toContain('10/10');
+    });
     beforeEach(() => {
         Object.defineProperties(HTMLDialogElement.prototype, {
             showModal: {

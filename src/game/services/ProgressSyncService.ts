@@ -11,6 +11,12 @@ type SyncAction =
     }
     | {
         id: string;
+        kind: 'record_jejak_aspect_result_v2';
+        answers: JejakAnswer[];
+        createdAt: string;
+    }
+    | {
+        id: string;
         kind: 'record_level_result';
         levelId: number;
         runStars: number;
@@ -35,6 +41,7 @@ type SyncAction =
     };
 
 const QUEUE_PREFIX = 'sikapandawa.syncQueue.';
+const V2_QUEUE_PREFIX = 'sikapandawa.jejakV2Queue.';
 const QUEUE_ACCOUNTS_KEY = 'sikapandawa.syncAccounts';
 const activeFlushes = new Map<string, Promise<boolean>>();
 let initialized = false;
@@ -68,7 +75,7 @@ function isSyncAction(value: unknown): value is SyncAction {
     if (value.kind === 'record_jejak_result') {
         return Number.isInteger(value.runScore);
     }
-    if (value.kind === 'record_jejak_aspect_result') {
+    if (value.kind === 'record_jejak_aspect_result' || value.kind === 'record_jejak_aspect_result_v2') {
         return Array.isArray(value.answers) && value.answers.length === 10
             && value.answers.every(answer => isRecord(answer) && typeof answer.cardId === 'string'
                 && (answer.basket === 'good' || answer.basket === 'bad'));
@@ -93,8 +100,8 @@ function safeWrite(key: string, value: string): boolean {
     }
 }
 
-function readQueue(accountId: string): SyncAction[] {
-    const raw = safeRead(queueKey(accountId));
+function readActions(key: string): SyncAction[] {
+    const raw = safeRead(key);
     if (!raw) return [];
     try {
         const parsed: unknown = JSON.parse(raw);
@@ -102,6 +109,13 @@ function readQueue(accountId: string): SyncAction[] {
     } catch {
         return [];
     }
+}
+
+function readQueue(accountId: string): SyncAction[] {
+    // Legacy tabs only know QUEUE_PREFIX and must never erase detailed v2 runs.
+    // Read staged v2 actions from the old key too, then migrate them on the next write.
+    const actions = [...readActions(queueKey(accountId)), ...readActions(V2_QUEUE_PREFIX + accountId).filter(action => action.kind === 'record_jejak_aspect_result_v2')];
+    return [...new Map(actions.map(action => [action.id, action])).values()];
 }
 
 function rememberAccount(accountId: string): void {
@@ -123,7 +137,9 @@ function rememberAccount(accountId: string): void {
 
 function writeQueue(accountId: string, queue: SyncAction[]): boolean {
     rememberAccount(accountId);
-    return safeWrite(queueKey(accountId), JSON.stringify(queue));
+    // Persist detailed answers first: if storage fails, the legacy copy stays recoverable.
+    return safeWrite(V2_QUEUE_PREFIX + accountId, JSON.stringify(queue.filter(action => action.kind === 'record_jejak_aspect_result_v2')))
+        && safeWrite(queueKey(accountId), JSON.stringify(queue.filter(action => action.kind !== 'record_jejak_aspect_result_v2')));
 }
 
 function compactQueue(queue: SyncAction[], incoming: SyncAction): SyncAction[] {
@@ -235,6 +251,10 @@ async function sendAction(action: SyncAction, accountId: string): Promise<boolea
         const { error } = await sendRpc('record_jejak_aspect_result', { run_answers: action.answers });
         return error === null;
     }
+    if (action.kind === 'record_jejak_aspect_result_v2') {
+        const { error } = await sendRpc('record_jejak_aspect_result_v2', { submission_id: action.id, run_answers: action.answers });
+        return error === null;
+    }
     const { error } = await sendRpc('record_jejak_result', {
         run_score: action.runScore
     });
@@ -309,7 +329,7 @@ function makeBaseAction(): Pick<SyncAction, 'id' | 'createdAt'> {
 export const ProgressSyncService = {
     enqueueJejakAnswers(accountId: string, answers: readonly JejakAnswer[]): void {
         // Keep each complete run: compacting by total would lose scores for individual aspects.
-        const action: SyncAction = { ...makeBaseAction(), kind: 'record_jejak_aspect_result', answers: answers.map(answer => ({ ...answer })) };
+        const action: SyncAction = { ...makeBaseAction(), id: window.crypto.randomUUID(), kind: 'record_jejak_aspect_result_v2', answers: answers.map(answer => ({ ...answer })) };
         writeQueue(accountId, compactQueue(readQueue(accountId), action));
         void this.flush(accountId);
     },

@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createLocalAdminFetch } from './localAdminFetch';
+import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
 
 export const ADMIN_AUTH_STORAGE_KEY = 'sikapandawa.admin.auth';
 
@@ -22,6 +24,7 @@ export interface AdminBackend {
     signOut(): Promise<{ error: AdminBackendError | null }>;
     updateOwnPassword(password: string): Promise<AdminBackendResponse>;
     rpc(name: string, args?: Record<string, unknown>): Promise<AdminBackendResponse>;
+    getJejakAspects(userId: string): Promise<AdminBackendResponse>;
     invokeAdminFunction(
         action: string,
         body: Record<string, unknown>
@@ -65,6 +68,8 @@ export function createAdminSupabaseClient(
     if (!normalizedUrl || !normalizedKey) throw new AdminConfigurationError();
 
     return createClient(normalizedUrl, normalizedKey, {
+        ...(import.meta.env.DEV && typeof window !== 'undefined' && ['127.0.0.1', 'localhost', '[::1]'].includes(window.location.hostname)
+            ? { global: { fetch: createLocalAdminFetch(normalizedUrl, window.location.origin) } } : {}),
         auth: {
             persistSession: true,
             autoRefreshToken: true,
@@ -95,6 +100,22 @@ export function createAdminBackend(client: SupabaseClient): AdminBackend {
         async rpc(name, args) {
             const response = await client.rpc(name, args);
             return { data: response.data, error: response.error };
+        },
+        async getJejakAspects(userId) {
+            // Each maximum covers all runs, independent of the API row limit.
+            // Existing table RLS authorizes the signed-in reader.
+            const results = await Promise.all(CHARACTER_ASPECTS.map(async aspect => {
+                const response = await client.from('jejak_aspect_runs')
+                    .select(`score:aspect_scores->${aspect.id}`)
+                    .eq('user_id', userId)
+                    .eq('curriculum_version', 2)
+                    .order(`aspect_scores->${aspect.id}`, { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                return { id: aspect.id, score: response.data?.score ?? null, error: response.error };
+            }));
+            const error = results.find(result => result.error)?.error ?? null;
+            return { data: error ? null : Object.fromEntries(results.map(result => [result.id, result.score])), error };
         },
         async invokeAdminFunction(action, body) {
             const response = await client.functions.invoke('admin-users', {

@@ -10,9 +10,12 @@ test('one combined five-aspect chart per school stays independent of search and 
     await expect(charts.locator('.aspect-chart-group')).toHaveCount(5);
     await expect(charts.locator('.aspect-bar')).toHaveCount(10);
     await expect(charts).toContainText('rincian Jejak');
+    await expect(charts).toContainText('versi 2');
+    const heights = await charts.locator('.chart-jejak .aspect-bar').evaluateAll(bars => bars.map(bar => (bar as HTMLElement).style.getPropertyValue('--bar-height')));
+    expect(heights).toEqual(['100%','0%','50%','100%','50%']);
     const before = await charts.innerText();
     await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
-    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
     expect(await charts.innerText()).toBe(before);
     await page.getByLabel('Sekolah', { exact: true }).selectOption('SDN Kalibanteng Kulon 01');
     await expect(charts.locator('.aspect-bar')).toHaveCount(10);

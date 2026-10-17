@@ -8,7 +8,8 @@ import type {
     DashboardSummary,
     ProgressStatus
 } from '../types';
-import { CHARACTER_ASPECTS, type SchoolAspectAverage } from '../../shared/game/characterAspects';
+import { CHARACTER_ASPECTS, type CharacterAspect, type SchoolAspectAverage } from '../../shared/game/characterAspects';
+import { parseMonitoringSummary, parseMonitoringHistory, type MonitoringSchool, type MonitoringHistory } from '../../shared/monitoring';
 import { normalizeListUsersParams } from '../utils/pagination';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminServiceError, classifyBackendError } from './errors';
@@ -154,6 +155,14 @@ async function unwrapRpc(
 }
 
 export class AdminDashboardService {
+    async getMonitoringSummary(schoolName: string | null = null, userId: string | null = null): Promise<MonitoringSchool[]> {
+        if (userId !== null && !UUID_PATTERN.test(userId)) throw new AdminServiceError('invalid_response');
+        return parseMonitoringSummary(await unwrapRpc(this.backend, 'admin_monitoring_summary', { school_name: schoolName, target_user_id: userId }));
+    }
+    async getMonitoringHistory(userId: string, offset = 0): Promise<MonitoringHistory> {
+        if (!UUID_PATTERN.test(userId)) throw new AdminServiceError('invalid_response');
+        return parseMonitoringHistory(await unwrapRpc(this.backend, 'monitoring_history', { target_user_id: userId, page_size: 25, page_offset: offset }));
+    }
     constructor(private readonly backend: AdminBackend) {}
 
     async getSummary(schoolName: string | null = null): Promise<DashboardSummary> {
@@ -225,21 +234,44 @@ export class AdminDashboardService {
         ) {
             throw new AdminServiceError('invalid_response');
         }
+        const user = {
+            userId: requiredString(value.user, 'userId'),
+            displayName: requiredString(value.user, 'displayName'),
+            username: requiredString(value.user, 'username')
+        };
+        if (user.userId !== userId) throw new AdminServiceError('invalid_response');
+        const summary = parseReportSummary(value.summary);
+        let jejakAspects: Record<CharacterAspect, number> | null;
+        try {
+            const response = await this.backend.getJejakAspects(userId);
+            if (response.error) throw classifyBackendError(response.error);
+            if (!isRecord(response.data)) throw new AdminServiceError('invalid_response');
+            const scores = response.data;
+            jejakAspects = CHARACTER_ASPECTS.every(aspect => scores[aspect.id] === null)
+                ? null
+                : Object.fromEntries(CHARACTER_ASPECTS.map(aspect => [
+                    aspect.id, requiredNumberInRange(scores, aspect.id, 0, 2)
+                ])) as Record<CharacterAspect, number>;
+        } catch (error) {
+            if (error instanceof AdminServiceError) throw error;
+            throw new AdminServiceError(navigator.onLine ? 'generic' : 'offline');
+        }
         return {
-            user: {
-                userId: requiredString(value.user, 'userId'),
-                displayName: requiredString(value.user, 'displayName'),
-                username: requiredString(value.user, 'username')
-            },
-            summary: parseReportSummary(value.summary),
-            levels
+            user,
+            summary,
+            levels,
+            jejakAspects
         };
     }
     async getAspectAverages(schoolName: string | null = null): Promise<SchoolAspectAverage[]> {
-        const value = await unwrapRpc(this.backend, 'admin_school_aspect_averages', { school_name: schoolName });
+        const value = await unwrapRpc(this.backend, 'admin_school_aspect_averages_v2', { school_name: schoolName });
+        return this.parseAspectAverages(value);
+    }
+
+    private parseAspectAverages(value: unknown): SchoolAspectAverage[] {
         if (!Array.isArray(value)) throw new AdminServiceError('invalid_response');
         return value.map(school => {
-            if (!isRecord(school) || !Array.isArray(school.aspects)) throw new AdminServiceError('invalid_response');
+            if (!isRecord(school) || school.jejakVersion !== 2 || !Array.isArray(school.aspects)) throw new AdminServiceError('invalid_response');
             const studentCount = requiredNumberInRange(school, 'studentCount', 1, Number.MAX_SAFE_INTEGER);
             const jejakKnownCount = requiredNumberInRange(school, 'jejakKnownCount', 0, studentCount);
             const aspectValues = school.aspects;
@@ -250,7 +282,7 @@ export class AdminDashboardService {
                 if ((jejakKnownCount === 0) !== (jejakAverage === null)) throw new AdminServiceError('invalid_response');
                 return { id: definition.id, missionAverage: requiredNumberInRange(score, 'missionAverage', 0, 6, false), jejakAverage };
             });
-            return { schoolName: requiredString(school, 'schoolName'), studentCount, jejakKnownCount, aspects };
+            return { schoolName: requiredString(school, 'schoolName'), studentCount, jejakKnownCount, jejakVersion: 2, aspects };
         });
     }
 }

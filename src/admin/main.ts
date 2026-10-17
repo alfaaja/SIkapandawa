@@ -81,6 +81,7 @@ async function start(): Promise<void> {
             }
         };
         const view = new DashboardView(root, {
+            onMonitoring: user => void controller.showMonitoring(user),
             onDetail: (userId) => void controller.showDetail(userId),
             onCreateUser: (input) => runManagementOperation(
                 () => userManagementService.createUser(input)

@@ -10,6 +10,7 @@ import type {
 import { validateUsername } from '../../shared/auth/username';
 import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
 import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
+import { demoHistory, demoSummary } from '../../shared/monitoringDemo';
 import {
     getJejakReportTier,
     getMissionReportRank
@@ -77,6 +78,14 @@ export function createAdminMockBackend(): AdminBackend {
     const mockRole = new URLSearchParams(window.location.search).get('mockRole') ?? 'admin';
 
     return {
+        async getJejakAspects(targetUserId) {
+            if (mockRole !== 'admin') return { data: null, error: { code: '42501', message: 'Insufficient privilege' } };
+            const target = users.find(user => user.userId === targetUserId);
+            const demoScores = [2, 0, 1, 2, 1];
+            return success(Object.fromEntries(CHARACTER_ASPECTS.map((aspect, index) => [
+                aspect.id, target?.jejakPandawaUnlocked ? demoScores[index] : null
+            ])));
+        },
         async signInWithPassword() {
             if (mockRole === 'invalid') {
                 return {
@@ -255,15 +264,19 @@ export function createAdminMockBackend(): AdminBackend {
                     generatedAt: new Date().toISOString()
                 });
             }
-            if (name === 'admin_school_aspect_averages') {
+            if (name === 'admin_monitoring_summary') return success(demoSummary(users, args.school_name, args.target_user_id));
+            if (name === 'monitoring_history') return success(demoHistory(String(args.target_user_id), Number(args.page_offset ?? 0)));
+            if (name === 'admin_school_aspect_averages_v2') {
                 const cohort = users.filter(user => !user.isAdmin && (!args.school_name || user.schoolName === args.school_name));
                 return success([...new Set(cohort.map(user => user.schoolName))].sort().map(schoolName => {
                     const students = cohort.filter(user => user.schoolName === schoolName);
-                    const known = students.filter(user => [0, 10].includes(user.jejakPandawaBestScore));
-                    return { schoolName, studentCount: students.length, jejakKnownCount: known.length,
-                        aspects: CHARACTER_ASPECTS.map(aspect => ({ id: aspect.id,
+                    const known = students.filter(user => user.jejakPandawaUnlocked);
+                    // Explicit seeded v2 fixture, independent of legacy total-only scores.
+                    const demoScores = [2,0,1,2,1];
+                    return { schoolName, studentCount: students.length, jejakKnownCount: known.length, jejakVersion: 2,
+                        aspects: CHARACTER_ASPECTS.map((aspect,index) => ({ id: aspect.id,
                             missionAverage: students.reduce((sum, user) => sum + createLevels(user).filter(level => (aspect.levels as readonly number[]).includes(level.level)).reduce((score, level) => score + level.stars, 0), 0) / students.length,
-                            jejakAverage: known.length ? known.reduce((sum, user) => sum + user.jejakPandawaBestScore / 5, 0) / known.length : null
+                            jejakAverage: known.length ? demoScores[index] : null
                         })) };
                 }));
             }

@@ -22,6 +22,7 @@ function makeBackend(overrides: Partial<AdminBackend> = {}) {
         }),
         signOut: vi.fn().mockResolvedValue({ error: null }),
         updateOwnPassword: vi.fn().mockResolvedValue({ data: {}, error: null }),
+        getJejakAspects: vi.fn(),
         rpc: vi.fn().mockResolvedValue({ data: {}, error: null }),
         invokeAdminFunction: vi.fn(),
         ...overrides

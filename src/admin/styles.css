@@ -76,10 +76,15 @@ h2 {
 
 .eyebrow {
     margin-bottom: 0.65rem;
-    color: var(--gold);
+    color: #8a5614;
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.18em;
+}
+
+.login-brand .eyebrow,
+.dashboard-header .eyebrow {
+    color: var(--gold-soft);
 }
 
 .muted {
@@ -367,7 +372,7 @@ select:hover {
 
 .summary-hint {
     margin-bottom: 0;
-    color: #858d89;
+    color: var(--muted);
     font-size: 0.82rem;
 }
 
@@ -722,7 +727,7 @@ td:last-child {
 }
 
 th {
-    color: #6d756f;
+    color: #55645b;
     background: #faf6ed;
     font-size: 0.7rem;
     letter-spacing: 0.07em;
@@ -864,6 +869,55 @@ tbody tr:hover {
     border: 1px solid var(--line);
     border-radius: 0.8rem;
     background: #fffefb;
+}
+
+.jejak-aspect-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: 0.8rem;
+}
+
+.jejak-aspect-card {
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    background: #fffaf0;
+}
+
+.jejak-aspect-card h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+}
+
+.jejak-aspect-card strong {
+    color: #805315;
+    font-size: 1.4rem;
+}
+
+.jejak-aspect-card meter {
+    display: block;
+    width: 100%;
+    height: 1rem;
+    margin-top: 0.6rem;
+    appearance: none;
+    background: #f0e6d1;
+    border-radius: 1rem;
+}
+
+.jejak-aspect-card meter::-webkit-meter-bar {
+    border: 0;
+    border-radius: 1rem;
+    background: #f0e6d1;
+}
+
+.jejak-aspect-card meter::-webkit-meter-optimum-value {
+    border-radius: 1rem;
+    background: linear-gradient(90deg, #ffcc25, #f4a524);
+}
+
+.jejak-aspect-card meter::-moz-meter-bar {
+    border-radius: 1rem;
+    background: #f4b426;
 }
 
 .stars {
