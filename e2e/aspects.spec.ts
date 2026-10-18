@@ -5,6 +5,7 @@ test('one combined five-aspect chart per school stays independent of search and 
     await page.getByLabel('Nama pengguna').fill('admin.demo');
     await page.getByLabel('Password', { exact: true }).fill('local-test-only');
     await page.getByRole('button', { name: 'Masuk ke panel' }).click();
+    await page.getByRole('tab', { name: 'Aspek', exact: true }).click();
     const charts = page.getByRole('region', { name: 'Rata-rata lima aspek', exact: true });
     await expect(charts.locator('.aspect-chart-panel')).toHaveCount(1);
     await expect(charts.locator('.aspect-chart-group')).toHaveCount(5);
@@ -14,8 +15,10 @@ test('one combined five-aspect chart per school stays independent of search and 
     const heights = await charts.locator('.chart-jejak .aspect-bar').evaluateAll(bars => bars.map(bar => (bar as HTMLElement).style.getPropertyValue('--bar-height')));
     expect(heights).toEqual(['100%','0%','50%','100%','50%']);
     const before = await charts.innerText();
+    await page.getByRole('tab', { name: 'Siswa', exact: true }).click();
     await page.getByLabel('Cari pemain').fill('drupadi.kirana.56');
     await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
+    await page.getByRole('tab', { name: 'Aspek', exact: true }).click();
     expect(await charts.innerText()).toBe(before);
     await page.getByLabel('Sekolah', { exact: true }).selectOption('SDN Kalibanteng Kulon 01');
     await expect(charts.locator('.aspect-bar')).toHaveCount(10);

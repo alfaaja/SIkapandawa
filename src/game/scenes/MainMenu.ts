@@ -5,11 +5,12 @@ import { makeText } from '../ui/fonts';
 import { AuthService } from '../services/AuthService';
 import { ProgressService } from '../services/ProgressService';
 import { BackgroundMusicService } from '../services/BackgroundMusicService';
+import { addMonitoringButton } from '../ui/MonitoringButton';
 
 const PANEL_CENTER_X = 648;
 
 /**
- * MainMenu — panel dengan logo besar dan tombol DAFTAR / MASUK.
+ * MainMenu — panel dengan logo besar dan tombol DAFTAR / MASUK / MONITORING.
  */
 export class MainMenu extends Scene {
     constructor() {
@@ -31,12 +32,13 @@ export class MainMenu extends Scene {
                 .setOrigin(0.5);
         }
 
-        new SpriteButton(this, PANEL_CENTER_X - 90, 565, 'button-daftar', () => {
+        new SpriteButton(this, PANEL_CENTER_X - 90, 535, 'button-daftar', () => {
             this.goTo('Register');
-        });
-        new SpriteButton(this, PANEL_CENTER_X + 90, 565, 'button-masuk', () => {
+        }).image.setName('main-menu-register');
+        new SpriteButton(this, PANEL_CENTER_X + 90, 535, 'button-masuk', () => {
             this.goTo('Login');
-        });
+        }).image.setName('main-menu-login');
+        addMonitoringButton(this, PANEL_CENTER_X, 610, 'main-menu-monitoring');
 
         void AuthService.restoreSession().then(async (account) => {
             if (!account || !this.scene.isActive()) return;

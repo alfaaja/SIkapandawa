@@ -1,0 +1,13 @@
+# Penghapusan catatan monitoring lama
+
+Pembaruan UI berikutnya atas permintaan pengguna: tombol Catatan lama, event pemilihannya, dan teks filter legacy dihapus dari DashboardView. Filter admin tetap mulai periode 1; tidak ada mutasi backend tambahan. Test view diperbarui menjadi memastikan tombol/teks lama tidak ada; alur periode angka dan arsip bernama tetap tersedia untuk kompatibilitas. Paket terbaru adalah sikapandawa-final-v2-20261018.zip. Catatan tentang tombol tetap tersedia di paragraf historis bawah merekam keadaan sebelum permintaan penghapusan menu.
+
+18 Oktober 2026. Pengguna secara eksplisit meminta seluruh Catatan lama dihapus karena sebelumnya hanya testing. Scope SQL dibatasi ke public.parent_monitoring_observations dengan monitoring_period='legacy', seluruh sekolah. Bukan reset skor game, akun, atau periode monitoring bernomor.
+
+Pemeriksaan awal menemukan 3 observasi legacy sumber parent pada 2 siswa; tidak ada observasi periode bernomor. Penghapusan dilakukan dalam transaksi dengan guard jumlah tetap 3 dan hanya mengembalikan jumlah baris, tanpa payload observasi. Hasil: 3 dihapus, 0 legacy tersisa. Jumlah akun 29, progres 29, level 290, Jejak run 23; jumlah/digest progres, level, Jejak dan observasi nonlegacy identik sebelum–sesudah.
+
+Pencadangan isi observasi ditolak oleh pemeriksaan persetujuan otomatis karena izin penghapusan tidak mencakup penyalinan payload sensitif. Tidak menyalin isi observasi. Penghapusan tetap dilaksanakan melalui alternatif dengan scope sempit sesuai instruksi eksplisit pengguna. Laporan ini hanya menyimpan metadata agregat, tanpa identitas atau jawaban siswa.
+
+Konfirmasi source: ParentPage menginisialisasi monitoringPeriod='1'; form guru memakai ParentPage dalam teacherMode sehingga default sama. Input bernomor diserialisasi sebagai periode 1. Nilai periode dapat diubah pengguna dan dipertahankan selama pengisian form aktif; sistem tidak menaikkan periode otomatis setelah 12 titik. Admin juga memulai filter pada 1. Tombol Catatan lama tetap tersedia sebagai fitur arsip, tetapi kini kosong. Tidak ada perubahan frontend/build sehingga ZIP final sebelumnya tetap berlaku.
+
+Verifikasi: query sesudah penghapusan memastikan legacyCount=0 dan agregat lainnya cocok. Evaluasi mandiri: accuracy 4 (bukti query/source; hanya cakupan yang diminta), completeness 4 (penghapusan selesai tanpa backup payload yang ditolak), clarity 4 (scope/default periode dijelaskan), actionability 4 (pengguna cukup refresh lalu pilih periode 1), conciseness 4 (detail di laporan, ringkasan pengguna singkat). Rata-rata 4,0/5. Tindak lanjut: pengguna mengisi pengamatan baru sesuai periode yang dipilih.

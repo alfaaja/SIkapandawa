@@ -36,6 +36,32 @@ function listItem(overrides: Record<string, unknown> = {}) {
 }
 
 describe('AdminDashboardService', () => {
+    it('normalizes scoped period names and rejects invalid or failed reads', async () => {
+        const backend = makeBackend(vi.fn());
+        const service = new AdminDashboardService(backend);
+        expect(await service.getMonitoringPeriods()).toEqual([]);
+        const read = vi.fn().mockResolvedValue({ data: [' Periode  2 ', 'periode 2', 'legacy'], error: null });
+        backend.getMonitoringPeriods = read;
+        expect(await service.getMonitoringPeriods()).toEqual(['periode 2', 'legacy']);
+        for (const data of [null, [123], ['x']]) {
+            read.mockResolvedValue({ data, error: null });
+            await expect(service.getMonitoringPeriods()).rejects.toMatchObject({ code: 'invalid_response' });
+        }
+        read.mockResolvedValue({ data: null, error: { code: '42501', message: 'denied' } });
+        await expect(service.getMonitoringPeriods()).rejects.toMatchObject({ code: 'access_denied' });
+    });
+    it('pins comparisons to one explicit normalized period and rejects mismatched or malformed data', async () => {
+        const rpc=vi.fn().mockResolvedValue({data:{ruleVersion:'draft-1',periodPolicy:'same-point-monitoring-period',cells:[]},error:null});
+        const service=new AdminDashboardService(makeBackend(rpc));
+        expect((await service.getMonitoringComparison(USER_ID,' Periode  Dua ')).cells).toEqual([]);
+        expect(rpc).toHaveBeenCalledWith('admin_monitoring_comparison',{target_user_id:USER_ID,monitoring_period:'periode dua'});
+        rpc.mockResolvedValue({data:{ruleVersion:'draft-1',periodPolicy:'same-point-monitoring-period',cells:[{pointNumber:1,period:'periode lain',aspect:'kejujuran',parentAverage:4,teacherAverage:2,parentCount:1,teacherCount:1}]},error:null});
+        await expect(service.getMonitoringComparison(USER_ID,'periode dua')).rejects.toMatchObject({code:'invalid_response'});
+        rpc.mockClear(); await expect(service.getMonitoringComparison('not-uuid')).rejects.toThrow();
+        expect(rpc).not.toHaveBeenCalled();
+        await expect(service.getMonitoringComparison(USER_ID,'x')).rejects.toThrow();
+        expect(rpc).not.toHaveBeenCalled();
+    });
     it('validates per-student v2 aspect maxima and never infers them from the legacy best total', async () => {
         const data = {
             user: { userId: USER_ID, displayName: 'Budi', username: 'budi' },
@@ -67,7 +93,7 @@ describe('AdminDashboardService', () => {
         const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
         const service = new AdminDashboardService(makeBackend(rpc));
         expect(await service.getMonitoringSummary('SDN Satu', USER_ID)).toEqual([]);
-        expect(rpc).toHaveBeenCalledWith('admin_monitoring_summary', { school_name: 'SDN Satu', target_user_id: USER_ID });
+        expect(rpc).toHaveBeenCalledWith('admin_monitoring_summary_v2', { reporter_type: 'parent', school_name: 'SDN Satu', target_user_id: USER_ID, monitoring_period: 'periode 1' });
         rpc.mockResolvedValue({ data: { items: [], total: 0, pageSize: 25, pageOffset: 25 }, error: null });
         expect((await service.getMonitoringHistory(USER_ID, 25)).pageOffset).toBe(25);
         await expect(service.getMonitoringHistory('not-an-id')).rejects.toThrow();

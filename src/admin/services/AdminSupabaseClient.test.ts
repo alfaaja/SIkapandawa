@@ -53,6 +53,31 @@ describe('createAdminSupabaseClient', () => {
 });
 
 describe('createAdminBackend', () => {
+    it.each([
+        { data: null, error: { message: 'denied', code: '42501' } },
+        { data: null, error: null },
+        { data: [{ monitoring_period: null }], error: null }
+    ])('fails safely when period rows are unavailable or malformed', async response => {
+        const query = { select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue(response) };
+        const backend = createAdminBackend({ from: vi.fn().mockReturnValue(query) } as never);
+        expect((await backend.getMonitoringPeriods!()).error).not.toBeNull();
+    });
+    it('discovers periods through scoped RLS reads and skips duplicate pages using a period cursor', async () => {
+        const responses = [
+            { data: [{ monitoring_period: 'periode 1' }, { monitoring_period: 'periode 1' }], error: null },
+            { data: [{ monitoring_period: 'periode 2' }], error: null },
+            { data: [], error: null }
+        ];
+        const queries = responses.map(response => ({ select: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(),
+            gt: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValue(response) }));
+        const from = vi.fn(); queries.forEach(query => from.mockReturnValueOnce(query));
+        const backend = createAdminBackend({ from } as never);
+        await expect(backend.getMonitoringPeriods!()).resolves.toEqual({ data: ['periode 1', 'periode 2'], error: null });
+        expect(from).toHaveBeenCalledWith('parent_monitoring_observations');
+        expect(queries[0].select).toHaveBeenCalledWith('monitoring_period');
+        expect(queries[1].gt).toHaveBeenCalledWith('monitoring_period', 'periode 1');
+        expect(queries[2].gt).toHaveBeenCalledWith('monitoring_period', 'periode 2');
+    });
     it('reads each aspect maximum across all v2 runs for only the selected student', async () => {
         const ids = ['kejujuran', 'keberanian', 'kesopanan', 'kebijaksanaan', 'keadilan'];
         const queries = ids.map((_, index) => {

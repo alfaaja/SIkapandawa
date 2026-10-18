@@ -1,6 +1,7 @@
 import { buildInternalAuthEmail, validateUsername } from '../../shared/auth/username';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminServiceError, classifyBackendError } from './errors';
+import { parseStaffAccess, type StaffAccess } from '../../shared/auth/staff';
 
 export type AdminAuthResult =
     | { ok: true }
@@ -46,12 +47,14 @@ function sessionUsername(data: unknown): string | null {
 export class AdminAuthService {
     private currentUsername = 'admin';
     private currentUserId: string | null = null;
+    private access: StaffAccess | null = null;
 
     constructor(private readonly backend: AdminBackend) {}
 
     private async clearUnverifiedSession(): Promise<void> {
         this.currentUsername = 'admin';
         this.currentUserId = null;
+        this.access = null;
         try {
             await this.backend.signOut();
         } catch {
@@ -61,8 +64,16 @@ export class AdminAuthService {
 
     private async authorize(): Promise<AdminAuthResult> {
         try {
-            const gate = await this.backend.rpc('admin_dashboard_summary');
-            if (!gate.error) return { ok: true };
+            const gate = await this.backend.rpc('staff_access');
+            if (!gate.error) {
+                const access = parseStaffAccess(gate.data);
+                if (access.role !== 'teacher') {
+                    this.access = access;
+                    return { ok: true };
+                }
+                await this.clearUnverifiedSession();
+                return { ok: false, error: new AdminServiceError('access_denied') };
+            }
 
             const classified = classifyBackendError(gate.error);
             await this.clearUnverifiedSession();
@@ -141,6 +152,7 @@ export class AdminAuthService {
         await this.backend.signOut();
         this.currentUsername = 'admin';
         this.currentUserId = null;
+        this.access = null;
     }
 
     async changeOwnPassword(password: string): Promise<AdminAuthResult> {
@@ -164,6 +176,8 @@ export class AdminAuthService {
     getCurrentUsername(): string {
         return this.currentUsername;
     }
+
+    getAccess(): StaffAccess | null { return this.access; }
 
     getCurrentUserId(): string | null {
         return this.currentUserId;

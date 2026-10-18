@@ -7,6 +7,7 @@ import type {
 } from '../types';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminServiceError, classifyBackendError } from './errors';
+import { parseStaffAccess, type StaffAccountInput, type StaffAccountItem } from '../../shared/auth/staff';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MIN_PASSWORD_LENGTH = 12;
@@ -61,6 +62,48 @@ function parseMutationResult(value: unknown): AdminMutationResult {
 
 export class AdminUserManagementService {
     constructor(private readonly backend: AdminBackend) {}
+
+    async updateStaff(userId: string, input: AdminUpdateUserInput): Promise<AdminMutationResult> {
+        return this.invoke('staff_update', { userId: requireUserId(userId), displayName: normalizeDisplayName(input.displayName),
+            expectedUsername: requireUsername(input.expectedUsername), username: requireUsername(input.username) });
+    }
+
+    async resetStaffPassword(userId: string, password: string): Promise<AdminMutationResult> {
+        return this.invoke('staff_reset_password', { userId: requireUserId(userId), password: requirePassword(password) });
+    }
+
+    async deleteStaff(userId: string, expectedUsername: string): Promise<AdminMutationResult> {
+        return this.invoke('staff_delete', { userId: requireUserId(userId), expectedUsername: requireUsername(expectedUsername) });
+    }
+
+    async createStaff(input: StaffAccountInput): Promise<AdminMutationResult> {
+        if (!['school','forum','teacher'].includes(input.role)) throw new AdminServiceError('validation');
+        const schoolName = input.role === 'forum' ? undefined : normalizeSchoolName(input.schoolName);
+        if (input.role !== 'forum' && !schoolName) throw new AdminServiceError('validation');
+        return this.invoke('create_staff', {
+            displayName: normalizeDisplayName(input.displayName), username: requireUsername(input.username),
+            password: requirePassword(input.password), role: input.role,
+            ...(schoolName ? { schoolName } : {})
+        });
+    }
+
+    async listStaff(): Promise<StaffAccountItem[]> {
+        try {
+            const response = await this.backend.rpc('admin_list_staff');
+            if (response.error) throw classifyBackendError(response.error);
+            if (!Array.isArray(response.data)) throw new AdminServiceError('invalid_response');
+            return response.data.map((value: unknown) => {
+                if (!value || typeof value !== 'object') throw new AdminServiceError('invalid_response');
+                const item = value as Record<string, unknown>;
+                const access = parseStaffAccess(item);
+                return { ...access, userId: requireUserId(item.userId),
+                    displayName: normalizeDisplayName(item.displayName), username: requireUsername(item.username) };
+            });
+        } catch (error) {
+            if (error instanceof AdminServiceError) throw error;
+            throw new AdminServiceError(navigator.onLine ? 'generic' : 'offline');
+        }
+    }
 
     async createUser(input: AdminCreateUserInput): Promise<AdminMutationResult> {
         const schoolName = normalizeSchoolName(input.schoolName);

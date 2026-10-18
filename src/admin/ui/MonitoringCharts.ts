@@ -1,5 +1,5 @@
 import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
-import type { MonitoringSchool } from '../../shared/monitoring';
+import type { MonitoringSchool, MonitoringReporter } from '../../shared/monitoring';
 import { createElement, replaceContent } from './dom';
 const COLORS = ['#773eb2', '#b57800', '#18775a', '#2866b5', '#bf426c'];
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attributes: Record<string, string>): SVGElementTagNameMap[K] {
@@ -9,8 +9,9 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attributes: Record<st
 }
 export class MonitoringCharts {
     readonly element = createElement('section', { className: 'progress-charts monitoring-charts', attributes: { 'aria-label': 'Grafik monitoring 12 titik' } });
-    render(schools: readonly MonitoringSchool[]): void {
-        replaceContent(this.element, createElement('h2', { text: 'Monitoring orang tua · 12 titik' }),
+    render(schools: readonly MonitoringSchool[], reporterType: MonitoringReporter = 'parent'): void {
+        this.element.setAttribute('data-reporter', reporterType);
+        replaceContent(this.element, createElement('h2', { text: 'Monitoring ' + (reporterType === 'teacher' ? 'guru' : 'orang tua') + ' · 12 titik' }),
             createElement('p', { className: 'muted', text: 'Skor 1–4 per aspek. N/A dan siswa tanpa pengamatan tidak dihitung sebagai nol. Pengisian berulang dirata-ratakan per siswa dahulu, lalu antar-siswa. Setiap siswa memiliki bobot yang sama.' }));
         const format = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
         for (const school of schools) {

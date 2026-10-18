@@ -23,13 +23,25 @@ function makeBackend(overrides: Partial<AdminBackend> = {}) {
         signOut: vi.fn().mockResolvedValue({ error: null }),
         updateOwnPassword: vi.fn().mockResolvedValue({ data: {}, error: null }),
         getJejakAspects: vi.fn(),
-        rpc: vi.fn().mockResolvedValue({ data: {}, error: null }),
+        rpc: vi.fn().mockResolvedValue({ data: { role: 'master', schoolName: null }, error: null }),
         invokeAdminFunction: vi.fn(),
         ...overrides
     } satisfies AdminBackend;
 }
 
 describe('AdminAuthService', () => {
+    it('takes school scope from the verified RPC and denies teachers or malformed memberships', async () => {
+        const rpc = vi.fn().mockResolvedValue({ data: { role: 'school', schoolName: 'SDN SATU' }, error: null });
+        const backend = makeBackend({ rpc });
+        const service = new AdminAuthService(backend);
+        expect((await service.login('admin.satu', crypto.randomUUID())).ok).toBe(true);
+        expect(service.getAccess()).toEqual({ role: 'school', schoolName: 'SDN SATU' });
+        for (const data of [{ role: 'teacher', schoolName: 'SDN SATU' }, { role: 'master', schoolName: 'SDN SATU' }, { role: 'school', schoolName: null }, {}]) {
+            rpc.mockResolvedValue({ data, error: null });
+            expect((await service.restoreSession()).ok).toBe(false);
+            expect(service.getAccess()).toBeNull();
+        }
+    });
     beforeEach(() => {
         vi.stubGlobal('navigator', { onLine: true });
     });
@@ -44,7 +56,7 @@ describe('AdminAuthService', () => {
             email: '24263bfaefb124c488c2f5e63d1d30b418f51d0d6f5b380aa1956ec40ea57278@users.sikapandawa.invalid',
             password: credential
         });
-        expect(backend.rpc).toHaveBeenCalledWith('admin_dashboard_summary');
+        expect(backend.rpc).toHaveBeenCalledWith('staff_access');
     });
 
     it.each([
@@ -130,7 +142,7 @@ describe('AdminAuthService', () => {
 
         await expect(service.restoreSession()).resolves.toEqual({ ok: true });
         expect(backend.getSession).toHaveBeenCalledOnce();
-        expect(backend.rpc).toHaveBeenCalledWith('admin_dashboard_summary');
+        expect(backend.rpc).toHaveBeenCalledWith('staff_access');
         expect(service.getCurrentUserId()).toBe('admin-id');
     });
 

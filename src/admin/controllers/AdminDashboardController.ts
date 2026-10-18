@@ -2,6 +2,7 @@ import type { ProgressStatusFilter, AdminUserIdentity } from '../types';
 import type { AdminDashboardService } from '../services/AdminDashboardService';
 import { AdminServiceError } from '../services/errors';
 import type { DashboardView } from '../ui/DashboardView';
+import { normalizeMonitoringPeriod } from '../../shared/monitoring';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -15,6 +16,7 @@ export class AdminDashboardController {
     private requestSequence = 0;
     private detailSequence = 0;
     private monitoringSequence = 0;
+    private monitoringPeriod = 'periode 1';
     private searchTimer: number | undefined;
 
     constructor(
@@ -31,7 +33,7 @@ export class AdminDashboardController {
         }
         this.view.showLoading();
         try {
-            const [summaryResult, listResult, chartResult, aspectResult, monitoringResult] = await Promise.allSettled([
+            const [summaryResult, listResult, chartResult, aspectResult, monitoringResult, teacherResult, periodsResult] = await Promise.allSettled([
                 this.service.getSummary(this.schoolName),
                 this.service.listUsers({
                     schoolName: this.schoolName,
@@ -42,7 +44,9 @@ export class AdminDashboardController {
                 }),
                 this.service.listChartUsers(this.schoolName),
                 this.service.getAspectAverages(this.schoolName),
-                this.service.getMonitoringSummary(this.schoolName)
+                this.service.getMonitoringSummary(this.schoolName, null, 'parent', this.monitoringPeriod),
+                this.service.getMonitoringSummary(this.schoolName, null, 'teacher', this.monitoringPeriod),
+                this.service.getMonitoringPeriods()
             ]);
             if (sequence !== this.requestSequence) return;
             if (summaryResult.status === 'rejected') throw summaryResult.reason;
@@ -54,6 +58,8 @@ export class AdminDashboardController {
             this.view.renderData(summary, list, chartUsers, this.schoolName);
             this.view.renderAspectData(aspectResult.status === 'fulfilled' ? aspectResult.value : null);
             this.view.renderMonitoringSummary(monitoringResult.status === 'fulfilled' ? monitoringResult.value : null);
+            this.view.renderTeacherMonitoringSummary(teacherResult.status === 'fulfilled' ? teacherResult.value : null);
+            this.view.renderMonitoringPeriods(periodsResult.status === 'fulfilled' ? periodsResult.value : null);
             if (chartResult.status === 'rejected') {
                 this.view.showChartError('Grafik capaian tidak dapat dimuat.');
             }
@@ -103,6 +109,14 @@ export class AdminDashboardController {
         void this.refresh();
     }
 
+    setMonitoringPeriod(period: string): void {
+        try { this.monitoringPeriod = normalizeMonitoringPeriod(period); }
+        catch { this.view.showError('Periode monitoring harus 2–80 karakter.', () => void this.refresh()); return; }
+        ++this.monitoringSequence;
+        this.view.closeMonitoring();
+        void this.refresh();
+    }
+
     previousPage(): void {
         this.pageOffset = Math.max(0, this.pageOffset - this.pageSize);
         void this.refresh();
@@ -125,10 +139,19 @@ export class AdminDashboardController {
 
     async showMonitoring(user: AdminUserIdentity): Promise<void> {
         const sequence = ++this.monitoringSequence;
+        const period = this.monitoringPeriod;
         this.view.showMonitoringLoading();
         try {
-            const [history, summary] = await Promise.all([this.service.getMonitoringHistory(user.userId), this.service.getMonitoringSummary(null, user.userId)]);
-            if (sequence === this.monitoringSequence) this.view.showMonitoring(user, history, summary, offset => this.service.getMonitoringHistory(user.userId, offset));
+            const [history, summary, teacherHistory, teacherSchools, comparison] = await Promise.all([
+                this.service.getMonitoringHistory(user.userId, 0, 'parent', period), this.service.getMonitoringSummary(null, user.userId, 'parent', period),
+                this.service.getMonitoringHistory(user.userId, 0, 'teacher', period), this.service.getMonitoringSummary(null, user.userId, 'teacher', period),
+                this.service.getMonitoringComparison(user.userId, period)
+            ]);
+            if (sequence === this.monitoringSequence) this.view.showMonitoring(user, history, summary,
+                offset => this.service.getMonitoringHistory(user.userId, offset, 'parent', period), {
+                    teacherHistory, teacherSchools, comparison,
+                    loadTeacherMore: offset => this.service.getMonitoringHistory(user.userId, offset, 'teacher', period)
+                });
         } catch { if (sequence === this.monitoringSequence) this.view.showMonitoringError(); }
     }
 }

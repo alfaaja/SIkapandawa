@@ -14,12 +14,27 @@ import { UserManagementDialog } from './UserManagementDialog';
 import { ProgressCharts } from './ProgressCharts';
 import { AspectCharts } from './AspectCharts';
 import { MonitoringCharts } from './MonitoringCharts';
-import { MonitoringDialog } from './MonitoringDialog';
+import { MonitoringDialog, type DualSourceMonitoring } from './MonitoringDialog';
 import type { MonitoringHistory, MonitoringSchool } from '../../shared/monitoring';
+import { normalizeMonitoringPeriod, numberedMonitoringPeriod, monitoringPeriodNumber } from '../../shared/monitoring';
 import type { SchoolAspectAverage } from '../../shared/game/characterAspects';
 import { UserProgressDialog } from './UserProgressDialog';
+import { AdminAccessDialog, type AdminAccessInput, type AdminAccessItem } from './AdminAccessDialog';
+
+export interface DashboardAccess {
+    role: 'master' | 'school' | 'forum';
+    schoolName: string | null;
+}
+
+type DashboardTab = 'overview' | 'students' | 'aspects' | 'monitoring';
 
 export interface DashboardCallbacks {
+    onMonitoringPeriod?(period: string): void;
+    onCreateAdmin?(input: AdminAccessInput): Promise<unknown>;
+    onListAdmins?(): Promise<AdminAccessItem[]>;
+    onEditAdmin?(userId: string, input: AdminUpdateUserInput): Promise<unknown>;
+    onResetAdminPassword?(userId: string, password: string): Promise<unknown>;
+    onDeleteAdmin?(userId: string, expectedUsername: string): Promise<unknown>;
     onMonitoring(user: AdminUserIdentity): void;
     onSchool(schoolName: string | null): void;
     onDetail(userId: string): void;
@@ -72,17 +87,31 @@ export class DashboardView {
     private readonly progressCharts: ProgressCharts;
     private readonly aspectCharts = new AspectCharts();
     private readonly monitoringCharts = new MonitoringCharts();
+    private readonly teacherMonitoringCharts = new MonitoringCharts();
     private readonly monitoringDialog = new MonitoringDialog();
     private readonly managementDialog: UserManagementDialog;
+    private readonly accessDialog: AdminAccessDialog | null;
+    private readonly tabPanels = new Map<DashboardTab, HTMLElement>();
+    private readonly tabButtons = new Map<DashboardTab, HTMLButtonElement>();
+    private selectedTab: DashboardTab = 'overview';
+    private schools: string[] = [];
+    private readonly periodFilter = createElement('input', { attributes: { id: 'admin-monitoring-period', type: 'number', inputmode: 'numeric', min: '1', step: '1', max: String(Number.MAX_SAFE_INTEGER), value: '1', required: '' } });
+    private readonly periodHint = createElement('p', { className: 'muted' });
+    private readonly periodArchives = createElement('details', { className: 'period-archives', attributes: { hidden: '' } });
 
     constructor(
         private readonly root: HTMLElement,
         private readonly callbacks: DashboardCallbacks,
         private readonly adminUsername = 'admin',
         private readonly demoMode = false,
-        private readonly adminUserId: string | null = null
+        private readonly adminUserId: string | null = null,
+        private readonly access: DashboardAccess = { role: 'forum', schoolName: null }
     ) {
         this.progressCharts = new ProgressCharts(adminUserId, adminUsername);
+        this.accessDialog = ['master', 'school'].includes(access.role) && callbacks.onCreateAdmin && callbacks.onListAdmins
+            ? new AdminAccessDialog({ onCreate: input => callbacks.onCreateAdmin!(input), onList: () => callbacks.onListAdmins!(),
+                onUpdate: callbacks.onEditAdmin, onResetPassword: callbacks.onResetAdminPassword, onDelete: callbacks.onDeleteAdmin },
+                access.role === 'school' ? access.schoolName : null) : null;
         this.managementDialog = new UserManagementDialog({
             onCreate: (input) => this.callbacks.onCreateUser(input),
             onUpdate: (userId, input) => this.callbacks.onEditUser(userId, input),
@@ -111,13 +140,93 @@ export class DashboardView {
                 attributes: { role: 'note' }
             }));
         }
-        tableSection.append(this.status, this.createTable(), this.createPagination());
-        content.append(this.summary, this.progressCharts.element, this.aspectCharts.element, this.monitoringCharts.element, tableSection);
+        tableSection.append(this.createTable(), this.createPagination());
+        const overview = createElement('section', { className: 'dashboard-tab-panel' });
+        overview.append(this.summary, this.progressCharts.element);
+        const aspects = createElement('section', { className: 'dashboard-tab-panel' });
+        aspects.append(this.aspectCharts.element);
+        const monitoring = createElement('section', { className: 'dashboard-tab-panel' });
+        monitoring.append(this.createMonitoringPeriodFilter(), this.monitoringCharts.element, this.teacherMonitoringCharts.element);
+        content.append(this.status, this.createNavigation([
+            ['overview', 'Ringkasan', overview],
+            ['students', 'Siswa', tableSection],
+            ['aspects', 'Aspek', aspects],
+            ['monitoring', 'Monitoring', monitoring]
+        ]), overview, tableSection, aspects, monitoring);
         main.append(header, content);
         replaceContent(this.root, main);
         this.progressDialog.mount(main);
         this.monitoringDialog.mount(main);
         this.managementDialog.mount(main);
+        this.accessDialog?.mount(main);
+    }
+
+    private createNavigation(tabs: Array<[DashboardTab, string, HTMLElement]>): HTMLElement {
+        this.tabPanels.clear(); this.tabButtons.clear();
+        const navigation = createElement('nav', { className: 'dashboard-navigation', attributes: { role: 'tablist', 'aria-label': 'Bagian panel admin' } });
+        for (const [key, label, panel] of tabs) {
+            const button = createElement('button', { className: 'dashboard-tab', text: label, attributes: { type: 'button', role: 'tab', id: `dashboard-tab-${key}`, 'aria-controls': `dashboard-panel-${key}` } });
+            panel.id = `dashboard-panel-${key}`; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', button.id); panel.tabIndex = 0;
+            this.tabPanels.set(key, panel); this.tabButtons.set(key, button);
+            button.addEventListener('click', () => this.selectTab(key));
+            button.addEventListener('keydown', event => {
+                const keys = tabs.map(([tab]) => tab);
+                let index = keys.indexOf(key);
+                if (event.key === 'ArrowRight') index = (index + 1) % keys.length;
+                else if (event.key === 'ArrowLeft') index = (index - 1 + keys.length) % keys.length;
+                else if (event.key === 'Home') index = 0;
+                else if (event.key === 'End') index = keys.length - 1;
+                else return;
+                event.preventDefault(); this.selectTab(keys[index]); this.tabButtons.get(keys[index])?.focus();
+            });
+            navigation.append(button);
+        }
+        this.selectTab(this.selectedTab);
+        return navigation;
+    }
+
+    private createMonitoringPeriodFilter(): HTMLElement {
+        const form = createElement('form', { className: 'monitoring-period-filter' });
+        const group = createElement('div', { className: 'field-group' });
+        this.renderMonitoringPeriods([]);
+        group.append(createElement('label', { text: 'Periode monitoring', attributes: { for: this.periodFilter.id } }), this.periodFilter);
+        const submit = createElement('button', { className: 'button button-secondary', text: 'Terapkan periode', attributes: { type: 'submit' } });
+        form.append(group, submit, this.periodHint, this.periodArchives);
+        form.addEventListener('submit', event => {
+            event.preventDefault(); if (!form.reportValidity()) return;
+            try {
+                const period = numberedMonitoringPeriod(this.periodFilter.value);
+                this.periodFilter.value = String(monitoringPeriodNumber(period));
+                this.periodHint.textContent = 'Grafik ortu dan guru memakai nomor periode yang sama.';
+                this.callbacks.onMonitoringPeriod?.(period);
+            } catch { this.periodFilter.setCustomValidity('Periode harus berupa bilangan bulat mulai dari 1.'); this.periodFilter.reportValidity(); }
+        });
+        this.periodFilter.addEventListener('input', () => this.periodFilter.setCustomValidity(''));
+        return form;
+    }
+
+    renderMonitoringPeriods(periods: string[] | null): void {
+        if (!this.periodHint.textContent) this.periodHint.textContent = 'Isi nomor periode yang sama dengan form guru dan orang tua. Gunakan panah kecil untuk menaikkan atau menurunkan angka.';
+        if (periods !== null) {
+            const named = [...new Set(periods.map(normalizeMonitoringPeriod))].filter(period => period !== 'legacy' && monitoringPeriodNumber(period) === null);
+            replaceContent(this.periodArchives, createElement('summary', { text: 'Arsip periode dengan nama lama' }), ...named.map(period => {
+                const button = createElement('button', { className: 'button button-secondary', text: period, attributes: { type: 'button' } });
+                button.addEventListener('click', () => {
+                    this.periodHint.textContent = 'Menampilkan arsip periode: ' + period;
+                    this.callbacks.onMonitoringPeriod?.(period);
+                });
+                return button;
+            }));
+            this.periodArchives.hidden = named.length === 0;
+        }
+    }
+
+    private selectTab(selected: DashboardTab): void {
+        this.selectedTab = selected;
+        for (const [key, panel] of this.tabPanels) panel.hidden = key !== selected;
+        for (const [key, button] of this.tabButtons) {
+            button.setAttribute('aria-selected', String(key === selected)); button.tabIndex = key === selected ? 0 : -1;
+        }
     }
 
     private createHeader(): HTMLElement {
@@ -129,7 +238,7 @@ export class DashboardView {
         refreshCopy.append('Terakhir diperbarui: ', this.refreshedAt);
         const identity = createElement('p', {
             className: 'admin-identity',
-            text: `Masuk sebagai @${this.adminUsername}`
+            text: `@${this.adminUsername} · ${this.access.role === 'master' ? 'Admin master' : this.access.role === 'school' ? 'Admin sekolah' : 'Forum / dinas'}`
         });
         titleGroup.append(eyebrow, title, identity);
         if (this.demoMode) {
@@ -145,8 +254,13 @@ export class DashboardView {
         schoolLabel.htmlFor = 'school-filter';
         this.schoolFilter.append(createElement('option', { text: 'All', attributes: { value: '' } }));
         this.schoolFilter.addEventListener('change', () => {
+            if (this.access.role === 'school') return;
             this.callbacks.onSchool(this.schoolFilter.value || null);
         });
+        if (this.access.role === 'school') {
+            replaceContent(this.schoolFilter, createElement('option', { text: this.access.schoolName ?? 'Sekolah belum ditetapkan', attributes: { value: this.access.schoolName ?? '' } }));
+            this.schoolFilter.disabled = true;
+        }
         schoolGroup.append(schoolLabel, this.schoolFilter);
         const changePassword = createElement('button', {
             className: 'button button-secondary',
@@ -168,7 +282,13 @@ export class DashboardView {
         });
         refresh.addEventListener('click', this.callbacks.onRefresh);
         logout.addEventListener('click', this.callbacks.onLogout);
-        actions.append(schoolGroup, changePassword, refresh, logout);
+        actions.append(schoolGroup);
+        if (this.accessDialog) {
+            const manageAdmins = createElement('button', { className: 'button button-secondary', text: this.access.role === 'school' ? 'Kelola guru' : 'Kelola admin', attributes: { type: 'button' } });
+            manageAdmins.addEventListener('click', () => { void this.accessDialog!.show(this.schools); });
+            actions.append(manageAdmins);
+        }
+        actions.append(changePassword, refresh, logout);
         header.append(titleGroup, actions);
         return header;
     }
@@ -188,7 +308,13 @@ export class DashboardView {
             text: 'Tambah pemain',
             attributes: { type: 'button', 'aria-label': 'Tambah pemain' }
         });
-        addPlayer.addEventListener('click', () => this.managementDialog.showCreate());
+        addPlayer.addEventListener('click', () => {
+            this.managementDialog.showCreate();
+            if (this.access.role === 'school') {
+                const input = this.root.querySelector<HTMLInputElement>('#create-school-name');
+                if (input) { input.value = this.access.schoolName ?? ''; input.readOnly = true; }
+            }
+        });
         tools.append(addPlayer, this.createToolbar());
         wrapper.append(headingGroup, tools);
         return wrapper;
@@ -307,12 +433,13 @@ export class DashboardView {
         this.renderSummary(summary);
         const schools = [...new Set(summary.schools ?? chartUsers.map(user => user.schoolName))]
             .filter(Boolean).sort((left, right) => left.localeCompare(right, 'id'));
+        this.schools = this.access.role === 'school' ? [this.access.schoolName ?? ''].filter(Boolean) : schools;
         replaceContent(this.schoolFilter,
-            createElement('option', { text: 'All', attributes: { value: '' } }),
-            ...schools.map(school => createElement('option', { text: school, attributes: { value: school } }))
+            ...(this.access.role === 'school' ? [] : [createElement('option', { text: 'All', attributes: { value: '' } })]),
+            ...this.schools.map(school => createElement('option', { text: school, attributes: { value: school } }))
         );
-        this.schoolFilter.value = schoolName ?? '';
-        this.progressCharts.render(chartUsers, schoolName);
+        this.schoolFilter.value = this.access.role === 'school' ? this.access.schoolName ?? '' : schoolName ?? '';
+        this.progressCharts.render(chartUsers, this.access.role === 'school' ? this.access.schoolName : schoolName);
         this.renderUsers(list);
         this.refreshedAt.textContent = formatDateTime(summary.generatedAt);
         if (list.items.length === 0) {
@@ -437,13 +564,15 @@ export class DashboardView {
         this.progressDialog.showLoading();
     }
 
-    renderMonitoringSummary(schools: MonitoringSchool[] | null): void {
-        if (schools === null) this.monitoringCharts.showError(); else this.monitoringCharts.render(schools);
+    renderMonitoringSummary(schools: MonitoringSchool[] | null, reporterType: 'parent' | 'teacher' = 'parent'): void {
+        const charts = reporterType === 'teacher' ? this.teacherMonitoringCharts : this.monitoringCharts;
+        if (schools === null) charts.showError(); else charts.render(schools, reporterType);
     }
+    renderTeacherMonitoringSummary(schools: MonitoringSchool[] | null): void { this.renderMonitoringSummary(schools, 'teacher'); }
     showMonitoringLoading(): void { this.monitoringDialog.showLoading(); }
     showMonitoringError(): void { this.monitoringDialog.showError(); }
-    showMonitoring(user: AdminUserIdentity, history: MonitoringHistory, schools: MonitoringSchool[], loadMore: (offset: number) => Promise<MonitoringHistory>): void {
-        this.monitoringDialog.show(user, history, schools, loadMore);
+    showMonitoring(user: AdminUserIdentity, history: MonitoringHistory, schools: MonitoringSchool[], loadMore: (offset: number) => Promise<MonitoringHistory>, dual?: DualSourceMonitoring): void {
+        this.monitoringDialog.show(user, history, schools, loadMore, dual);
     }
     closeMonitoring(): void { this.monitoringDialog.close(); }
 

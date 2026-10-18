@@ -20,11 +20,11 @@ try {
     });
     if (results.some(item => item.status !== 401) || paths.length !== 4 || failures.length) throw Error(JSON.stringify({ results, paths, failures }));
     await page.goto(base + '/form/');
-    const username = page.getByLabel('Username siswa');
+    const username = page.getByLabel('Username', { exact: true });
     await page.keyboard.press('Tab');
     if (!await username.evaluate(element => element === document.activeElement)) throw Error('Parent username keyboard focus missing');
     await page.keyboard.press('Tab');
-    if (!await page.getByLabel('Password siswa').evaluate(element => element === document.activeElement)) throw Error('Parent password keyboard focus missing');
+    if (!await page.getByLabel('Password', { exact: true }).evaluate(element => element === document.activeElement)) throw Error('Parent password keyboard focus missing');
     await page.keyboard.press('Tab');
     if (!await page.getByRole('button', { name: 'Masuk ke monitoring', exact: true }).evaluate(element => element === document.activeElement)) throw Error('Parent submit keyboard focus missing');
     console.log(JSON.stringify({ results, localRequests: paths.length, failedRequests: failures.length, parentKeyboardLogin: 'PASS' }));

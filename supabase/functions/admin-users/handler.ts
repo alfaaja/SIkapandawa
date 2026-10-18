@@ -15,6 +15,10 @@ export interface VerifiedAdminUser {
 }
 
 export interface AdminMutationPort {
+    createStaff?(input: {
+        displayName: string; username: string; password: string;
+        role: 'school' | 'forum' | 'teacher'; schoolName?: string;
+    }): Promise<{ userId: string }>;
     createUser(input: {
         schoolName?: string;
         displayName: string;
@@ -25,16 +29,19 @@ export interface AdminMutationPort {
         displayName: string;
         expectedUsername: string;
         username: string;
-    }): Promise<{ userId: string }>;
-    getUsername(userId: string): Promise<string | null>;
-    deleteUser(userId: string): Promise<{ userId: string }>;
-    resetPassword(userId: string, password: string): Promise<{ userId: string }>;
+    }, staff?: boolean): Promise<{ userId: string }>;
+    getUsername(userId: string, staff?: boolean): Promise<string | null>;
+    deleteUser(userId: string, staff?: boolean): Promise<{ userId: string }>;
+    resetPassword(userId: string, password: string, staff?: boolean): Promise<{ userId: string }>;
 }
 
 export interface AdminUsersHandlerDependencies {
     allowedOrigins: Set<string>;
     verifyUser(accessToken: string): Promise<VerifiedAdminUser | null>;
     isAdmin(userId: string): Promise<boolean>;
+    isMaster?(userId: string): Promise<boolean>;
+    canCreateStaff?(userId: string, role: unknown, schoolName: unknown): Promise<boolean>;
+    canManageStaff?(userId: string, targetUserId: unknown, action: string): Promise<boolean>;
     adminUsers: AdminMutationPort;
 }
 
@@ -128,6 +135,23 @@ async function performMutation(
     adminUsers: AdminMutationPort,
     origin: string
 ): Promise<Response> {
+    if (body.action === 'create_staff') {
+        if (!hasExactKeys(body, ['action','displayName','username','password','role', ...('schoolName' in body ? ['schoolName'] : [])])) {
+            return json(400, { error: 'Invalid request' }, origin);
+        }
+        const displayName = requireDisplayName(body.displayName);
+        const username = typeof body.username === 'string' ? validateUsername(body.username) : null;
+        const password = requirePassword(body.password);
+        const role = body.role;
+        const schoolName = normalizeSchoolName(body.schoolName);
+        if (!displayName || !username || !password || !['school','forum','teacher'].includes(String(role))
+            || (role !== 'forum' && !schoolName) || (role === 'forum' && 'schoolName' in body)) {
+            return json(400, { error: 'Invalid request' }, origin);
+        }
+        if (!adminUsers.createStaff) throw new AdminMutationError(503, 'Layanan akun staf belum tersedia');
+        return json(201, await adminUsers.createStaff({ displayName, username, password,
+            role: role as 'school' | 'forum' | 'teacher', ...(schoolName ? { schoolName } : {}) }), origin);
+    }
     if (body.action === 'create') {
         if (!hasExactKeys(body, ['action', 'displayName', 'username', 'password',
             ...('schoolName' in body ? ['schoolName'] : [])])) {
@@ -146,7 +170,8 @@ async function performMutation(
         return json(201, result, origin);
     }
 
-    if (body.action === 'update') {
+    const staff = typeof body.action === 'string' && body.action.startsWith('staff_');
+    if (body.action === 'update' || body.action === 'staff_update') {
         if (!hasExactKeys(
             body,
             ['action', 'userId', 'displayName', 'expectedUsername', 'username']
@@ -164,14 +189,15 @@ async function performMutation(
         if (!userId || !displayName || !expectedUsername || !username) {
             return json(400, { error: 'Invalid request' }, origin);
         }
-        return json(200, await adminUsers.updateUser(userId, {
+        const input = {
             displayName,
             expectedUsername,
             username
-        }), origin);
+        };
+        return json(200, await (staff ? adminUsers.updateUser(userId, input, true) : adminUsers.updateUser(userId, input)), origin);
     }
 
-    if (body.action === 'delete') {
+    if (body.action === 'delete' || body.action === 'staff_delete') {
         if (!hasExactKeys(body, ['action', 'userId', 'expectedUsername'])) {
             return json(400, { error: 'Invalid request' }, origin);
         }
@@ -182,26 +208,26 @@ async function performMutation(
         if (!userId || !expectedUsername || userId === actor.id) {
             return json(400, { error: 'Invalid request' }, origin);
         }
-        const actualUsername = await adminUsers.getUsername(userId);
+        const actualUsername = await (staff ? adminUsers.getUsername(userId, true) : adminUsers.getUsername(userId));
         const normalizedActualUsername = typeof actualUsername === 'string'
             ? validateUsername(actualUsername)
             : null;
         if (normalizedActualUsername !== expectedUsername) {
             return json(400, { error: 'Username confirmation does not match' }, origin);
         }
-        return json(200, await adminUsers.deleteUser(userId), origin);
+        return json(200, await (staff ? adminUsers.deleteUser(userId, true) : adminUsers.deleteUser(userId)), origin);
     }
 
-    if (body.action === 'reset_password') {
+    if (body.action === 'reset_password' || body.action === 'staff_reset_password') {
         if (!hasExactKeys(body, ['action', 'userId', 'password'])) {
             return json(400, { error: 'Invalid request' }, origin);
         }
         const userId = requireUuid(body.userId);
         const password = requirePassword(body.password);
-        if (!userId || !password || userId === actor.id) {
+        if (!userId || !password || (!staff && userId === actor.id)) {
             return json(400, { error: 'Invalid request' }, origin);
         }
-        return json(200, await adminUsers.resetPassword(userId, password), origin);
+        return json(200, await (staff ? adminUsers.resetPassword(userId, password, true) : adminUsers.resetPassword(userId, password)), origin);
     }
 
     return json(400, { error: 'Invalid request' }, origin);
@@ -239,6 +265,16 @@ export function createAdminUsersHandler(
             }
             const body = await parseBody(request);
             if (!body) return json(400, { error: 'Invalid request' }, allowedOrigin);
+            if (typeof body.action === 'string' && body.action.startsWith('staff_') && !(dependencies.canManageStaff
+                ? await dependencies.canManageStaff(actor.id, body.userId, body.action)
+                : await dependencies.isMaster?.(actor.id))) {
+                return json(403, { error: 'Staff management access required' }, allowedOrigin);
+            }
+            if (body.action === 'create_staff' && !(dependencies.canCreateStaff
+                ? await dependencies.canCreateStaff(actor.id, body.role, body.schoolName)
+                : await dependencies.isMaster?.(actor.id))) {
+                return json(403, { error: 'Master access required' }, allowedOrigin);
+            }
             return await performMutation(actor, body, dependencies.adminUsers, allowedOrigin);
         } catch (error) {
             if (error instanceof AdminMutationError) {

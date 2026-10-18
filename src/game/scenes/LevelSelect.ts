@@ -9,6 +9,7 @@ import {
 } from '../services/ProgressService';
 import { LEVELS } from '../data/levels';
 import { BackgroundMusicService } from '../services/BackgroundMusicService';
+import { addMonitoringButton } from '../ui/MonitoringButton';
 
 const GRID_XS = [380, 510, 640, 770, 900];
 const GRID_ROW_YS = [240, 350];
@@ -56,6 +57,9 @@ export class LevelSelect extends Scene {
         // Branding kanan atas + logout.
         addImageIfExists(this, 1090, 46, 'label-sikapandawa');
         new SpriteButton(this, 1220, 47, 'button-logout', () => this.logout());
+        addMonitoringButton(this, 800, 47, 'level-select-monitoring', () => {
+            if (!this.modal.isOpen) window.location.assign('/form/');
+        });
 
         // Judul misi.
         const misi = addImageIfExists(this, 640, 118, 'label-misi');

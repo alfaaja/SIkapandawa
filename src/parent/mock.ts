@@ -4,7 +4,7 @@ import { parseMonitoringScores } from '../shared/monitoring';
 const SESSION = 'sikapandawa.parent.demo';
 export function createParentMockBackend(): ParentBackend {
     const context = (): ParentContext => ({ userId: DEMO_STUDENT, username: 'arjuna.pratama', displayName: 'Arjuna Pratama', schoolName: 'SDN Kalibanteng Kulon 01',
-        completedPoints: [...new Set(demoEntries().filter(row => row.userId === DEMO_STUDENT).map(row => row.pointNumber))].sort((a, b) => a - b) });
+        completedPoints: [...new Set(demoEntries().filter(row => row.userId === DEMO_STUDENT && (row.reporterType ?? 'parent') === 'parent').map(row => row.pointNumber))].sort((a, b) => a - b) });
     return {
         async login(username, password) {
             if (username !== 'arjuna.pratama' || password !== 'local-test-only') throw new Error('Username atau password salah.');

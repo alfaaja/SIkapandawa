@@ -48,7 +48,8 @@ export default defineConfig({
             input: {
                 game: resolve(projectRoot, 'index.html'),
                 admin: resolve(projectRoot, 'admin/index.html'),
-                monitoring: resolve(projectRoot, 'form/index.html')
+                monitoring: resolve(projectRoot, 'form/index.html'),
+                teacher: resolve(projectRoot, 'guru/index.html')
             },
             output: {
                 manualChunks: {

@@ -14,6 +14,7 @@ import { resolveAdminAllowedOrigins } from './corsOrigins.ts';
 import { executeAdminOperation } from './operation.ts';
 import { safeMutationFailure } from './mutationFailure.ts';
 import { executeUsernameRename } from './usernameRename.ts';
+import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../../src/shared/auth/school.ts';
 
 interface OperationState {
     status?: unknown;
@@ -72,6 +73,14 @@ function createMutationPort(
     operationId: string,
     fingerprintSecret: string
 ): AdminMutationPort {
+    async function authorize(action: string, targetUserId: string | null = null, schoolName: string | null = null): Promise<{schoolName: string | null}> {
+        const { data, error } = await client.rpc('admin_authorize_account_action', {
+            actor_user_id: actorUserId(), action, target_user_id: targetUserId, target_school_name: schoolName
+        });
+        if (error) throw new AdminMutationError(403, 'Akses akun di luar kewenangan');
+        if (!data || !(data.schoolName === null || typeof data.schoolName === 'string')) throw new AdminMutationError(503, 'Hak akses belum tersedia');
+        return data;
+    }
     async function targetIsProtected(userId: string): Promise<boolean> {
         const { data, error } = await client.rpc('admin_target_is_protected', {
             target_user_id: userId
@@ -91,7 +100,7 @@ function createMutationPort(
     }
 
     async function runOperation(
-        action: 'create' | 'update' | 'rename_username' | 'reset_password' | 'delete',
+        action: 'create' | 'update' | 'rename_username' | 'reset_password' | 'delete' | 'create_staff' | 'staff_update' | 'staff_rename_username' | 'staff_reset_password' | 'staff_delete',
         targetUserId: string | null,
         targetUsername: string,
         sensitiveFingerprintInput: unknown,
@@ -116,7 +125,7 @@ function createMutationPort(
                 target_user_id: targetUserId,
                 target_username: targetUsername,
                 request_fingerprint: fingerprint,
-                request_details: requestDetails
+                request_details: { ...requestDetails, ...(action.startsWith('staff_') ? { managedStaff: true } : {}) }
             }
         );
         if (beginError) {
@@ -161,13 +170,38 @@ function createMutationPort(
     }
 
     return {
+        async createStaff(input) {
+            await authorize('create_staff', null, input.schoolName ?? null);
+            return runOperation('create_staff', null, input.username, input,
+                { role: input.role, schoolName: input.schoolName ?? null, changedFields: ['staffMembership','credential'] },
+                async () => {
+                    const email = await buildInternalAuthEmail(input.username);
+                    const { data, error } = await client.auth.admin.createUser({ email, password: input.password, email_confirm: true,
+                        user_metadata: { display_name: input.displayName, username: input.username, normalized_username: input.username,
+                            school_name: input.schoolName ?? 'FORUM' }, app_metadata: { admin_operation_id: operationId,
+                                staff_role: input.role, staff_actor_id: actorUserId(), staff_school_name: input.schoolName ?? null } });
+                    if (error || !data.user) throw safeMutationFailure(error ?? new Error('Missing user'));
+                    const userId = data.user.id;
+                    const { error: roleError } = await client.rpc('admin_assign_staff', { actor_user_id: actorUserId(),
+                        target_user_id: userId, staff_role: input.role, staff_school_name: input.schoolName ?? null });
+                    if (roleError) {
+                        const { error: cleanupError } = await client.auth.admin.deleteUser(userId);
+                        if (cleanupError) throw new AdminMutationError(503, 'Pembuatan akun belum tuntas; hubungi pengelola');
+                        if (roleError.code === '23505') throw new AdminMutationError(409, 'Admin untuk sekolah ini sudah dibuat');
+                        throw safeMutationFailure(roleError);
+                    }
+                    return { userId };
+                });
+        },
         async createUser(input) {
+            const scope = await authorize('create', null, input.schoolName ?? null);
+            const schoolName = scope.schoolName ?? input.schoolName ?? DEFAULT_SCHOOL_NAME;
             return runOperation(
                 'create',
                 null,
                 input.username,
                 input,
-                { changedFields: ['displayName', 'username', 'credential'] },
+                { schoolName, changedFields: ['displayName', 'username', 'credential'] },
                 async () => {
                     const email = await buildInternalAuthEmail(input.username);
                     const { data, error } = await client.auth.admin.createUser({
@@ -178,7 +212,7 @@ function createMutationPort(
                             display_name: input.displayName,
                             username: input.username,
                             normalized_username: input.username,
-                            ...(input.schoolName ? { school_name: input.schoolName } : {})
+                            school_name: schoolName
                         },
                         app_metadata: { admin_operation_id: operationId }
                     });
@@ -188,8 +222,9 @@ function createMutationPort(
             );
         },
 
-        async updateUser(userId, input) {
-            if (userId === actorUserId() || await targetIsProtected(userId)) {
+        async updateUser(userId, input, staff = false) {
+            await authorize(staff ? 'staff_update' : 'update', userId);
+            if (!staff && (userId === actorUserId() || await targetIsProtected(userId))) {
                 throw new AdminMutationError(403, 'Akun admin tidak dapat dikelola di sini');
             }
             const storedUsername = await usernameFor(userId);
@@ -206,7 +241,7 @@ function createMutationPort(
 
             if (input.username === username) {
                 return runOperation(
-                    'update',
+                    staff ? 'staff_update' : 'update',
                     userId,
                     username,
                     input,
@@ -225,7 +260,7 @@ function createMutationPort(
             }
 
             return runOperation(
-                'rename_username',
+                staff ? 'staff_rename_username' : 'rename_username',
                 userId,
                 input.username,
                 input,
@@ -277,8 +312,9 @@ function createMutationPort(
                         },
                         async updateProfileIdentity(identity) {
                             const { error } = await client.rpc(
-                                'admin_service_update_profile_identity',
+                                staff ? 'admin_service_update_staff_identity' : 'admin_service_update_profile_identity',
                                 {
+                                    ...(staff ? { actor_user_id: actorUserId() } : {}),
                                     target_user_id: identity.userId,
                                     expected_username: identity.expectedUsername,
                                     new_username: identity.newUsername,
@@ -292,20 +328,21 @@ function createMutationPort(
             );
         },
 
-        getUsername: usernameFor,
+        async getUsername(userId, staff = false) { await authorize(staff ? 'staff_delete' : 'delete', userId); return usernameFor(userId); },
 
-        async deleteUser(userId) {
-            if (await targetIsProtected(userId)) {
+        async deleteUser(userId, staff = false) {
+            await authorize(staff ? 'staff_delete' : 'delete', userId);
+            if (!staff && await targetIsProtected(userId)) {
                 throw new AdminMutationError(403, 'Akun admin tidak dapat dihapus');
             }
             const username = await usernameFor(userId);
             if (!username) throw new AdminMutationError(404, 'Akun pemain tidak ditemukan');
             return runOperation(
-                'delete',
+                staff ? 'staff_delete' : 'delete',
                 userId,
                 username,
                 { confirmedUsername: username },
-                { changedFields: ['account', 'progress'] },
+                { changedFields: staff ? ['staffAccount'] : ['account', 'progress'] },
                 async () => {
                     const { error: sessionError } = await client.rpc(
                         'admin_revoke_user_sessions',
@@ -319,14 +356,15 @@ function createMutationPort(
             );
         },
 
-        async resetPassword(userId, password) {
-            if (await targetIsProtected(userId)) {
+        async resetPassword(userId, password, staff = false) {
+            await authorize(staff ? 'staff_reset_password' : 'reset_password', userId);
+            if (!staff && await targetIsProtected(userId)) {
                 throw new AdminMutationError(403, 'Password akun admin tidak dapat direset di sini');
             }
             const username = await usernameFor(userId);
             if (!username) throw new AdminMutationError(404, 'Akun pemain tidak ditemukan');
             return runOperation(
-                'reset_password',
+                staff ? 'staff_reset_password' : 'reset_password',
                 userId,
                 username,
                 { password },
@@ -368,14 +406,15 @@ Deno.serve(async (request: Request): Promise<Response> => {
             return privilegedPort;
         };
         const mutationPort: AdminMutationPort = {
+            createStaff: input => requirePrivilegedPort().createStaff!(input),
             createUser: (input) => requirePrivilegedPort().createUser(input),
-            updateUser: (userId, input) => (
-                requirePrivilegedPort().updateUser(userId, input)
+            updateUser: (userId, input, staff) => (
+                requirePrivilegedPort().updateUser(userId, input, staff)
             ),
-            getUsername: (userId) => requirePrivilegedPort().getUsername(userId),
-            deleteUser: (userId) => requirePrivilegedPort().deleteUser(userId),
-            resetPassword: (userId, password) => (
-                requirePrivilegedPort().resetPassword(userId, password)
+            getUsername: (userId, staff) => requirePrivilegedPort().getUsername(userId, staff),
+            deleteUser: (userId, staff) => requirePrivilegedPort().deleteUser(userId, staff),
+            resetPassword: (userId, password, staff) => (
+                requirePrivilegedPort().resetPassword(userId, password, staff)
             )
         };
         const handler = createAdminUsersHandler({
@@ -394,6 +433,25 @@ Deno.serve(async (request: Request): Promise<Response> => {
                 const { error } = await callerClient(accessToken)
                     .rpc('admin_dashboard_summary');
                 return !error;
+            },
+            async isMaster(userId) {
+                if (!accessToken || userId !== verifiedActor) return false;
+                const { data, error } = await callerClient(accessToken).rpc('staff_access');
+                return !error && data?.role === 'master';
+            },
+            async canManageStaff(userId, targetUserId, action) {
+                if (!accessToken || userId !== verifiedActor || !isAdminUuid(targetUserId)
+                    || !['staff_update','staff_reset_password','staff_delete'].includes(action)) return false;
+                const { data, error } = await serviceClient().rpc('admin_authorize_account_action', {
+                    actor_user_id: userId, action, target_user_id: targetUserId
+                });
+                return !error && ['master','school'].includes(data?.role);
+            },
+            async canCreateStaff(userId, role, schoolName) {
+                if (!accessToken || userId !== verifiedActor) return false;
+                const { data, error } = await callerClient(accessToken).rpc('staff_access');
+                return !error && (data?.role === 'master' || (data?.role === 'school' && role === 'teacher'
+                    && normalizeSchoolName(schoolName) === data.schoolName));
             },
             adminUsers: mutationPort
         });

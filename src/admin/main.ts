@@ -81,6 +81,20 @@ async function start(): Promise<void> {
             }
         };
         const view = new DashboardView(root, {
+            onCreateAdmin: input => runManagementOperation(() => userManagementService.createStaff(input)),
+            onListAdmins: () => runManagementOperation(() => userManagementService.listStaff()),
+            onEditAdmin: (id, input) => runManagementOperation(async () => {
+                const result = await userManagementService.updateStaff(id, input);
+                if (id === authService.getCurrentUserId()) await authService.logout().finally(() => showLogin('Profil akun diperbarui. Silakan masuk kembali.'));
+                return result;
+            }),
+            onResetAdminPassword: (id, password) => runManagementOperation(async () => {
+                const result = await userManagementService.resetStaffPassword(id, password);
+                if (id === authService.getCurrentUserId()) await authService.logout().finally(() => showLogin('Password diperbarui. Silakan masuk kembali.'));
+                return result;
+            }),
+            onDeleteAdmin: (id, username) => runManagementOperation(() => userManagementService.deleteStaff(id, username)),
+            onMonitoringPeriod: period => controller.setMonitoringPeriod(period),
             onMonitoring: user => void controller.showMonitoring(user),
             onDetail: (userId) => void controller.showDetail(userId),
             onCreateUser: (input) => runManagementOperation(
@@ -112,7 +126,11 @@ async function start(): Promise<void> {
             onPreviousPage: () => controller.previousPage(),
             onRefresh: () => void controller.refresh(),
             onSearch: (searchText) => controller.setSearch(searchText)
-        }, authService.getCurrentUsername(), demoMode, authService.getCurrentUserId());
+        }, authService.getCurrentUsername(), demoMode, authService.getCurrentUserId(), (() => {
+            const access = authService.getAccess();
+            if (!access || access.role === 'teacher') throw new AdminServiceError('access_denied');
+            return { role: access.role, schoolName: access.schoolName };
+        })());
         controller = new AdminDashboardController(
             dashboardService,
             view,

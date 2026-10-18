@@ -20,7 +20,7 @@ export class MonitoringHistoryView {
                 card.append(createElement('summary', { text: 'Titik ' + entry.pointNumber + ' · ' + new Date(entry.observedAt).toLocaleString('id-ID') + ' · ' + entry.guardianName }));
                 const scores = createElement('ul', { className: 'monitoring-score-list' });
                 for (const aspect of CHARACTER_ASPECTS) scores.append(createElement('li', { text: aspect.label + ': ' + (entry.scores[aspect.id] ?? 'N/A') }));
-                card.append(createElement('p', { text: 'Kelas: ' + (entry.studentClass || '—') }), scores,
+                card.append(createElement('p', { text: 'Periode: ' + (!entry.monitoringPeriod || entry.monitoringPeriod === 'legacy' ? 'Catatan lama tanpa periode' : entry.monitoringPeriod) }), createElement('p', { text: 'Kelas: ' + (entry.studentClass || '—') }), scores,
                     createElement('p', { text: 'Situasi: ' + entry.situation }), createElement('p', { text: 'Perilaku nyata: ' + (entry.behavior || '—') }),
                     createElement('p', { text: 'Penguatan / arahan: ' + (entry.reinforcement || '—') }),
                     createElement('small', { text: 'Disimpan ' + new Date(entry.createdAt).toLocaleString('id-ID') }));

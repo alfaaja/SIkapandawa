@@ -20,6 +20,43 @@ function makeBackend() {
 }
 
 describe('AdminUserManagementService', () => {
+    it('uses explicit staff operations with normalized input and no role/school mutation', async () => {
+        const backend=makeBackend(); const service=new AdminUserManagementService(backend);
+        await service.updateStaff(USER_ID,{displayName:' Guru Baru ',expectedUsername:'Guru.Lama',username:'Guru.Baru'});
+        expect(backend.invokeAdminFunction).toHaveBeenLastCalledWith('staff_update',{userId:USER_ID,displayName:'Guru Baru',expectedUsername:'guru.lama',username:'guru.baru'});
+        const password=crypto.randomUUID(); await service.resetStaffPassword(USER_ID,password);
+        expect(backend.invokeAdminFunction).toHaveBeenLastCalledWith('staff_reset_password',{userId:USER_ID,password});
+        await service.deleteStaff(USER_ID,'Guru.Baru');
+        expect(backend.invokeAdminFunction).toHaveBeenLastCalledWith('staff_delete',{userId:USER_ID,expectedUsername:'guru.baru'});
+        await expect(service.resetStaffPassword(USER_ID,'bad')).rejects.toMatchObject({code:'validation'});
+        await expect(service.deleteStaff('bad','guru.baru')).rejects.toMatchObject({code:'validation'});
+    });
+    it('never returns malformed staff memberships or database denial details',async()=>{
+        const backend=makeBackend(); const service=new AdminUserManagementService(backend);
+        for(const data of [null,{},[null],[{userId:USER_ID,role:'teacher',schoolName:null}],[{userId:'bad',role:'forum',schoolName:null,username:'okay',displayName:'Okay'}]]) {
+            backend.rpc.mockResolvedValue({data,error:null}); await expect(service.listStaff()).rejects.toThrow();
+        }
+        backend.rpc.mockResolvedValue({data:null,error:{code:'42501',message:'private.membership detail'}});
+        await expect(service.listStaff()).rejects.toMatchObject({code:'access_denied',message:'Akun tidak memiliki akses admin'});
+        await service.createStaff({role:'forum',displayName:'Forum Anak',username:'forum.anak',password:crypto.randomUUID()});
+        expect(backend.invokeAdminFunction).toHaveBeenLastCalledWith('create_staff',expect.not.objectContaining({schoolName:expect.anything()}));
+        backend.rpc.mockRejectedValue(new Error('internal network detail'));
+        await expect(service.listStaff()).rejects.toMatchObject({code:'generic'});
+        vi.stubGlobal('navigator',{onLine:false});
+        await expect(service.listStaff()).rejects.toMatchObject({code:'offline'});
+    });
+    it('creates scoped staff and validates role and school before sending', async () => {
+        const backend = makeBackend();
+        const service = new AdminUserManagementService(backend);
+        const input = { role: 'teacher' as const, schoolName: '  sdn satu  ', displayName: 'Guru Satu', username: 'guru.satu', password: crypto.randomUUID() };
+        await service.createStaff(input);
+        expect(backend.invokeAdminFunction).toHaveBeenLastCalledWith('create_staff', { ...input, schoolName: 'SDN SATU' });
+        await expect(service.createStaff({ ...input, role: 'master' as never })).rejects.toThrow();
+        await expect(service.createStaff({ ...input, schoolName: '' })).rejects.toThrow();
+        backend.rpc.mockResolvedValue({ data: [{ userId: USER_ID, role: 'school', schoolName: 'SDN SATU', displayName: 'Admin Satu', username: 'admin.satu' }], error: null });
+        expect(await service.listStaff()).toHaveLength(1);
+        expect(backend.rpc).toHaveBeenCalledWith('admin_list_staff');
+    });
     beforeEach(() => {
         vi.stubGlobal('navigator', { onLine: true });
     });

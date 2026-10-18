@@ -9,7 +9,8 @@ import type {
     ProgressStatus
 } from '../types';
 import { CHARACTER_ASPECTS, type CharacterAspect, type SchoolAspectAverage } from '../../shared/game/characterAspects';
-import { parseMonitoringSummary, parseMonitoringHistory, type MonitoringSchool, type MonitoringHistory } from '../../shared/monitoring';
+import { normalizeMonitoringPeriod, parseMonitoringSummary, parseMonitoringHistory, type MonitoringSchool, type MonitoringHistory, type MonitoringReporter } from '../../shared/monitoring';
+import { parseMonitoringComparison, type MonitoringComparison } from '../../shared/monitoringComparison';
 import { normalizeListUsersParams } from '../utils/pagination';
 import type { AdminBackend } from './AdminSupabaseClient';
 import { AdminServiceError, classifyBackendError } from './errors';
@@ -155,15 +156,31 @@ async function unwrapRpc(
 }
 
 export class AdminDashboardService {
-    async getMonitoringSummary(schoolName: string | null = null, userId: string | null = null): Promise<MonitoringSchool[]> {
+    async getMonitoringSummary(schoolName: string | null = null, userId: string | null = null, reporter: MonitoringReporter = 'parent', period = 'Periode 1'): Promise<MonitoringSchool[]> {
         if (userId !== null && !UUID_PATTERN.test(userId)) throw new AdminServiceError('invalid_response');
-        return parseMonitoringSummary(await unwrapRpc(this.backend, 'admin_monitoring_summary', { school_name: schoolName, target_user_id: userId }));
+        return parseMonitoringSummary(await unwrapRpc(this.backend, 'admin_monitoring_summary_v2', { reporter_type: reporter, school_name: schoolName, target_user_id: userId, monitoring_period: normalizeMonitoringPeriod(period) }));
     }
-    async getMonitoringHistory(userId: string, offset = 0): Promise<MonitoringHistory> {
+    async getMonitoringHistory(userId: string, offset = 0, reporter: MonitoringReporter = 'parent', period = 'Periode 1'): Promise<MonitoringHistory> {
         if (!UUID_PATTERN.test(userId)) throw new AdminServiceError('invalid_response');
-        return parseMonitoringHistory(await unwrapRpc(this.backend, 'monitoring_history', { target_user_id: userId, page_size: 25, page_offset: offset }));
+        return parseMonitoringHistory(await unwrapRpc(this.backend, 'monitoring_history_v2', { reporter_type: reporter, target_user_id: userId, page_size: 25, page_offset: offset, monitoring_period: normalizeMonitoringPeriod(period) }));
+    }
+    async getMonitoringComparison(userId: string, period = 'Periode 1'): Promise<MonitoringComparison> {
+        if (!UUID_PATTERN.test(userId)) throw new AdminServiceError('invalid_response');
+        const selected = normalizeMonitoringPeriod(period);
+        const result = parseMonitoringComparison(await unwrapRpc(this.backend, 'admin_monitoring_comparison', { target_user_id: userId, monitoring_period: selected }));
+        if (result.cells.some(cell => cell.period !== selected)) throw new AdminServiceError('invalid_response');
+        return result;
     }
     constructor(private readonly backend: AdminBackend) {}
+
+    async getMonitoringPeriods(): Promise<string[]> {
+        if (!this.backend.getMonitoringPeriods) return [];
+        const { data, error } = await this.backend.getMonitoringPeriods();
+        if (error) throw classifyBackendError(error);
+        if (!Array.isArray(data) || data.some(value => typeof value !== 'string')) throw new AdminServiceError('invalid_response');
+        try { return [...new Set(data.map(normalizeMonitoringPeriod))]; }
+        catch { throw new AdminServiceError('invalid_response'); }
+    }
 
     async getSummary(schoolName: string | null = null): Promise<DashboardSummary> {
         return parseSummary(await unwrapRpc(this.backend, 'admin_dashboard_summary', {

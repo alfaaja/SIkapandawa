@@ -25,6 +25,7 @@ export interface AdminBackend {
     updateOwnPassword(password: string): Promise<AdminBackendResponse>;
     rpc(name: string, args?: Record<string, unknown>): Promise<AdminBackendResponse>;
     getJejakAspects(userId: string): Promise<AdminBackendResponse>;
+    getMonitoringPeriods?(): Promise<AdminBackendResponse>;
     invokeAdminFunction(
         action: string,
         body: Record<string, unknown>
@@ -100,6 +101,26 @@ export function createAdminBackend(client: SupabaseClient): AdminBackend {
         async rpc(name, args) {
             const response = await client.rpc(name, args);
             return { data: response.data, error: response.error };
+        },
+        async getMonitoringPeriods() {
+            const periods = new Set<string>(); let cursor: string | null = null;
+            // RLS scopes these reads. A value cursor skips repeated rows without assuming the API row cap.
+            while (true) {
+                let query = client.from('parent_monitoring_observations').select('monitoring_period')
+                    .order('monitoring_period', { ascending: true });
+                if (cursor !== null) query = query.gt('monitoring_period', cursor);
+                const { data, error } = await query.limit(1000);
+                if (error) return { data: null, error };
+                if (!Array.isArray(data)) return { data: null, error: { message: 'Invalid monitoring periods' } };
+                if (!data.length) return { data: [...periods], error: null };
+                for (const row of data) {
+                    if (typeof row.monitoring_period !== 'string') return { data: null, error: { message: 'Invalid monitoring period' } };
+                    periods.add(row.monitoring_period);
+                }
+                const last = data[data.length - 1].monitoring_period;
+                if (last === cursor) return { data: null, error: { message: 'Invalid monitoring cursor' } };
+                cursor = last;
+            }
         },
         async getJejakAspects(userId) {
             // Each maximum covers all runs, independent of the API row limit.

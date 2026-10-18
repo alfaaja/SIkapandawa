@@ -1,0 +1,52 @@
+import { expect, test } from '@playwright/test';
+
+for (const width of [390,768,1366]) test(`school teacher account management is scoped and usable at ${width}px`, async ({page},info) => {
+    const errors:string[]=[]; page.on('pageerror',error=>errors.push(error.message));
+    const badResponses:string[]=[]; page.on('response',response=>{if(response.status()>=400) badResponses.push(`${response.status()} ${new URL(response.url()).pathname}`);});
+    await page.setViewportSize({width,height:1000});
+    await page.goto('/admin/?mockAdmin=1&mockRole=school&mockSchools=2');
+    await page.getByLabel('Nama pengguna').fill('admin.demo');
+    await page.getByLabel('Password',{exact:true}).fill(crypto.randomUUID());
+    await page.getByRole('button',{name:'Masuk ke panel'}).click();
+    await expect(page.locator('.summary-value').first()).toHaveText('40');
+    await page.getByRole('button',{name:'Kelola guru',exact:true}).click();
+    const dialog=page.getByRole('dialog',{name:'Kelola guru',exact:true});
+    await expect(dialog.getByRole('tab',{name:'Daftar guru',exact:true})).toHaveAttribute('aria-selected','true');
+    for(const suffix of ['satu','dua']) {
+        await dialog.getByRole('tab',{name:'Tambah guru',exact:true}).click();
+        await dialog.getByLabel('Nama guru',{exact:true}).fill(`Guru ${suffix}`);
+        await dialog.getByLabel('Username guru',{exact:true}).fill(`guru.${suffix}`);
+        await dialog.getByLabel('Password awal',{exact:true}).fill(crypto.randomUUID());
+        await dialog.getByRole('button',{name:'Buat akun guru',exact:true}).click();
+        await expect(dialog.getByRole('tab',{name:'Daftar guru',exact:true})).toHaveAttribute('aria-selected','true');
+        await expect(dialog.locator('.admin-account-list')).toContainText(`@guru.${suffix}`);
+    }
+    await dialog.screenshot({path:info.outputPath(`school-accounts-${width}.png`)});
+    expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth)).toBe(true);
+    const close=dialog.getByRole('button',{name:'Tutup kelola guru'});
+    const bounds=(await dialog.boundingBox())!, closeBounds=(await close.boundingBox())!;
+    expect(closeBounds.x).toBeGreaterThan(bounds.x+bounds.width/2);
+    expect(closeBounds.y).toBeLessThan(bounds.y+100);
+    await dialog.getByRole('button',{name:'Edit @guru.satu',exact:true}).click();
+    await dialog.getByLabel('Nama pengelola',{exact:true}).fill('Guru Diperbarui');
+    await dialog.getByLabel('Username pengelola',{exact:true}).fill('guru.baru');
+    await dialog.screenshot({path:info.outputPath(`school-editor-${width}.png`)});
+    await dialog.getByRole('button',{name:'Simpan perubahan pengelola'}).click();
+    await expect(dialog.locator('.admin-account-list')).toContainText('@guru.baru');
+    await dialog.getByRole('button',{name:'Reset password @guru.baru',exact:true}).click();
+    const password=crypto.randomUUID();
+    await dialog.getByLabel('Password baru pengelola',{exact:true}).fill(password);
+    await dialog.getByLabel('Konfirmasi password pengelola',{exact:true}).fill(password);
+    await dialog.getByRole('button',{name:'Reset password pengelola',exact:true}).click();
+    await expect(dialog.locator('[role="status"]')).toContainText('berhasil direset');
+    await dialog.getByRole('button',{name:'Hapus @guru.baru',exact:true}).click();
+    const remove=dialog.getByRole('button',{name:'Hapus akun pengelola',exact:true});
+    await expect(remove).toBeDisabled();
+    await dialog.getByLabel('Ketik guru.baru untuk konfirmasi').fill('guru.baru');
+    await remove.click();
+    await expect(dialog.locator('.admin-account-list')).not.toContainText('@guru.baru');
+    await expect(dialog.locator('.admin-account-list')).toContainText('@guru.dua');
+    await close.click();
+    await expect(page.locator('.summary-value').first()).toHaveText('40');
+    expect(errors).toEqual([]); expect(badResponses).toEqual([]);
+});

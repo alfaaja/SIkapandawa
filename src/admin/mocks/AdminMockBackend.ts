@@ -7,10 +7,11 @@ import type {
     AdminUserListItem,
     ProgressStatus
 } from '../types';
+import type { AdminAccessItem } from '../ui/AdminAccessDialog';
 import { validateUsername } from '../../shared/auth/username';
 import { DEFAULT_SCHOOL_NAME, normalizeSchoolName } from '../../shared/auth/school';
 import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
-import { demoHistory, demoSummary } from '../../shared/monitoringDemo';
+import { demoComparison, demoHistory, demoSummary, demoEntries } from '../../shared/monitoringDemo';
 import {
     getJejakReportTier,
     getMissionReportRank
@@ -75,12 +76,26 @@ function success(data: unknown): AdminBackendResponse {
 
 export function createAdminMockBackend(): AdminBackend {
     let users = createUsers();
-    const mockRole = new URLSearchParams(window.location.search).get('mockRole') ?? 'admin';
+    const params = new URLSearchParams(window.location.search);
+    const selectedRole = params.get('mockRole') ?? 'master';
+    const mockRole = selectedRole === 'admin' ? 'master' : selectedRole;
+    const schoolName = DEFAULT_SCHOOL_NAME;
+    if (params.get('mockSchools') === '2') users = users.map((user, index) => index >= 40 ? { ...user, schoolName: normalizeSchoolName('SDN Sekolah Kedua')! } : user);
+    const staff: AdminAccessItem[] = [{ userId: userId(999), displayName: 'Master Demo', username: 'admin.demo', role: 'master', schoolName: null }];
+    const isAdmin = ['master', 'school', 'forum'].includes(mockRole);
+    const permittedUsers = () => users.filter(user => mockRole !== 'school' || user.schoolName === schoolName);
+    const denied = () => ({ data: null, error: { code: '42501', message: 'Insufficient privilege', status: 403 } });
 
     return {
+        async getMonitoringPeriods() {
+            if (!isAdmin) return denied();
+            const allowed = new Set(permittedUsers().map(user => user.userId));
+            return success([...new Set(demoEntries().filter(row => allowed.has(row.userId)).map(row => row.monitoringPeriod ?? 'legacy'))]);
+        },
         async getJejakAspects(targetUserId) {
-            if (mockRole !== 'admin') return { data: null, error: { code: '42501', message: 'Insufficient privilege' } };
-            const target = users.find(user => user.userId === targetUserId);
+            if (!isAdmin) return denied();
+            const target = permittedUsers().find(user => user.userId === targetUserId);
+            if (!target) return denied();
             const demoScores = [2, 0, 1, 2, 1];
             return success(Object.fromEntries(CHARACTER_ASPECTS.map((aspect, index) => [
                 aspect.id, target?.jejakPandawaUnlocked ? demoScores[index] : null
@@ -121,14 +136,54 @@ export function createAdminMockBackend(): AdminBackend {
             return success({ user: { id: userId(999) } });
         },
         async invokeAdminFunction(action, body) {
-            if (mockRole !== 'admin') {
+            if (!isAdmin) {
                 return {
                     data: null,
                     error: { code: '42501', message: 'Insufficient privilege', status: 403 }
                 };
             }
+            if (action === 'create_staff') {
+                if (mockRole !== 'master' && !(mockRole === 'school' && body.role === 'teacher' && normalizeSchoolName(body.schoolName) === schoolName)) return denied();
+                const role = body.role;
+                const name = typeof body.displayName === 'string' ? body.displayName.trim() : '';
+                const username = typeof body.username === 'string' ? validateUsername(body.username) : null;
+                const scope = normalizeSchoolName(body.schoolName);
+                if (!['school', 'forum', 'teacher'].includes(String(role)) || !username || name.length < 2 || name.length > 24 || typeof body.password !== 'string' || body.password.length < 12 || (role !== 'forum' && !scope)) {
+                    return { data: null, error: { code: '22023', message: 'Invalid account data', status: 400 } };
+                }
+                if (staff.some(account => account.username === username) || users.some(user => user.username === username) || (role === 'school' && staff.some(account => account.role === 'school' && account.schoolName?.toLocaleLowerCase('id') === scope?.toLocaleLowerCase('id')))) {
+                    return { data: null, error: { code: '23505', message: 'Duplicate account or school', status: 409 } };
+                }
+                const account: AdminAccessItem = { userId: crypto.randomUUID(), displayName: name, username, role: role as AdminAccessItem['role'], schoolName: role === 'forum' ? null : scope };
+                staff.push(account);
+                return success({ userId: account.userId });
+            }
             const userIdValue = typeof body.userId === 'string' ? body.userId : '';
+            if (action.startsWith('staff_')) {
+                const target = staff.find(account => account.userId === userIdValue);
+                if (!target) return denied();
+                if (mockRole !== 'master' && !(mockRole === 'school' && target.role === 'teacher' && target.schoolName === schoolName)) return denied();
+                if (target.role === 'master' && action === 'staff_delete') return denied();
+                const invalid = () => ({ data:null, error:{ code:'22023', message:'Invalid staff account data', status:400 } });
+                if (action === 'staff_update') {
+                    const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
+                    const username = typeof body.username === 'string' ? validateUsername(body.username) : null;
+                    if (displayName.length < 2 || displayName.length > 24 || !username || body.expectedUsername !== target.username) return invalid();
+                    if (staff.some(account => account.userId !== target.userId && account.username === username) || users.some(user => user.username === username)) {
+                        return { data:null, error:{ code:'23505', message:'Duplicate account', status:409 } };
+                    }
+                    target.displayName = displayName; target.username = username;
+                } else if (action === 'staff_reset_password') {
+                    if (typeof body.password !== 'string' || body.password.length < 12 || body.password.length > 128) return invalid();
+                } else if (action === 'staff_delete') {
+                    if (body.expectedUsername !== target.username) return invalid();
+                    staff.splice(staff.indexOf(target), 1);
+                } else return invalid();
+                return success({ userId:target.userId });
+            }
             if (action === 'create') {
+                const requestedSchool = normalizeSchoolName(body.schoolName);
+                if (mockRole === 'school' && requestedSchool && requestedSchool !== schoolName) return denied();
                 const displayName = typeof body.displayName === 'string'
                     ? body.displayName.trim()
                     : '';
@@ -156,7 +211,7 @@ export function createAdminMockBackend(): AdminBackend {
                     };
                 }
                 const created: AdminUserListItem = {
-                    schoolName: normalizeSchoolName(body.schoolName) ?? DEFAULT_SCHOOL_NAME,
+                    schoolName: mockRole === 'school' ? schoolName : normalizeSchoolName(body.schoolName) ?? DEFAULT_SCHOOL_NAME,
                     userId: crypto.randomUUID(),
                     displayName,
                     username,
@@ -173,7 +228,7 @@ export function createAdminMockBackend(): AdminBackend {
                 return success({ userId: created.userId });
             }
 
-            const target = users.find((user) => user.userId === userIdValue);
+            const target = permittedUsers().find((user) => user.userId === userIdValue);
             if (!target) {
                 return {
                     data: null,
@@ -246,16 +301,20 @@ export function createAdminMockBackend(): AdminBackend {
             };
         },
         async rpc(name, args = {}) {
-            if (mockRole === 'user') {
+            if (name === 'staff_access') return isAdmin || mockRole === 'teacher' ? success({ role: mockRole, schoolName: ['school', 'teacher'].includes(mockRole) ? schoolName : null }) : denied();
+            if (!isAdmin) {
                 return {
                     data: null,
                     error: { code: '42501', message: 'Insufficient privilege', status: 403 }
                 };
             }
+            if (name === 'admin_list_staff') return mockRole === 'master' ? success([...staff])
+                : mockRole === 'school' ? success(staff.filter(account => account.role === 'teacher' && account.schoolName === schoolName)) : denied();
+            const visible = permittedUsers();
             if (name === 'admin_dashboard_summary') {
-                const cohort = users.filter(user => !args.school_name || user.schoolName === args.school_name);
+                const cohort = visible.filter(user => !args.school_name || user.schoolName === args.school_name);
                 return success({
-                    schools: [...new Set(users.map(user => user.schoolName))].sort(),
+                    schools: [...new Set(visible.map(user => user.schoolName))].sort(),
                     totalUsers: cohort.length,
                     notStartedUsers: cohort.filter((user) => user.status === 'not_started').length,
                     inProgressUsers: cohort.filter((user) => user.status === 'in_progress').length,
@@ -264,10 +323,16 @@ export function createAdminMockBackend(): AdminBackend {
                     generatedAt: new Date().toISOString()
                 });
             }
-            if (name === 'admin_monitoring_summary') return success(demoSummary(users, args.school_name, args.target_user_id));
-            if (name === 'monitoring_history') return success(demoHistory(String(args.target_user_id), Number(args.page_offset ?? 0)));
+            if (name === 'admin_monitoring_summary' || name === 'admin_monitoring_summary_v2') {
+                return success(demoSummary(visible, args.school_name, args.target_user_id, args.reporter_type === 'teacher' ? 'teacher' : 'parent', typeof args.monitoring_period === 'string' ? args.monitoring_period : null));
+            }
+            if (name === 'monitoring_history' || name === 'monitoring_history_v2' || name === 'admin_monitoring_comparison') {
+                if (!visible.some(user => user.userId === args.target_user_id)) return denied();
+                if (name === 'admin_monitoring_comparison') return success(demoComparison(String(args.target_user_id), typeof args.monitoring_period === 'string' ? args.monitoring_period : 'Periode 1'));
+                return success(demoHistory(String(args.target_user_id), Number(args.page_offset ?? 0), args.reporter_type === 'teacher' ? 'teacher' : 'parent', typeof args.monitoring_period === 'string' ? args.monitoring_period : null));
+            }
             if (name === 'admin_school_aspect_averages_v2') {
-                const cohort = users.filter(user => !user.isAdmin && (!args.school_name || user.schoolName === args.school_name));
+                const cohort = visible.filter(user => !user.isAdmin && (!args.school_name || user.schoolName === args.school_name));
                 return success([...new Set(cohort.map(user => user.schoolName))].sort().map(schoolName => {
                     const students = cohort.filter(user => user.schoolName === schoolName);
                     const known = students.filter(user => user.jejakPandawaUnlocked);
@@ -289,7 +354,7 @@ export function createAdminMockBackend(): AdminBackend {
                     : 'all';
                 const pageSize = typeof args.page_size === 'number' ? args.page_size : 25;
                 const pageOffset = typeof args.page_offset === 'number' ? args.page_offset : 0;
-                const filtered = users.filter((user) => {
+                const filtered = visible.filter((user) => {
                     const matchesSearch = !search
                         || user.username.toLowerCase().includes(search)
                         || user.displayName.toLowerCase().includes(search);
@@ -304,7 +369,7 @@ export function createAdminMockBackend(): AdminBackend {
                 });
             }
             if (name === 'admin_get_user_progress') {
-                const target = users.find((user) => user.userId === args.target_user_id);
+                const target = visible.find((user) => user.userId === args.target_user_id);
                 if (!target) {
                     return {
                         data: null,

@@ -25,6 +25,82 @@ function makeDependencies() {
     };
 }
 
+describe('staff account creation', () => {
+    it('accepts scoped school teacher management authorization and rejects forged targets', async () => {
+        const base=makeDependencies(); const canManageStaff=vi.fn(async (actor:string,target:unknown) => actor===ADMIN_ID && target===TARGET_ID);
+        const handler=createAdminUsersHandler({...base,isMaster:vi.fn().mockResolvedValue(false),canManageStaff});
+        const cases=[{action:'staff_update',userId:TARGET_ID,displayName:'Guru Baru',expectedUsername:'budi',username:'guru.baru'},
+            {action:'staff_reset_password',userId:TARGET_ID,password:crypto.randomUUID()},
+            {action:'staff_delete',userId:TARGET_ID,expectedUsername:'budi'}];
+        for(const body of cases) {
+            expect((await handler(request(body))).status).toBe(200);
+            expect(canManageStaff).toHaveBeenLastCalledWith(ADMIN_ID,TARGET_ID,body.action);
+            expect((await handler(request({...body,userId:ADMIN_ID}))).status).toBe(403);
+        }
+        expect((await handler(request({...cases[0],role:'master',schoolName:'OTHER'}))).status).toBe(400);
+    });
+    it('requires master for staff CRUD and dispatches through explicitly scoped mutations', async () => {
+        const base = makeDependencies(); const isMaster = vi.fn().mockResolvedValue(false);
+        const handler = createAdminUsersHandler({ ...base, isMaster });
+        const cases = [
+            { action:'staff_update', userId:TARGET_ID, displayName:'Guru Baru', expectedUsername:'budi', username:'guru.baru' },
+            { action:'staff_reset_password', userId:TARGET_ID, password:crypto.randomUUID() },
+            { action:'staff_delete', userId:TARGET_ID, expectedUsername:'budi' }
+        ];
+        for (const body of cases) expect((await handler(request(body))).status).toBe(403);
+        expect(base.adminUsers.updateUser).not.toHaveBeenCalled();
+        isMaster.mockResolvedValue(true);
+        for (const body of cases) expect((await handler(request(body))).status).toBe(200);
+        expect(base.adminUsers.updateUser).toHaveBeenCalledWith(TARGET_ID, expect.objectContaining({ username:'guru.baru' }), true);
+        expect(base.adminUsers.resetPassword).toHaveBeenCalledWith(TARGET_ID, cases[1].password, true);
+        expect(base.adminUsers.getUsername).toHaveBeenCalledWith(TARGET_ID, true);
+        expect(base.adminUsers.deleteUser).toHaveBeenCalledWith(TARGET_ID, true);
+        expect((await handler(request({ ...cases[0], role:'master' }))).status).toBe(400);
+        expect((await handler(request({ ...cases[2], userId:ADMIN_ID }))).status).toBe(400);
+        expect((await handler(request({ ...cases[0], userId:ADMIN_ID }))).status).toBe(200);
+        expect((await handler(request({ ...cases[1], userId:ADMIN_ID }))).status).toBe(200);
+    });
+    it('authorizes school teacher creation by verified role and school and rejects scope or role escalation', async () => {
+        const base = makeDependencies(); const createStaff = vi.fn().mockResolvedValue({ userId: TARGET_ID });
+        const canCreateStaff = vi.fn(async (_id: string, role: unknown, school: unknown) => role === 'teacher' && school === 'SEKOLAH A');
+        const handler = createAdminUsersHandler({ ...base, canCreateStaff, adminUsers: { ...base.adminUsers, createStaff } });
+        const body = { action:'create_staff', role:'teacher', schoolName:'SEKOLAH A', displayName:'Guru Satu', username:'guru.satu', password:crypto.randomUUID() };
+        expect((await handler(request(body))).status).toBe(201);
+        expect(canCreateStaff).toHaveBeenCalledWith(ADMIN_ID, 'teacher', 'SEKOLAH A');
+        for (const changed of [{ role:'school' },{ role:'forum' },{ role:'master' },{ schoolName:'SEKOLAH B' }]) {
+            expect((await handler(request({ ...body, ...changed }))).status).toBe(403);
+        }
+        expect(createStaff).toHaveBeenCalledOnce();
+    });
+    it('validates exact fields and all requested staff roles without granting a master role', async () => {
+        const dependencies={...makeDependencies(),isMaster:vi.fn().mockResolvedValue(true)};
+        const createStaff=vi.fn().mockResolvedValue({userId:TARGET_ID});
+        const handler=createAdminUsersHandler({...dependencies,adminUsers:{...dependencies.adminUsers,createStaff}});
+        const body={action:'create_staff',role:'teacher',schoolName:'SDN SATU',displayName:'Guru Satu',username:'guru.satu',password:crypto.randomUUID()};
+        expect((await handler(request(body))).status).toBe(201);
+        const {schoolName:_scope,...forum}=body;
+        expect((await handler(request({...forum,role:'forum'}))).status).toBe(201);
+        for(const invalid of [{...body,unexpected:true},{...body,role:'forum'},{...body,displayName:3},{...body,username:3},{...body,password:3}]) {
+            expect((await handler(request(invalid))).status).toBe(400);
+        }
+        expect((await createAdminUsersHandler(dependencies)(request(body))).status).toBe(503);
+    });
+    it('requires master authorization before creating staff and rejects master as a requested role', async () => {
+        const dependencies = { ...makeDependencies(), isMaster: vi.fn().mockResolvedValue(false) };
+        const createStaff = vi.fn().mockResolvedValue({ userId: TARGET_ID });
+        const port = { ...dependencies.adminUsers, createStaff };
+        const handler = createAdminUsersHandler({ ...dependencies, adminUsers: port });
+        const body = { action: 'create_staff', role: 'school', schoolName: 'SDN SATU', displayName: 'Admin Satu', username: 'admin.satu', password: crypto.randomUUID() };
+        expect((await handler(request(body))).status).toBe(403);
+        expect(createStaff).not.toHaveBeenCalled();
+        dependencies.isMaster.mockResolvedValue(true);
+        expect((await handler(request({ ...body, role: 'master' }))).status).toBe(400);
+        expect((await handler(request(body))).status).toBe(201);
+        expect(createStaff).toHaveBeenCalledWith(expect.objectContaining({ role: 'school', schoolName: 'SDN SATU' }));
+        expect((await handler(request({ ...body, schoolName: '' }))).status).toBe(400);
+    });
+});
+
 function request(
     body: unknown,
     options: {

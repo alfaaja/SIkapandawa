@@ -99,8 +99,8 @@ describe('school dashboard', () => {
     it('resets pagination and scopes every request when selecting a school', async () => {
         const service = { getSummary: vi.fn().mockResolvedValue({}),
             listUsers: vi.fn().mockResolvedValue({ items: [], total: 100 }), listChartUsers: vi.fn().mockResolvedValue([]),
-            getAspectAverages: vi.fn().mockResolvedValue([]), getMonitoringSummary: vi.fn().mockResolvedValue([]) };
-        const view = { showLoading: vi.fn(), renderData: vi.fn(), renderAspectData: vi.fn(), renderMonitoringSummary: vi.fn(), closeMonitoring: vi.fn(), showError: vi.fn() };
+            getMonitoringPeriods: vi.fn().mockResolvedValue([]), getAspectAverages: vi.fn().mockResolvedValue([]), getMonitoringSummary: vi.fn().mockResolvedValue([]) };
+        const view = { showLoading: vi.fn(), renderData: vi.fn(), renderAspectData: vi.fn(), renderMonitoringSummary: vi.fn(), renderTeacherMonitoringSummary: vi.fn(), renderMonitoringPeriods: vi.fn(), closeMonitoring: vi.fn(), showError: vi.fn() };
         const controller = new AdminDashboardController(service as never, view as never, vi.fn());
         await controller.refresh();
         controller.nextPage();

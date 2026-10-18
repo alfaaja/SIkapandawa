@@ -9,6 +9,10 @@ async function login(page: Page): Promise<void> {
     await page.getByLabel('Nama pengguna').fill('budi');
     await page.getByLabel('Password').fill(crypto.randomUUID());
     await page.getByRole('button', { name: 'Masuk ke panel' }).click();
+    const role = new URL(page.url()).searchParams.get('mockRole');
+    if (!['invalid', 'user', 'teacher'].includes(role ?? '')) {
+        await page.getByRole('tab', { name: 'Siswa', exact: true }).click();
+    }
 }
 
 test.describe('panel admin mock contract', () => {
@@ -52,7 +56,7 @@ test.describe('panel admin mock contract', () => {
         await login(page);
 
         await expect(page.getByRole('heading', { name: 'Panel Admin' })).toBeVisible();
-        await expect(page.getByText('56', { exact: true })).toBeVisible();
+        await expect(page.locator('.summary-card').first()).toContainText('56');
         await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
         await expect(page.getByText(/Halaman 1 dari 3/)).toBeVisible();
         await page.getByRole('button', { name: 'Berikutnya' }).click();
@@ -103,15 +107,18 @@ test.describe('panel admin mock contract', () => {
         await openMockLogin(page);
         await login(page);
         await page.getByLabel('Sekolah', { exact: true }).selectOption('SDN Kalibanteng Kulon 01');
+        await page.getByRole('tab', { name: 'Ringkasan', exact: true }).click();
 
         await expect(page.getByRole('heading', { name: 'Capaian Misi Pandawa' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Capaian Jejak Pandawa' })).toBeVisible();
         const bars = page.locator('.progress-charts:not(.aspect-charts):not(.monitoring-charts) .chart-bar');
         await expect(bars).toHaveCount(112);
 
+        await page.getByRole('tab', { name: 'Siswa', exact: true }).click();
         await page.getByLabel('Cari pemain').fill('arjuna.pratama.25');
         await expect(page.locator('.players-panel tbody tr')).toHaveCount(1);
         await expect(bars).toHaveCount(112);
+        await page.getByRole('tab', { name: 'Ringkasan', exact: true }).click();
 
         const layout = await page.locator('.progress-charts:not(.aspect-charts):not(.monitoring-charts)').evaluate((element) => ({
             insideViewport: element.getBoundingClientRect().right <= innerWidth,
@@ -170,7 +177,7 @@ test.describe('panel admin mock contract', () => {
         const username = page.locator('.player-username').first();
         await expect(username).toBeVisible();
         await expect(username).toContainText('@arjuna.pratama');
-        await expect(page.getByText('Masuk sebagai @budi', { exact: true })).toBeVisible();
+        await expect(page.locator('.admin-identity')).toContainText('@budi');
         await expect(page.getByText(/Mode demo.*data contoh/i)).toBeVisible();
         await expect(username).toHaveCSS('font-weight', /^(700|750|800|bold)$/);
         await expect(page.locator('.dashboard-header')).toHaveCSS(
@@ -350,7 +357,7 @@ test.describe('panel admin mock contract', () => {
         await expect(report.getByText('Total bintang')).toBeVisible();
         await expect(report.getByText(/\/30/)).toBeVisible();
         await expect(report.getByText('Predikat')).toBeVisible();
-        await expect(report.getByText('Jejak Pandawa')).toBeVisible();
+        await expect(report.getByText('Jejak Pandawa', { exact: true })).toBeVisible();
         await expect(report.getByText(/Nilai terbaik: \d\/3 bintang/).first()).toBeVisible();
         await expect(report).toHaveAttribute('aria-labelledby', /.+/);
         const closeReport = page.getByRole('button', { name: 'Tutup detail progres' });

@@ -24,9 +24,13 @@ const emptyList: AdminUserListResponse = {
 
 function withChartUsers<T extends Record<string, unknown>>(service: T): T & {
     listChartUsers: ReturnType<typeof vi.fn>;
+    getMonitoringSummary: ReturnType<typeof vi.fn>;
+    getAspectAverages: ReturnType<typeof vi.fn>;
+    getMonitoringPeriods: ReturnType<typeof vi.fn>;
 } {
     return {
         ...service,
+        getMonitoringPeriods: vi.fn().mockResolvedValue([]),
         getAspectAverages: vi.fn().mockResolvedValue([]),
         getMonitoringSummary: vi.fn().mockResolvedValue([]),
         listChartUsers: vi.fn().mockResolvedValue(emptyList.items)
@@ -52,6 +56,8 @@ function makeView() {
         renderData: vi.fn(),
         renderAspectData: vi.fn(),
         renderMonitoringSummary: vi.fn(),
+        renderTeacherMonitoringSummary: vi.fn(),
+        renderMonitoringPeriods: vi.fn(),
         closeMonitoring: vi.fn(),
         showMonitoringLoading: vi.fn(),
         showMonitoring: vi.fn(),
@@ -63,11 +69,35 @@ function makeView() {
 }
 
 describe('AdminDashboardController', () => {
+    it('keeps parent data available when the teacher summary fails independently',async()=>{
+        const service=withChartUsers({getSummary:vi.fn().mockResolvedValue(summary),listUsers:vi.fn().mockResolvedValue(emptyList)});
+        service.getMonitoringSummary.mockImplementation((_school:unknown,_user:unknown,reporter:string)=>reporter==='teacher'?Promise.reject(new Error('teacher unavailable')):Promise.resolve([]));
+        const view=makeView(); await new AdminDashboardController(service as never,view as never,vi.fn()).refresh();
+        expect(view.renderMonitoringSummary).toHaveBeenCalledWith([]);
+        expect(view.renderTeacherMonitoringSummary).toHaveBeenCalledWith(null);
+        expect(view.showError).not.toHaveBeenCalled();
+    });
+    it('uses one normalized monitoring period and keeps deferred history callbacks pinned to that period', async () => {
+        const history={items:[],total:0,pageOffset:0,pageSize:25};
+        const service={...withChartUsers({getSummary:vi.fn().mockResolvedValue(summary),listUsers:vi.fn().mockResolvedValue(emptyList)}),
+            getMonitoringHistory:vi.fn().mockResolvedValue(history),getMonitoringComparison:vi.fn().mockResolvedValue({ruleVersion:'draft-1',periodPolicy:'same-point-monitoring-period',cells:[]})};
+        const view=makeView(); const controller=new AdminDashboardController(service as never,view as never,vi.fn());
+        controller.setMonitoringPeriod(' Periode   Kedua ');
+        await vi.waitFor(()=>expect(view.renderMonitoringSummary).toHaveBeenCalled());
+        expect(service.getMonitoringSummary).toHaveBeenCalledWith(null,null,'teacher','periode kedua');
+        await controller.showMonitoring({userId:'student',displayName:'Siswa',username:'siswa'});
+        const args=view.showMonitoring.mock.calls[0];
+        await args[3](25); await args[4].loadTeacherMore(25);
+        expect(service.getMonitoringHistory).toHaveBeenCalledWith('student',25,'parent','periode kedua');
+        expect(service.getMonitoringHistory).toHaveBeenCalledWith('student',25,'teacher','periode kedua');
+        controller.setMonitoringPeriod('x'); expect(view.showError).toHaveBeenCalledWith('Periode monitoring harus 2–80 karakter.',expect.any(Function));
+    });
     it('ignores monitoring results from an earlier student and invalidates them on school changes', async () => {
         const old = deferred<unknown>();
         const recent = deferred<unknown>();
         const history = { items: [], total: 0, pageSize: 25, pageOffset: 0 };
-        const service = { getMonitoringHistory: vi.fn().mockReturnValueOnce(old.promise).mockReturnValueOnce(recent.promise), getMonitoringSummary: vi.fn().mockResolvedValue([]) };
+        const comparison = { ruleVersion: 'draft-1', periodPolicy: 'same-point-monitoring-period', cells: [] };
+        const service = { getMonitoringHistory: vi.fn().mockImplementation((id: string, _offset: number, reporter: string) => reporter === 'teacher' ? Promise.resolve(history) : id === 'a' ? old.promise : recent.promise), getMonitoringSummary: vi.fn().mockResolvedValue([]), getMonitoringComparison: vi.fn().mockResolvedValue(comparison) };
         const view = makeView();
         const controller = new AdminDashboardController(service as never, view as never, vi.fn());
         const a = { userId: 'a', displayName: 'A', username: 'aaa' };
@@ -77,7 +107,7 @@ describe('AdminDashboardController', () => {
         recent.resolve(history); await second;
         old.resolve(history); await first;
         expect(view.showMonitoring).toHaveBeenCalledTimes(1);
-        expect(view.showMonitoring).toHaveBeenCalledWith(b, history, [], expect.any(Function));
+        expect(view.showMonitoring).toHaveBeenCalledWith(b, history, [], expect.any(Function), expect.objectContaining({ comparison }));
     });
     it('renders a monitoring error when the history request fails', async () => {
         const service = { getMonitoringHistory: vi.fn().mockRejectedValue(new Error('offline')), getMonitoringSummary: vi.fn().mockResolvedValue([]) };

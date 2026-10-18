@@ -31,7 +31,7 @@ export class LoginView {
         const title = createElement('h1', { text: 'Pantau perjalanan setiap pemain.' });
         const copy = createElement('p', {
             className: 'brand-copy',
-            text: 'Ringkasan akun, progres sepuluh level, dan capaian Jejak Pandawa dalam satu panel baca-saja.'
+            text: 'Kelola akun siswa, pantau capaian game, dan tinjau monitoring orang tua serta guru.'
         });
         const seal = createElement('div', {
             className: 'brand-seal',

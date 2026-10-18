@@ -17,6 +17,7 @@ test('only registered schools appear; selection scopes accounts, summary and stu
     for (const row of await page.locator('td[data-label="Sekolah"]').allTextContents()) {
         expect(row).toBe('SDN Kalibanteng Kulon 01');
     }
+    await page.getByRole('tab', { name: 'Siswa', exact: true }).click();
     await page.getByRole('button', { name: 'Berikutnya' }).click();
     await expect(page.locator('.players-panel tbody tr')).toHaveCount(25);
     await school.selectOption('');
@@ -51,6 +52,7 @@ test('a new school appears only after a player is created for it', async ({ page
     await page.getByLabel('Nama pengguna').fill('admin.demo');
     await page.getByLabel('Password', { exact: true }).fill('local-test-only');
     await page.getByRole('button', { name: 'Masuk ke panel' }).click();
+    await page.getByRole('tab', { name: 'Siswa', exact: true }).click();
     await expect(page.locator('#school-filter option')).toHaveCount(2);
     await page.getByRole('button', { name: 'Tambah pemain' }).click();
     await page.getByLabel('Nama tampilan').fill('Siswa Sekolah Baru');

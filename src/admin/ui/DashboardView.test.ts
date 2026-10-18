@@ -296,4 +296,90 @@ describe('DashboardView', () => {
         expect(root.querySelector('dialog h2')?.textContent)
             .toBe('Reset password @Sikapandawa');
     });
+
+    it('shows only one dashboard section at a time and preserves it across data refresh', () => {
+        const root = document.createElement('div'); document.body.append(root);
+        const view = new DashboardView(root, makeCallbacks()); view.renderShell();
+        expect(root.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('Ringkasan');
+        expect([...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')].filter(panel => !panel.hidden)).toHaveLength(1);
+        const students = root.querySelector<HTMLButtonElement>('#dashboard-tab-students')!;
+        students.click(); view.renderData(summary, listWithUsername('budi'));
+        expect(students.getAttribute('aria-selected')).toBe('true');
+        expect(root.querySelector<HTMLElement>('#dashboard-panel-students')!.hidden).toBe(false);
+        students.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        expect(root.querySelector('[aria-selected="true"]')?.textContent).toBe('Aspek');
+        expect(document.activeElement?.id).toBe('dashboard-tab-aspects');
+        root.remove();
+    });
+
+    it('locks the school selector and new-player scope to the verified school', () => {
+        const root = document.createElement('div'); const callbacks = makeCallbacks();
+        const view = new DashboardView(root, callbacks, 'kepala.sekolah', false, 'school-admin', { role: 'school', schoolName: 'Sekolah A' });
+        view.renderShell(); view.renderData({ ...summary, schools: ['Sekolah A', 'Sekolah B'] }, listWithUsername('budi'));
+        const selector = root.querySelector<HTMLSelectElement>('#school-filter')!;
+        expect(selector.disabled).toBe(true); expect([...selector.options].map(option => option.value)).toEqual(['Sekolah A']);
+        selector.dispatchEvent(new Event('change')); expect(callbacks.onSchool).not.toHaveBeenCalled();
+        root.querySelector<HTMLButtonElement>('[aria-label="Tambah pemain"]')!.click();
+        const schoolInput = root.querySelector<HTMLInputElement>('#create-school-name')!;
+        expect(schoolInput.value).toBe('Sekolah A'); expect(schoolInput.readOnly).toBe(true);
+    });
+
+    it('exposes staff-account management only for a verified master with management callbacks', async () => {
+        const callbacks = { ...makeCallbacks(), onCreateAdmin: vi.fn(), onListAdmins: vi.fn().mockResolvedValue([]) };
+        const root = document.createElement('div');
+        for (const role of ['school', 'forum'] as const) {
+            new DashboardView(root, callbacks, 'Sikapandawa', false, 'id', { role, schoolName: 'Sekolah A' }).renderShell();
+            expect([...root.querySelectorAll('button')].some(button => button.textContent === 'Kelola admin')).toBe(false);
+        }
+        new DashboardView(root, callbacks, 'Sikapandawa', false, 'id', { role: 'master', schoolName: null }).renderShell();
+        [...root.querySelectorAll('button')].find(button => button.textContent === 'Kelola admin')!.click();
+        await vi.waitFor(() => expect(callbacks.onListAdmins).toHaveBeenCalledOnce());
+        expect(root.querySelector('#admin-access-title')?.textContent).toBe('Kelola admin');
+    });
+
+    it('applies an explicit monitoring period without changing the selected section', () => {
+        const root = document.createElement('div');
+        const callbacks = { ...makeCallbacks(), onMonitoringPeriod: vi.fn() };
+        const view = new DashboardView(root, callbacks); view.renderShell();
+        root.querySelector<HTMLButtonElement>('#dashboard-tab-monitoring')!.click();
+        const period = root.querySelector<HTMLInputElement>('input#admin-monitoring-period')!;
+        expect(period.type).toBe('number'); expect(period.value).toBe('1');
+        view.renderMonitoringPeriods(['Siklus kedua', 'periode 2']);
+        period.stepUp(); expect(period.value).toBe('2');
+        root.querySelector('.monitoring-period-filter')!.dispatchEvent(new Event('submit', { cancelable: true }));
+        expect(callbacks.onMonitoringPeriod).toHaveBeenCalledWith('periode 2');
+        expect(root.querySelector('[aria-selected="true"]')?.textContent).toBe('Monitoring');
+    });
+
+    it('routes school teacher management edits through staff-specific callbacks', async () => {
+        const teacher = { userId: 'teacher-id', username: 'guru.sekolah', displayName: 'Guru Sekolah', role: 'teacher' as const, schoolName: 'SDN Kalibanteng Kulon 01' };
+        const callbacks = { ...makeCallbacks(), onCreateAdmin: vi.fn(), onListAdmins: vi.fn().mockResolvedValue([teacher]), onEditAdmin: vi.fn().mockResolvedValue({}), onResetAdminPassword: vi.fn(), onDeleteAdmin: vi.fn() };
+        const root = document.createElement('div');
+        new DashboardView(root, callbacks, 'kepala.sekolah', false, 'school-admin', { role: 'school', schoolName: teacher.schoolName }).renderShell();
+        [...root.querySelectorAll('button')].find(button => button.textContent === 'Kelola guru')!.click();
+        await vi.waitFor(() => expect(root.querySelector('[aria-label="Edit @guru.sekolah"]')).not.toBeNull());
+        root.querySelector<HTMLButtonElement>('[aria-label="Edit @guru.sekolah"]')!.click();
+        root.querySelector<HTMLInputElement>('#staff-edit-name')!.value = 'Guru Baru';
+        root.querySelector('.admin-access-editor')!.dispatchEvent(new Event('submit', { cancelable: true }));
+        await vi.waitFor(() => expect(callbacks.onEditAdmin).toHaveBeenCalledWith('teacher-id', expect.objectContaining({ displayName: 'Guru Baru' })));
+        expect(callbacks.onEditUser).not.toHaveBeenCalled();
+    });
+
+    it('keeps historical periods accessible, rejects invalid numbers, and preserves numeric input on refresh', () => {
+        const root = document.createElement('div');
+        const callbacks = { ...makeCallbacks(), onMonitoringPeriod: vi.fn() };
+        const view = new DashboardView(root, callbacks); view.renderShell();
+        const period = root.querySelector<HTMLInputElement>('#admin-monitoring-period')!;
+        const form = root.querySelector('form.monitoring-period-filter')!;
+        for (const value of ['0', '-1', '1.5', '']) {
+            period.value = value; form.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+        expect(callbacks.onMonitoringPeriod).not.toHaveBeenCalled();
+        period.value = '3'; view.renderMonitoringPeriods(['periode 3', 'Siklus kedua']); expect(period.value).toBe('3');
+        const archive = root.querySelector<HTMLDetailsElement>('.period-archives')!; expect(archive.hidden).toBe(false);
+        archive.querySelector('button')!.click(); expect(callbacks.onMonitoringPeriod).toHaveBeenLastCalledWith('siklus kedua');
+        expect([...root.querySelectorAll('button')].some(button => button.textContent === 'Catatan lama')).toBe(false);
+        expect(root.textContent).not.toContain('Menampilkan catatan lama');
+        view.renderMonitoringPeriods(null); expect(period.value).toBe('3');
+    });
 });
