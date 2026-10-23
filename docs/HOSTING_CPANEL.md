@@ -1,6 +1,6 @@
 # Upload Sikapandawa ke cPanel
 
-Paket siap upload: `release/sikapandawa-final-v2-20261018.zip` (40.639.291 byte, sekitar 38,8 MiB). Verifikasi ulang 18 Oktober 2026: TypeScript dan build produksi lulus; 475 berkas ZIP identik dengan build terbaru, CRC valid, seluruh entry game/admin/form/guru tersedia. Tidak ada source, migration, environment, private key, atau fixture/proxy development dalam paket. Bukti mesin: `release/staff-teacher-preview/hosting-final-verification-20261018.json`.
+Paket terbaru siap upload: `release/sikapandawa-sistem-pakar-ui-20261023.zip` (40.643.278 byte, sekitar 38,8 MiB), berisi redesign monitoring dan detail sistem pakar per siswa. Verifikasi 23 Oktober 2026: TypeScript dan build produksi lulus; 475 berkas ZIP identik dengan build terbaru, CRC valid, seluruh entry game/admin/form/guru tersedia. Tidak ada source, migration, environment, private key, atau fixture/proxy development dalam paket. Bukti mesin: `release/staff-teacher-preview/expert-ui-package-20261023.json`. Paket sebelumnya tetap disimpan.
 
 ## Langkah upload
 

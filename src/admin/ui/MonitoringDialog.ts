@@ -3,8 +3,8 @@ import type { MonitoringHistory, MonitoringSchool } from '../../shared/monitorin
 import type { AdminUserIdentity } from '../types';
 import { MonitoringCharts } from './MonitoringCharts';
 import { createElement, replaceContent } from './dom';
-import { CHARACTER_ASPECTS } from '../../shared/game/characterAspects';
-import { evaluateMonitoringComparison, type MonitoringComparison } from '../../shared/monitoringComparison';
+import type { MonitoringComparison } from '../../shared/monitoringComparison';
+import { createExpertAnalysis } from './MonitoringExpertView';
 export interface DualSourceMonitoring {
     teacherHistory: MonitoringHistory; teacherSchools: MonitoringSchool[];
     loadTeacherMore: (offset: number) => Promise<MonitoringHistory>; comparison: MonitoringComparison;
@@ -28,39 +28,25 @@ export class MonitoringDialog {
         if (!this.dialog.open) return;
         const charts = new MonitoringCharts(); charts.render(schools);
         const records = new MonitoringHistoryView(); records.render(history, loadMore);
-        const children: HTMLElement[] = [charts.element, records.element];
+        const children: HTMLElement[] = [];
         if (dual) {
+            const analysis = createExpertAnalysis(dual.comparison);
+            if ([...history.items, ...dual.teacherHistory.items].some(item => [item.guardianName, item.situation, item.behavior].some(text => text.includes('[DATA UJI')))) {
+                analysis.prepend(createElement('p', { className: 'expert-test-notice', text: 'DATA UJI terdeteksi · Riwayat yang dimuat memuat contoh pengujian, bukan pengamatan nyata.' }));
+            } else if (history.total > history.items.length || dual.teacherHistory.total > dual.teacherHistory.items.length) {
+                analysis.prepend(createElement('p', { className: 'expert-test-notice', text: 'Tinjau sumber data · Riwayat baru dimuat sebagian. Analisis mencakup seluruh catatan periode ini; periksa juga penandaan data uji di catatan sebelumnya.' }));
+            }
+            children.push(analysis);
             const teacherCharts = new MonitoringCharts(); teacherCharts.render(dual.teacherSchools, 'teacher');
             const teacherRecords = new MonitoringHistoryView(); teacherRecords.render(dual.teacherHistory, dual.loadTeacherMore);
             teacherRecords.element.prepend(createElement('h2', { text: 'Catatan guru' }));
-            children.push(teacherCharts.element, teacherRecords.element, this.comparison(dual.comparison));
-        }
+            const evidence = createElement('details', { className: 'expert-observations' });
+            evidence.append(createElement('summary', { text: 'Grafik & riwayat pengamatan' }),
+                createElement('p', { className: 'muted', text: 'Telusuri catatan asli dari kedua sumber pada periode yang dipilih.' }),
+                charts.element, records.element, teacherCharts.element, teacherRecords.element);
+            children.push(evidence);
+        } else children.push(charts.element, records.element);
         this.paint('Monitoring ' + user.displayName + ' · @' + user.username, ...children);
-    }
-    private comparison(data: MonitoringComparison): HTMLElement {
-        const section = createElement('section', { className: 'monitoring-comparison', attributes: { 'aria-label': 'Perbandingan penilaian orang tua dan guru' } });
-        section.append(createElement('h2', { text: 'Perbandingan ortu–guru' }),
-            createElement('p', { className: 'muted', text: 'Aturan awal · draft-1 · perlu validasi pakar. Hasil membantu klarifikasi pengamatan, bukan penetapan manipulasi. Pasangan hanya pada nomor titik dan periode monitoring yang sama; tanggal pengamatan boleh berbeda. N/A dikecualikan. Pengisian berulang dirata-ratakan per sumber/periode; setiap titik berbobot sama. Catatan lama tanpa periode tidak dibandingkan.' }));
-        const format = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
-        const cards = createElement('div', { className: 'level-grid' });
-        for (const result of evaluateMonitoringComparison(data)) {
-            const card = createElement('article', { className: 'level-card comparison-card' });
-            card.append(createElement('h3', { text: CHARACTER_ASPECTS.find(a => a.id === result.id)!.label }),
-                createElement('p', { className: 'status-pill', text: result.status === 'insufficient' ? 'Data belum cukup' : result.status === 'review' ? 'Perlu klarifikasi' : 'Pola selisih besar berulang belum terdeteksi' }),
-                createElement('p', { text: result.pairedPoints + '/12 titik berpasangan · ' + result.pairedPeriods + ' pasangan periode' }),
-                createElement('p', { text: 'Kesamaan rata-rata pasangan: ' + (result.exactAgreementPercent === null ? '—' : format.format(result.exactAgreementPercent) + '%') }),
-                createElement('p', { text: 'Rata-rata selisih absolut: ' + (result.meanAbsoluteDifference === null ? '—' : format.format(result.meanAbsoluteDifference) + ' poin') }),
-                createElement('p', { text: 'Arah selisih ortu − guru: ' + (result.signedBias === null ? '—' : format.format(result.signedBias) + ' poin') }));
-            const details = createElement('details'); details.append(createElement('summary', { text: 'Lihat penalaran dan selisih 12 titik' }));
-            for (const line of result.trace) details.append(createElement('p', { text: line }));
-            const pointList = createElement('ul', { className: 'monitoring-score-list' });
-            for (let point = 1; point <= 12; point++) {
-                const value = result.points.find(p => p.pointNumber === point);
-                pointList.append(createElement('li', { text: 'Titik ' + point + ': ' + (value ? 'selisih ' + format.format(value.meanAbsoluteDifference) + ' poin' : 'belum ada pasangan pengamatan') }));
-            }
-            details.append(pointList); card.append(details); cards.append(card);
-        }
-        section.append(cards); return section;
     }
     close(): void { if (this.dialog.open) this.dialog.close(); }
 }

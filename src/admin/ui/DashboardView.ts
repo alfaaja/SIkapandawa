@@ -15,6 +15,7 @@ import { ProgressCharts } from './ProgressCharts';
 import { AspectCharts } from './AspectCharts';
 import { MonitoringCharts } from './MonitoringCharts';
 import { MonitoringDialog, type DualSourceMonitoring } from './MonitoringDialog';
+import { createExpertOverview } from './MonitoringExpertView';
 import type { MonitoringHistory, MonitoringSchool } from '../../shared/monitoring';
 import { normalizeMonitoringPeriod, numberedMonitoringPeriod, monitoringPeriodNumber } from '../../shared/monitoring';
 import type { SchoolAspectAverage } from '../../shared/game/characterAspects';
@@ -146,7 +147,12 @@ export class DashboardView {
         const aspects = createElement('section', { className: 'dashboard-tab-panel' });
         aspects.append(this.aspectCharts.element);
         const monitoring = createElement('section', { className: 'dashboard-tab-panel' });
-        monitoring.append(this.createMonitoringPeriodFilter(), this.monitoringCharts.element, this.teacherMonitoringCharts.element);
+        const sources = createElement('div', { className: 'expert-source-charts' });
+        sources.append(this.monitoringCharts.element, this.teacherMonitoringCharts.element);
+        monitoring.append(createExpertOverview(() => {
+            this.selectTab('students');
+            this.tabPanels.get('students')?.focus();
+        }), this.createMonitoringPeriodFilter(), sources);
         content.append(this.status, this.createNavigation([
             ['overview', 'Ringkasan', overview],
             ['students', 'Siswa', tableSection],
@@ -300,7 +306,7 @@ export class DashboardView {
         title.id = 'players-title';
         headingGroup.append(title, createElement('p', {
             className: 'muted',
-            text: 'Cari akun, buka rapor, atau kelola akses pemain.'
+            text: 'Cari akun, buka rapor, atau pilih Monitoring untuk melihat analisis sistem pakar per siswa.'
         }));
         const tools = createElement('div', { className: 'players-toolbar-group' });
         const addPlayer = createElement('button', {

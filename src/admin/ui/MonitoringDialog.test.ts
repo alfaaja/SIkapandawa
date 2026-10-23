@@ -41,5 +41,17 @@ it('separates parent and teacher charts and explains draft forward-chaining deci
     expect(root.textContent).toContain('Monitoring guru'); expect(root.textContent).toContain('Perlu klarifikasi');
     expect(root.textContent).toContain('6/12 titik berpasangan'); expect(root.textContent).toContain('R3: minimal 3 titik');
     expect(root.querySelectorAll('.comparison-card')).toHaveLength(5); expect(root.textContent).toContain('draft-1');
-    expect(root.textContent).toContain('Titik 12: belum ada pasangan pengamatan');
+    expect(root.querySelector('[aria-label="Titik 12: belum ada pasangan pengamatan"]')).not.toBeNull();
+    expect(root.querySelector('.dialog-content')?.children[1].classList.contains('monitoring-comparison')).toBe(true);
+    expect(root.querySelector<HTMLDetailsElement>('.expert-observations')?.open).toBe(false);
+});
+it('does not imply fully verified provenance when only one page of observations was loaded', () => {
+    const root = document.createElement('main'); const dialog = new MonitoringDialog(); dialog.mount(root);
+    const history = { items: [], total: 26, pageOffset: 0, pageSize: 25 }; dialog.showLoading();
+    dialog.show({ userId: 'student', displayName: 'Siswa', username: 'siswa' }, history, [], async () => history, {
+        teacherHistory: history, teacherSchools: [], loadTeacherMore: async () => history,
+        comparison: { ruleVersion: 'draft-1', periodPolicy: 'same-point-monitoring-period', cells: [] }
+    });
+    expect(root.querySelector('.expert-test-notice')?.textContent).toContain('Riwayat baru dimuat sebagian');
+    expect(root.textContent).not.toContain('bukan pengamatan nyata');
 });
